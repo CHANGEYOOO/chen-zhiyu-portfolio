@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0a0908" />
+    <meta
+      name="description"
+      content="陈智宇，影视美术指导与视觉创作者。"
+    />
+    <title>JOEKUNI — 陈智宇</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+
+    <header class="site-header" data-header>
+      <a class="brand" href="#top" aria-label="JOEKUNI，返回页面顶部">
+        <img src="assets/images/logo.png" alt="JOEKUNI" width="239" height="63" />
+      </a>
+
+      <nav aria-label="主要导航">
+        <a href="#work">Portfolio</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="intro-sequence" id="top" aria-label="个人身份与创作方法" data-intro-sequence>
+        <div class="scene-track" data-scene="0">
+          <article class="media-panel hero" aria-label="首屏代表作" data-scene="0">
+            <video
+              class="panel-media"
+              muted
+              autoplay
+              loop
+              playsinline
+              preload="metadata"
+              poster="assets/images/posters/hero-nbpl-2024.mp4.png"
+              aria-label="2024《永劫无间》春季赛宣传片节选"
+              data-autoplay-video
+            >
+              <source src="assets/video/hero-nbpl-2024.mp4" type="video/mp4" />
+            </video>
+            <div class="media-shade" aria-hidden="true"></div>
+
+            <button class="media-toggle" type="button" data-video-toggle aria-label="暂停首屏视频">
+              <span aria-hidden="true">Ⅱ</span>
+              <span class="sr-only">暂停首屏视频</span>
+            </button>
+            <p class="autoplay-note" data-autoplay-note hidden>动态影像已暂停，可使用右下角按钮播放。</p>
+          </article>
+        </div>
+
+        <div class="scene-track" data-scene="1">
+          <article class="media-panel statement" aria-label="个人方法影像" data-scene="1">
+            <video
+              class="panel-media"
+              muted
+              loop
+              playsinline
+              preload="none"
+              poster="assets/images/posters/statement-last-one-standing-2023.mp4.png"
+              aria-label="2023《永劫无间》世界冠军赛宣传片节选"
+              data-autoplay-video
+              data-src="assets/video/statement-last-one-standing-2023.mp4"
+            ></video>
+            <div class="media-shade" aria-hidden="true"></div>
+
+            <button class="media-toggle" type="button" data-video-toggle aria-label="播放第二段视频">
+              <span aria-hidden="true">▶</span>
+              <span class="sr-only">播放第二段视频</span>
+            </button>
+          </article>
+        </div>
+
+          <div class="fixed-copy-stage" data-copy-stage>
+            <div class="panel-copy hero-copy" data-copy="0">
+              <h1 id="hero-title" data-reveal-text>陈智宇，影视美术指导与视觉创作者。</h1>
+              <p class="identity-en">
+                <span data-reveal-text>JoeKUni</span>
+                <span data-reveal-text>ART DIRECTION &amp; VISUAL WORLDS</span>
+              </p>
+            </div>
+
+            <div class="panel-copy statement-copy" data-copy="1">
+              <h2 id="statement-title" data-reveal-text>在影视、空间与数字视觉之间，将概念转化为具有叙事感的画面。</h2>
+              <p data-reveal-text>Across film, space, and digital imagery, I transform concepts into visuals with a strong sense of narrative.</p>
+            </div>
+          </div>
+      </section>
+
+      <section class="content-section works" id="work" aria-labelledby="work-title">
+        <p class="section-index">01</p>
+        <div>
+          <p class="eyebrow">Selected Works</p>
+          <h2 id="work-title">作品，正在进入下一幕。</h2>
+          <p class="placeholder-copy">本轮保留清晰入口，后续将加入 5–7 个重点项目与作品矩阵。</p>
+        </div>
+      </section>
+
+      <section class="content-section" id="about" aria-labelledby="about-title">
+        <p class="section-index">02</p>
+        <div>
+          <p class="eyebrow">About</p>
+          <h2 id="about-title">陈智宇<br />CHEN ZHIYU</h2>
+          <p class="placeholder-copy">个人介绍与创作方法将在内容确认后补充。</p>
+        </div>
+      </section>
+
+      <section class="content-section contact" id="contact" aria-labelledby="contact-title">
+        <p class="section-index">03</p>
+        <div>
+          <p class="eyebrow">Contact</p>
+          <h2 id="contact-title">LET'S CREATE<br />VISUAL WORLDS.</h2>
+          <p class="placeholder-copy">联系方式待确认，本原型暂不公开个人信息。</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>JOEKUNI</p>
+      <p>HTML PROTOTYPE V0.1</p>
+    </footer>
+  </body>
+</html>
