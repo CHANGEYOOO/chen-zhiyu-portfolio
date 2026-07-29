@@ -22,6 +22,9 @@
 
       if (isPageReload && location.hash) {
         history.replaceState(null, "", `${location.pathname}${location.search}`);
+      } else if (location.hash) {
+        window.__requestedInitialHash = location.hash;
+        history.replaceState(null, "", `${location.pathname}${location.search}`);
       }
 
       window.addEventListener("pageshow", () => {
@@ -35,9 +38,9 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.15" />
-    <script src="assets/data/livestream-data.js?v=0.15" defer></script>
-    <script src="script.js?v=0.15" defer onerror="document.documentElement.classList.remove('has-js')"></script>
+    <link rel="stylesheet" href="styles.css?v=0.16" />
+    <script src="assets/data/livestream-data.js?v=0.16" defer></script>
+    <script src="script.js?v=0.16" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -515,8 +518,8 @@
         id="livestream"
         aria-labelledby="livestream-title"
         data-livestream
-        data-projects-src="assets/data/livestream-projects.json?v=0.15"
-        data-dimensions-src="assets/data/livestream-image-dimensions.json?v=0.15"
+        data-projects-src="assets/data/livestream-projects.json?v=0.16"
+        data-dimensions-src="assets/data/livestream-image-dimensions.json?v=0.16"
       >
         <header class="livestream-header">
           <h2 id="livestream-title">Livestream Set Design</h2>
@@ -531,17 +534,123 @@
         </noscript>
       </section>
 
-      <section class="content-section" id="about" aria-labelledby="about-title">
-        <p class="section-index">02</p>
-        <div>
-          <p class="eyebrow">About</p>
-          <h2 id="about-title">陈智宇<br />CHEN ZHIYU</h2>
-          <p class="placeholder-copy">个人介绍与创作方法将在内容确认后补充。</p>
+      <section class="about" id="about" aria-labelledby="about-title" data-about>
+        <div class="about-inner">
+          <p class="about-kicker">ABOUT / PROFILE</p>
+
+          <div class="about-intro">
+            <div class="about-identity about-reveal">
+              <h2 class="about-name" id="about-title">
+                <span class="about-name-zh">陈智宇</span>
+                <span class="about-name-en" lang="en">CHEN ZHIYU</span>
+              </h2>
+
+              <p class="about-role">
+                <span>影视美术指导与视觉创作者</span>
+                <span lang="en">ART DIRECTION &amp; VISUAL WORLDS</span>
+              </p>
+
+              <p class="about-summary">
+                我从品牌概念与叙事出发，通过美术指导、场景设计、空间搭建与数字视觉，将抽象创意转化为可以被拍摄、观看与感受的视觉世界。工作横跨
+                TVC、游戏影视、直播空间与 CG
+                产品影像，重视从视觉设定到现场执行及后期衔接的完整落地。
+              </p>
+            </div>
+
+            <figure class="about-portrait about-reveal">
+              <img
+                src="assets/images/about/chen-zhiyu-working-portrait.webp?v=0.16"
+                alt="陈智宇在工作中使用相机记录画面"
+                width="960"
+                height="1280"
+                loading="lazy"
+                decoding="async"
+              />
+            </figure>
+          </div>
+
+          <div class="about-methods" aria-label="创作方法">
+            <article class="about-method about-reveal">
+              <p class="about-label" lang="en">Visual Direction</p>
+              <h3>视觉方向</h3>
+              <p>从品牌概念与叙事目标出发，建立视觉方向、场景设定与画面语言，并协调拍摄及后期环节。</p>
+            </article>
+
+            <article class="about-method about-reveal">
+              <p class="about-label" lang="en">Production &amp; Space</p>
+              <h3>空间与制作</h3>
+              <p>推进影视美术、场景设计、实体搭建与资源统筹，让视觉设定能够在真实制作条件中落地。</p>
+            </article>
+
+            <article class="about-method about-reveal">
+              <p class="about-label" lang="en">Digital Visuals</p>
+              <h3>数字视觉</h3>
+              <p>通过 3D 设定、数字预演与 CG 产品影像连接创意、空间和最终画面。</p>
+            </article>
+          </div>
+
+          <section class="about-experience" aria-labelledby="experience-title">
+            <header class="about-subhead about-reveal">
+              <p class="about-label" lang="en">Experience</p>
+              <h3 id="experience-title">工作经历</h3>
+            </header>
+
+            <ol class="about-timeline">
+              <li class="about-experience-item about-reveal">
+                <p class="about-year">2025—2026</p>
+                <div class="about-position">
+                  <h4>荒原视觉工作室</h4>
+                  <p>美术指导</p>
+                </div>
+                <p class="about-description">参与并主导品牌直播空间及 TVC 项目的设计、搭建与拍摄。</p>
+              </li>
+
+              <li class="about-experience-item about-reveal">
+                <p class="about-year">2025</p>
+                <div class="about-position">
+                  <h4>宁波怡人玩具有限公司</h4>
+                  <p>美术总监</p>
+                </div>
+                <p class="about-description">主导大型微缩场景及美术制作流程，推进资源整合与制作标准建立。</p>
+              </li>
+
+              <li class="about-experience-item about-reveal">
+                <p class="about-year">2024</p>
+                <div class="about-position">
+                  <h4>至幻蘑菇</h4>
+                  <p>三维美术师兼 CG 导演</p>
+                </div>
+                <p class="about-description">负责三维视觉设定，以及 CG 产品影像从创意到分镜的完整导演流程。</p>
+              </li>
+
+              <li class="about-experience-item about-reveal">
+                <p class="about-year">2023—2024</p>
+                <div class="about-position">
+                  <h4>LOOKwhat</h4>
+                  <p>美术指导</p>
+                </div>
+                <p class="about-description">参与 TVC、MV 等项目从创意落地、拍摄配合到后期衔接的完整流程。</p>
+              </li>
+            </ol>
+          </section>
+
+          <div class="about-secondary">
+            <section class="about-secondary-block about-reveal" aria-labelledby="education-title">
+              <p class="about-label" lang="en">Education</p>
+              <h3 id="education-title">北京电影学院现代创意媒体学院</h3>
+              <p>视觉艺术系 · 戏剧影视美术设计专业本科</p>
+            </section>
+
+            <section class="about-secondary-block about-reveal" aria-labelledby="collaborations-title">
+              <p class="about-label" lang="en">Selected Collaborations</p>
+              <h3 class="sr-only" id="collaborations-title">合作品牌</h3>
+              <p class="about-collaborations">网易 · 腾讯 · 优酷 · 小米 · NARS · 雀巢 · 极米 · 原神</p>
+            </section>
+          </div>
         </div>
       </section>
 
       <section class="content-section contact" id="contact" aria-labelledby="contact-title">
-        <p class="section-index">03</p>
         <div class="contact-content">
           <p class="eyebrow">Contact</p>
           <h2 id="contact-title">LET'S CREATE<br />VISUAL WORLDS.</h2>
@@ -597,7 +706,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.15</p>
+      <p>HTML PROTOTYPE V0.16</p>
     </footer>
   </body>
 </html>

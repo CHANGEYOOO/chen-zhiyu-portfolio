@@ -19,6 +19,7 @@ const workPlayerRetry = workPlayer?.querySelector("[data-work-player-retry]");
 const contactCopyButton = document.querySelector("[data-contact-copy]");
 const contactCopyLabel = contactCopyButton?.querySelector("[data-contact-copy-label]");
 const contactFeedback = document.querySelector("#contact-feedback");
+const about = document.querySelector("[data-about]");
 const livestream = document.querySelector("[data-livestream]");
 const livestreamProjects = livestream?.querySelector("[data-livestream-projects]");
 const precisePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -229,6 +230,41 @@ function createLivestreamProject(project, projectIndex, imageDimensions) {
   return article;
 }
 
+function restoreRequestedHashPosition() {
+  const requestedHash = window.location.hash || window.__requestedInitialHash;
+  if (!requestedHash) return;
+
+  let targetId;
+  try {
+    targetId = decodeURIComponent(requestedHash.slice(1));
+  } catch {
+    return;
+  }
+
+  const hashTarget = document.getElementById(targetId);
+  if (!hashTarget) return;
+
+  if (window.__requestedInitialHash) {
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${window.location.search}${requestedHash}`,
+    );
+    window.__requestedInitialHash = "";
+  }
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = "auto";
+      hashTarget.scrollIntoView({ block: "start", behavior: "auto" });
+      window.requestAnimationFrame(() => {
+        document.documentElement.style.scrollBehavior = previousScrollBehavior;
+      });
+    });
+  });
+}
+
 async function loadLivestreamProjects() {
   if (!livestream || !livestreamProjects) return;
 
@@ -283,10 +319,38 @@ async function loadLivestreamProjects() {
     livestreamProjects.replaceChildren(message);
     livestreamProjects.setAttribute("aria-busy", "false");
     console.error(error);
+  } finally {
+    restoreRequestedHashPosition();
   }
 }
 
 loadLivestreamProjects();
+
+function setupAboutMotion() {
+  if (!about || reducedMotion.matches || !("IntersectionObserver" in window)) return;
+
+  const revealItems = [...about.querySelectorAll(".about-reveal")];
+  if (!revealItems.length) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    },
+    {
+      rootMargin: "0px 0px -8%",
+      threshold: 0.12,
+    },
+  );
+
+  about.classList.add("about-motion-ready");
+  revealItems.forEach((item) => observer.observe(item));
+}
+
+setupAboutMotion();
 
 function dataSaverEnabled() {
   return Boolean(connection?.saveData);
@@ -448,7 +512,7 @@ function openWorkPlayer(card, trigger) {
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.15`;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.16`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");
