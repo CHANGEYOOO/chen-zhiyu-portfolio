@@ -14,6 +14,14 @@
         history.scrollRestoration = "manual";
       }
 
+      const navigationEntry = performance.getEntriesByType?.("navigation")[0];
+      const isPageReload =
+        navigationEntry?.type === "reload" || performance.navigation?.type === 1;
+
+      if (isPageReload && location.hash) {
+        history.replaceState(null, "", `${location.pathname}${location.search}`);
+      }
+
       window.addEventListener("pageshow", () => {
         if (!location.hash) {
           const previousScrollBehavior = document.documentElement.style.scrollBehavior;
@@ -25,8 +33,8 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.3" />
-    <script src="script.js?v=0.3" defer></script>
+    <link rel="stylesheet" href="styles.css?v=0.4" />
+    <script src="script.js?v=0.4" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -166,7 +174,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.3</p>
+      <p>HTML PROTOTYPE V0.4</p>
     </footer>
   </body>
 </html>
