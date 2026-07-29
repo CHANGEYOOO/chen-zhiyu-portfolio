@@ -262,7 +262,7 @@ async function loadLivestreamProjects() {
 
     const imageCount = projects.reduce((total, project) => total + project.images.length, 0);
     const dimensionsCount = Object.keys(imageDimensions).length;
-    if (projects.length !== 8 || imageCount !== 58 || dimensionsCount !== 58) {
+    if (projects.length !== 8 || imageCount !== 55 || dimensionsCount !== 55) {
       throw new Error(
         `Unexpected livestream data: ${projects.length} projects, ${imageCount} images, ${dimensionsCount} dimensions`,
       );
@@ -448,7 +448,7 @@ function openWorkPlayer(card, trigger) {
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.14`;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.15`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");

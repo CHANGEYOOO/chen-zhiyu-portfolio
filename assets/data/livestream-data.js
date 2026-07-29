@@ -119,9 +119,6 @@ window.LIVESTREAM_DATA = {
         "livestream-mifeng-render-01.png",
         "livestream-mifeng-detail-01.png",
         "livestream-mifeng-detail-02.png",
-        "livestream-mifeng-detail-03.png",
-        "livestream-mifeng-detail-04.png",
-        "livestream-mifeng-detail-05.png",
         "livestream-mifeng-render-02.png",
         "livestream-mifeng-detail-06.png",
         "livestream-mifeng-detail-07.png",
@@ -325,18 +322,6 @@ window.LIVESTREAM_DATA = {
       928
     ],
     "mifeng/livestream-mifeng-detail-02.png": [
-      452,
-      928
-    ],
-    "mifeng/livestream-mifeng-detail-03.png": [
-      749,
-      1048
-    ],
-    "mifeng/livestream-mifeng-detail-04.png": [
-      452,
-      928
-    ],
-    "mifeng/livestream-mifeng-detail-05.png": [
       452,
       928
     ],
