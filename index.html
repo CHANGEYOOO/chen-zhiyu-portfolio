@@ -9,8 +9,24 @@
       content="陈智宇，影视美术指导与视觉创作者。"
     />
     <title>JOEKUNI — 陈智宇</title>
-    <link rel="stylesheet" href="styles.css?v=0.2" />
-    <script src="script.js?v=0.2" defer></script>
+    <script>
+      if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+      }
+
+      window.addEventListener("pageshow", () => {
+        if (!location.hash) {
+          const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+          document.documentElement.style.scrollBehavior = "auto";
+          window.scrollTo(0, 0);
+          requestAnimationFrame(() => {
+            document.documentElement.style.scrollBehavior = previousScrollBehavior;
+          });
+        }
+      });
+    </script>
+    <link rel="stylesheet" href="styles.css?v=0.3" />
+    <script src="script.js?v=0.3" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -150,7 +166,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.2</p>
+      <p>HTML PROTOTYPE V0.3</p>
     </footer>
   </body>
 </html>
