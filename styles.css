@@ -853,6 +853,7 @@ footer {
 }
 
 .about-kicker,
+.works-kicker,
 .about-label,
 .about-name-en,
 .about-role span:last-child,
@@ -861,6 +862,7 @@ footer {
 }
 
 .about-kicker,
+.works-kicker,
 .about-label,
 .about-year {
   margin: 0;
@@ -869,6 +871,10 @@ footer {
   letter-spacing: 0.14em;
   line-height: 1.4;
   text-transform: uppercase;
+}
+
+.works-kicker {
+  margin-bottom: clamp(30px, 3.3vw, 48px);
 }
 
 .about-intro {
@@ -1360,6 +1366,10 @@ footer p {
   .works-header h2 {
     margin-bottom: 28px;
     font-size: 22px;
+  }
+
+  .works-kicker {
+    margin-bottom: 24px;
   }
 
   .works-grid {

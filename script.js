@@ -512,7 +512,7 @@ function openWorkPlayer(card, trigger) {
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.16`;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.17`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");
