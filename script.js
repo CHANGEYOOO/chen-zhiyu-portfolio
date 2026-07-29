@@ -224,13 +224,22 @@ function updateIntroSequence() {
   const firstCopyOpacity = reducedMotion.matches
     ? Number(distance < introMetrics.firstExitEnd)
     : 1 - smoothstep(introMetrics.firstHoldEnd, transitionFadeEnd, distance);
-  const secondCopyOpacity = reducedMotion.matches
+  const secondCopyEntranceOpacity = reducedMotion.matches
     ? Number(distance >= introMetrics.firstExitEnd)
     : smoothstep(
         introMetrics.firstExitEnd,
         introMetrics.firstExitEnd + introMetrics.viewportHeight * 0.12,
         distance,
       );
+  const secondCopyExitOpacity = reducedMotion.matches
+    ? Number(distance < introMetrics.secondHoldEnd)
+    : 1 -
+      smoothstep(
+        introMetrics.secondHoldEnd,
+        introMetrics.secondHoldEnd + introMetrics.viewportHeight * 0.08,
+        distance,
+      );
+  const secondCopyOpacity = secondCopyEntranceOpacity * secondCopyExitOpacity;
   const sequenceVisible = rect.bottom > 0 && rect.top < window.innerHeight;
   const firstReveal = clamp(distance / introMetrics.firstHoldEnd, 0, 1);
   const secondReveal = clamp(
