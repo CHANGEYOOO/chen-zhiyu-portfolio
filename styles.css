@@ -656,6 +656,180 @@ footer {
   outline-color: #171513;
 }
 
+.livestream {
+  --livestream-pad: clamp(20px, 2.1vw, 32px);
+  --livestream-image-height: 404px;
+  min-width: 0;
+  overflow: clip;
+  padding:
+    clamp(92px, 8vw, 122px) max(var(--livestream-pad), var(--safe-right))
+    calc(clamp(108px, 10vw, 148px) + var(--safe-bottom))
+    max(var(--livestream-pad), var(--safe-left));
+  border-top: 1px solid var(--line);
+  background: var(--ink);
+  color: #fff;
+}
+
+.livestream-header h2 {
+  margin: 0 0 clamp(30px, 3.3vw, 48px);
+  font-family: var(--nav);
+  font-size: clamp(23px, 2vw, 30px);
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.livestream-project,
+.livestream-carousel,
+.livestream-scroller {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.livestream-project + .livestream-project {
+  margin-top: clamp(62px, 6vw, 92px);
+}
+
+.livestream-carousel {
+  position: relative;
+}
+
+.livestream-scroller {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.livestream-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.livestream-scroller:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 5px;
+}
+
+.livestream-list {
+  display: flex;
+  width: max-content;
+  height: var(--livestream-image-height);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.livestream-slide {
+  flex: 0 0 auto;
+  height: var(--livestream-image-height);
+  background: #111;
+}
+
+.livestream-slide img {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: var(--livestream-image-height);
+  object-fit: contain;
+  user-select: none;
+}
+
+.livestream-slide img.is-missing {
+  width: min(70vw, 640px);
+  background: #181818;
+  color: #aaa;
+}
+
+.livestream-controls {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+}
+
+.livestream-controls[hidden] {
+  display: none;
+}
+
+.livestream-arrow {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  background: rgba(5, 5, 5, 0.58);
+  color: #fff;
+  font-family: var(--nav);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  transform: translateY(-50%);
+  backdrop-filter: blur(6px);
+  transition: background-color 180ms ease, opacity 180ms ease, transform 180ms ease;
+}
+
+.livestream-arrow-prev {
+  left: 14px;
+}
+
+.livestream-arrow-next {
+  right: 14px;
+}
+
+.livestream-arrow:hover:not(:disabled),
+.livestream-arrow:focus-visible:not(:disabled) {
+  background: rgba(5, 5, 5, 0.82);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.livestream-arrow:disabled {
+  opacity: 0.24;
+  cursor: default;
+}
+
+.livestream-meta {
+  padding-top: 15px;
+  font-family: var(--nav);
+  color: #fff;
+}
+
+.livestream-meta h3,
+.livestream-meta p {
+  margin: 0;
+  color: #fff;
+}
+
+.livestream-meta h3 {
+  font-size: clamp(15px, 1.35vw, 20px);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.livestream-meta p {
+  margin-top: 18px;
+  font-size: clamp(14px, 1.15vw, 18px);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.livestream-loading,
+.livestream-error {
+  min-height: 120px;
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--nav);
+  font-size: 14px;
+}
+
 .contact {
   min-height: 100vh;
   align-items: center;
@@ -911,6 +1085,47 @@ footer p {
     padding-top: 7px;
   }
 
+  .livestream {
+    --livestream-pad: 18px;
+    --livestream-image-height: 240px;
+    padding-top: calc(72px + var(--safe-top));
+  }
+
+  .livestream-header h2 {
+    margin-bottom: 28px;
+    font-size: 22px;
+  }
+
+  .livestream-project + .livestream-project {
+    margin-top: 54px;
+  }
+
+  .livestream-scroller {
+    scroll-padding-inline: 0;
+    scroll-snap-type: inline mandatory;
+  }
+
+  .livestream-slide {
+    scroll-snap-align: start;
+  }
+
+  .livestream-controls {
+    display: none;
+  }
+
+  .livestream-meta {
+    padding-top: 13px;
+  }
+
+  .livestream-meta h3 {
+    font-size: 15px;
+  }
+
+  .livestream-meta p {
+    margin-top: 12px;
+    font-size: 14px;
+  }
+
   .contact {
     align-content: start;
     padding-top: calc(112px + var(--safe-top));
@@ -1058,6 +1273,7 @@ footer p {
 
   .work-play,
   .work-play-icon,
+  .livestream-arrow,
   .contact-detail {
     transition: none;
   }

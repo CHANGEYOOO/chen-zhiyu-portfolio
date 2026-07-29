@@ -35,8 +35,8 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.12" />
-    <script src="script.js?v=0.12" defer onerror="document.documentElement.classList.remove('has-js')"></script>
+    <link rel="stylesheet" href="styles.css?v=0.13" />
+    <script src="script.js?v=0.13" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -509,6 +509,27 @@
         </div>
       </section>
 
+      <section
+        class="livestream"
+        id="livestream"
+        aria-labelledby="livestream-title"
+        data-livestream
+        data-projects-src="assets/data/livestream-projects.json?v=0.13"
+        data-dimensions-src="assets/data/livestream-image-dimensions.json?v=0.13"
+      >
+        <header class="livestream-header">
+          <h2 id="livestream-title">Livestream Set Design</h2>
+        </header>
+
+        <div class="livestream-projects" data-livestream-projects aria-busy="true">
+          <p class="livestream-loading" role="status">正在载入直播作品…</p>
+        </div>
+
+        <noscript>
+          <p class="livestream-error">请启用 JavaScript 查看直播作品图片。</p>
+        </noscript>
+      </section>
+
       <section class="content-section" id="about" aria-labelledby="about-title">
         <p class="section-index">02</p>
         <div>
@@ -575,7 +596,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.12</p>
+      <p>HTML PROTOTYPE V0.13</p>
     </footer>
   </body>
 </html>

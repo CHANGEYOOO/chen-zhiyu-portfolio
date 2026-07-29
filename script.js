@@ -19,6 +19,9 @@ const workPlayerRetry = workPlayer?.querySelector("[data-work-player-retry]");
 const contactCopyButton = document.querySelector("[data-contact-copy]");
 const contactCopyLabel = contactCopyButton?.querySelector("[data-contact-copy-label]");
 const contactFeedback = document.querySelector("#contact-feedback");
+const livestream = document.querySelector("[data-livestream]");
+const livestreamProjects = livestream?.querySelector("[data-livestream-projects]");
+const precisePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
 
 let introMetrics;
 let animationFrameRequested = false;
@@ -37,6 +40,240 @@ if (works && worksToggle) {
     if (worksToggleLabel) worksToggleLabel.textContent = expanded ? "收起" : "查看更多";
   });
 }
+
+function livestreamImageType(filename) {
+  if (filename.includes("poster")) return "主视觉";
+  if (filename.includes("render")) return "渲染图";
+  if (filename.includes("detail")) return "细节图";
+  if (filename.includes("live")) return "现场图";
+  return "项目图片";
+}
+
+function createLivestreamArrow(direction, title) {
+  const button = document.createElement("button");
+  const visibleLabel = document.createElement("span");
+  button.className = `livestream-arrow livestream-arrow-${direction}`;
+  button.type = "button";
+  button.setAttribute("aria-label", `${direction === "prev" ? "向左" : "向右"}浏览：${title}`);
+  button.dataset.livestreamDirection = direction === "prev" ? "-1" : "1";
+  visibleLabel.setAttribute("aria-hidden", "true");
+  visibleLabel.textContent = direction === "prev" ? "←" : "→";
+  button.appendChild(visibleLabel);
+  return button;
+}
+
+function setupLivestreamCarousel(projectElement) {
+  const scroller = projectElement.querySelector("[data-livestream-scroller]");
+  const controls = projectElement.querySelector("[data-livestream-controls]");
+  const arrows = [...projectElement.querySelectorAll("[data-livestream-direction]")];
+  if (!scroller || !controls || arrows.length !== 2) return;
+
+  let holdFrame = 0;
+  let holdDirection = 0;
+  let previousTimestamp = 0;
+  let resumeTimer = 0;
+
+  function updateControls() {
+    const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    const overflows = maxScroll > 2;
+    controls.hidden = !overflows;
+    arrows[0].disabled = !overflows || scroller.scrollLeft <= 1;
+    arrows[1].disabled = !overflows || scroller.scrollLeft >= maxScroll - 1;
+  }
+
+  function stopHold() {
+    holdDirection = 0;
+    previousTimestamp = 0;
+    window.cancelAnimationFrame(holdFrame);
+    holdFrame = 0;
+  }
+
+  function holdScroll(timestamp) {
+    if (!holdDirection) return;
+    if (!previousTimestamp) previousTimestamp = timestamp;
+    const elapsed = Math.min(timestamp - previousTimestamp, 40);
+    previousTimestamp = timestamp;
+    scroller.scrollLeft += holdDirection * 64 * (elapsed / 1000);
+    updateControls();
+
+    const activeArrow = holdDirection < 0 ? arrows[0] : arrows[1];
+    if (activeArrow.disabled) {
+      stopHold();
+      return;
+    }
+
+    holdFrame = window.requestAnimationFrame(holdScroll);
+  }
+
+  function startHold(direction) {
+    if (reducedMotion.matches || !precisePointer.matches) return;
+    const activeArrow = direction < 0 ? arrows[0] : arrows[1];
+    if (activeArrow.disabled || holdDirection === direction) return;
+    stopHold();
+    holdDirection = direction;
+    holdFrame = window.requestAnimationFrame(holdScroll);
+  }
+
+  function moveByViewport(direction, button) {
+    stopHold();
+    window.clearTimeout(resumeTimer);
+    scroller.scrollBy({
+      left: direction * scroller.clientWidth * 0.7,
+      behavior: reducedMotion.matches ? "auto" : "smooth",
+    });
+    resumeTimer = window.setTimeout(() => {
+      if (button.matches(":hover")) startHold(direction);
+    }, reducedMotion.matches ? 0 : 480);
+  }
+
+  arrows.forEach((button) => {
+    const direction = Number(button.dataset.livestreamDirection);
+    button.addEventListener("pointerenter", (event) => {
+      if (event.pointerType === "mouse") startHold(direction);
+    });
+    button.addEventListener("pointerleave", () => {
+      window.clearTimeout(resumeTimer);
+      stopHold();
+    });
+    button.addEventListener("click", () => moveByViewport(direction, button));
+  });
+
+  scroller.addEventListener("scroll", updateControls, { passive: true });
+  scroller.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    moveByViewport(event.key === "ArrowLeft" ? -1 : 1, arrows[event.key === "ArrowLeft" ? 0 : 1]);
+  });
+  projectElement.querySelectorAll("img").forEach((image) => {
+    image.addEventListener("load", updateControls, { once: true });
+    image.addEventListener("error", () => image.classList.add("is-missing"), { once: true });
+  });
+  window.addEventListener("blur", stopHold);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopHold();
+  });
+
+  if ("ResizeObserver" in window) {
+    const resizeObserver = new ResizeObserver(updateControls);
+    resizeObserver.observe(scroller);
+  } else {
+    window.addEventListener("resize", updateControls, { passive: true });
+  }
+
+  window.requestAnimationFrame(updateControls);
+}
+
+function createLivestreamProject(project, projectIndex, imageDimensions) {
+  const article = document.createElement("article");
+  const carousel = document.createElement("div");
+  const scroller = document.createElement("div");
+  const imageList = document.createElement("ul");
+  const controls = document.createElement("div");
+  const meta = document.createElement("div");
+  const title = document.createElement("h3");
+  const category = document.createElement("p");
+  const titleId = `livestream-project-${String(projectIndex + 1).padStart(2, "0")}`;
+
+  article.className = "livestream-project";
+  article.setAttribute("aria-labelledby", titleId);
+  article.dataset.livestreamProject = project.id;
+  carousel.className = "livestream-carousel";
+  scroller.className = "livestream-scroller";
+  scroller.dataset.livestreamScroller = "";
+  scroller.tabIndex = 0;
+  scroller.setAttribute("role", "region");
+  scroller.setAttribute("aria-label", `${project.title}图片，共 ${project.images.length} 张`);
+  imageList.className = "livestream-list";
+
+  project.images.forEach((filename, imageIndex) => {
+    const item = document.createElement("li");
+    const image = document.createElement("img");
+    const imageNumber = String(imageIndex + 1).padStart(2, "0");
+    const dimensions = imageDimensions[`${project.directory}/${filename}`];
+    if (!Array.isArray(dimensions) || dimensions.length !== 2) {
+      throw new Error(`Missing livestream image dimensions: ${project.directory}/${filename}`);
+    }
+    item.className = "livestream-slide";
+    image.width = dimensions[0];
+    image.height = dimensions[1];
+    image.src = `assets/images/livestream/${project.directory}/${filename}`;
+    image.alt = `${project.title} ${livestreamImageType(filename)} ${imageNumber}`;
+    image.decoding = "async";
+    image.draggable = false;
+    if (projectIndex === 0 && imageIndex < 3) {
+      image.loading = "eager";
+      if (imageIndex === 0) image.setAttribute("fetchpriority", "high");
+    } else {
+      image.loading = "lazy";
+    }
+    item.appendChild(image);
+    imageList.appendChild(item);
+  });
+
+  scroller.appendChild(imageList);
+  controls.className = "livestream-controls";
+  controls.dataset.livestreamControls = "";
+  controls.hidden = true;
+  controls.append(
+    createLivestreamArrow("prev", project.title),
+    createLivestreamArrow("next", project.title),
+  );
+  carousel.append(scroller, controls);
+
+  meta.className = "livestream-meta";
+  title.id = titleId;
+  title.textContent = project.title;
+  category.textContent = project.category;
+  meta.append(title, category);
+  article.append(carousel, meta);
+  return article;
+}
+
+async function loadLivestreamProjects() {
+  if (!livestream || !livestreamProjects) return;
+
+  try {
+    const [projectsResponse, dimensionsResponse] = await Promise.all([
+      fetch(livestream.dataset.projectsSrc),
+      fetch(livestream.dataset.dimensionsSrc),
+    ]);
+    if (!projectsResponse.ok) {
+      throw new Error(`Livestream data request failed: ${projectsResponse.status}`);
+    }
+    if (!dimensionsResponse.ok) {
+      throw new Error(`Livestream dimensions request failed: ${dimensionsResponse.status}`);
+    }
+    const [projects, imageDimensions] = await Promise.all([
+      projectsResponse.json(),
+      dimensionsResponse.json(),
+    ]);
+    const imageCount = projects.reduce((total, project) => total + project.images.length, 0);
+    const dimensionsCount = Object.keys(imageDimensions).length;
+    if (projects.length !== 8 || imageCount !== 58 || dimensionsCount !== 58) {
+      throw new Error(
+        `Unexpected livestream data: ${projects.length} projects, ${imageCount} images, ${dimensionsCount} dimensions`,
+      );
+    }
+
+    const fragment = document.createDocumentFragment();
+    projects.forEach((project, projectIndex) => {
+      fragment.appendChild(createLivestreamProject(project, projectIndex, imageDimensions));
+    });
+    livestreamProjects.replaceChildren(fragment);
+    livestreamProjects.setAttribute("aria-busy", "false");
+    livestreamProjects.querySelectorAll(".livestream-project").forEach(setupLivestreamCarousel);
+  } catch (error) {
+    const message = document.createElement("p");
+    message.className = "livestream-error";
+    message.setAttribute("role", "alert");
+    message.textContent = "直播作品载入失败，请刷新页面后重试。";
+    livestreamProjects.replaceChildren(message);
+    livestreamProjects.setAttribute("aria-busy", "false");
+    console.error(error);
+  }
+}
+
+loadLivestreamProjects();
 
 function dataSaverEnabled() {
   return Boolean(connection?.saveData);
@@ -198,7 +435,7 @@ function openWorkPlayer(card, trigger) {
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.12`;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.13`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");
