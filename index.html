@@ -35,8 +35,8 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.9" />
-    <script src="script.js?v=0.9" defer onerror="document.documentElement.classList.remove('has-js')"></script>
+    <link rel="stylesheet" href="styles.css?v=0.10" />
+    <script src="script.js?v=0.10" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -159,10 +159,15 @@
           </div>
       </section>
 
-      <section class="works" id="work" aria-labelledby="work-title">
+      <section
+        class="works"
+        id="work"
+        aria-labelledby="work-title"
+        data-video-base="https://media.kjoe.top/works/"
+      >
         <header class="works-header">
           <h2 id="work-title">TVC</h2>
-          <p id="works-note" class="sr-only">当前版本展示作品封面，视频播放将在后续版本开放。</p>
+          <p id="works-note" class="sr-only">点击作品封面可进入全屏播放器。视频只会在点击后加载。</p>
         </header>
 
         <div class="works-grid" id="works-grid" aria-describedby="works-note">
@@ -523,9 +528,26 @@
       </section>
     </main>
 
+    <dialog class="work-player" aria-labelledby="work-player-title" data-work-player>
+      <div class="work-player-shell" data-work-player-shell>
+        <header class="work-player-header">
+          <h2 id="work-player-title" data-work-player-title>作品播放</h2>
+          <button class="work-player-close" type="button" aria-label="关闭全屏播放器" data-work-player-close>
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+
+        <div class="work-player-media">
+          <video controls playsinline preload="none" data-work-player-video></video>
+          <p class="work-player-status" role="status" aria-live="polite" data-work-player-status>正在载入视频…</p>
+          <button class="work-player-retry" type="button" data-work-player-retry hidden>重新加载</button>
+        </div>
+      </div>
+    </dialog>
+
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.9</p>
+      <p>HTML PROTOTYPE V0.10</p>
     </footer>
   </body>
 </html>

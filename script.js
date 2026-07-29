@@ -10,10 +10,19 @@ const copies = [...document.querySelectorAll("[data-copy]")];
 const header = document.querySelector("[data-header]");
 const works = document.querySelector("#work");
 const worksToggle = document.querySelector("[data-works-toggle]");
+const workPlayer = document.querySelector("[data-work-player]");
+const workPlayerShell = workPlayer?.querySelector("[data-work-player-shell]");
+const workPlayerVideo = workPlayer?.querySelector("[data-work-player-video]");
+const workPlayerTitle = workPlayer?.querySelector("[data-work-player-title]");
+const workPlayerStatus = workPlayer?.querySelector("[data-work-player-status]");
+const workPlayerRetry = workPlayer?.querySelector("[data-work-player-retry]");
 
 let introMetrics;
 let animationFrameRequested = false;
 let activeSceneIndex = -1;
+let workPlayerOpen = false;
+let workPlayerTrigger = null;
+let workPlayerUrl = "";
 const userPausedVideos = new WeakSet();
 
 if (works && worksToggle) {
@@ -109,6 +118,7 @@ function pauseOtherVideos(activeVideo) {
 
 function tryPlay(video) {
   if (
+    workPlayerOpen ||
     posterOnlyMode() ||
     userPausedVideos.has(video) ||
     !video.paused
@@ -125,6 +135,134 @@ function tryPlay(video) {
       if (button) setToggleState(video, button);
     });
   }
+}
+
+function setWorkPlayerStatus(message = "") {
+  if (!workPlayerStatus) return;
+  workPlayerStatus.textContent = message;
+  workPlayerStatus.hidden = !message;
+}
+
+function unloadWorkPlayer() {
+  if (!workPlayerVideo) return;
+  workPlayerVideo.pause();
+  workPlayerVideo.removeAttribute("src");
+  workPlayerVideo.removeAttribute("poster");
+  workPlayerVideo.load();
+  workPlayerUrl = "";
+}
+
+function closeWorkPlayer({ restoreFocus = true } = {}) {
+  if (!workPlayerOpen || !workPlayer) return;
+
+  workPlayerOpen = false;
+  document.body.classList.remove("work-player-open");
+  unloadWorkPlayer();
+  setWorkPlayerStatus("");
+  if (workPlayerRetry) workPlayerRetry.hidden = true;
+
+  if (document.fullscreenElement) {
+    document.exitFullscreen?.().catch(() => {});
+  }
+
+  if (workPlayer.open) workPlayer.close();
+  if (restoreFocus) workPlayerTrigger?.focus({ preventScroll: true });
+  workPlayerTrigger = null;
+}
+
+function playSelectedWork() {
+  if (!workPlayerVideo || !workPlayerUrl) return;
+
+  setWorkPlayerStatus("正在载入视频…");
+  if (workPlayerRetry) workPlayerRetry.hidden = true;
+  workPlayerVideo.src = workPlayerUrl;
+  workPlayerVideo.load();
+  const playResult = workPlayerVideo.play();
+  playResult?.catch(() => {
+    if (workPlayerVideo.error) return;
+    setWorkPlayerStatus("视频已载入，请点击播放按钮开始播放。");
+  });
+}
+
+function openWorkPlayer(card, trigger) {
+  if (!workPlayer || !workPlayerVideo || !works) return;
+
+  const slug = card.dataset.work;
+  const base = works.dataset.videoBase;
+  const title = card.querySelector("h3")?.textContent?.trim() || "作品播放";
+  const poster = card.querySelector(".work-poster img");
+  if (!slug || !base) return;
+
+  workPlayerTrigger = trigger;
+  workPlayerOpen = true;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.10`;
+  workPlayerTitle.textContent = title;
+  workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
+  document.body.classList.add("work-player-open");
+  videos.forEach((video) => video.pause());
+
+  if (typeof workPlayer.showModal === "function") {
+    workPlayer.showModal();
+  } else {
+    workPlayer.setAttribute("open", "");
+  }
+
+  const fullscreenResult = workPlayerShell?.requestFullscreen?.({ navigationUI: "hide" });
+  fullscreenResult?.catch(() => {});
+  playSelectedWork();
+}
+
+if (works && workPlayer && workPlayerVideo) {
+  works.querySelectorAll(".work-card[data-work]").forEach((card) => {
+    const title = card.querySelector("h3")?.textContent?.trim() || "作品";
+    const playButton = document.createElement("button");
+    playButton.className = "work-play";
+    playButton.type = "button";
+    playButton.setAttribute("aria-label", `全屏播放：${title}`);
+    playButton.innerHTML = '<span class="work-play-icon" aria-hidden="true">▶</span>';
+    playButton.addEventListener("click", () => openWorkPlayer(card, playButton));
+    card.appendChild(playButton);
+  });
+
+  workPlayer.querySelector("[data-work-player-close]")?.addEventListener("click", () => {
+    closeWorkPlayer();
+  });
+
+  workPlayer.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeWorkPlayer();
+  });
+
+  workPlayer.addEventListener("click", (event) => {
+    if (event.target === workPlayer) closeWorkPlayer();
+  });
+
+  workPlayerRetry?.addEventListener("click", playSelectedWork);
+
+  workPlayerVideo.addEventListener("playing", () => {
+    setWorkPlayerStatus("");
+    if (workPlayerRetry) workPlayerRetry.hidden = true;
+  });
+
+  workPlayerVideo.addEventListener("waiting", () => {
+    if (workPlayerVideo.error) return;
+    setWorkPlayerStatus("正在缓冲视频…");
+  });
+
+  workPlayerVideo.addEventListener("error", () => {
+    setWorkPlayerStatus("视频加载失败，请检查网络后重试。");
+    if (workPlayerRetry) workPlayerRetry.hidden = false;
+  });
+
+  workPlayerVideo.addEventListener("webkitendfullscreen", () => closeWorkPlayer());
+
+  document.addEventListener("fullscreenchange", () => {
+    if (workPlayerOpen && !document.fullscreenElement && workPlayer.open) {
+      closeWorkPlayer();
+    }
+  });
+
+  window.addEventListener("pagehide", () => closeWorkPlayer({ restoreFocus: false }));
 }
 
 document.querySelectorAll("[data-video-toggle]").forEach((button) => {
