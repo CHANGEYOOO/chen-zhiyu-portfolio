@@ -165,6 +165,7 @@ button:focus-visible {
   pointer-events: auto;
 }
 
+.panel-poster,
 .panel-media,
 .media-shade {
   position: absolute;
@@ -173,13 +174,31 @@ button:focus-visible {
   height: 100%;
 }
 
-.panel-media {
+.panel-poster {
   z-index: -2;
+  display: block;
+  margin: 0;
+  opacity: 1;
+  transition: opacity 160ms linear;
+}
+
+.panel-poster img,
+.panel-media {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: 50% 50%;
-  background: #17120e;
   transform: scale(var(--media-scale, 1.34));
   transform-origin: center;
+}
+
+.media-panel.has-video-frame .panel-poster {
+  opacity: 0;
+}
+
+.panel-media {
+  z-index: -3;
+  background: transparent;
 }
 
 .media-shade {
@@ -297,6 +316,11 @@ button:focus-visible {
   background: rgba(0, 0, 0, 0.55);
   font-family: var(--nav);
   font-size: 12px;
+}
+
+.poster-only .media-toggle,
+.poster-only .autoplay-note {
+  display: none;
 }
 
 .content-section {
@@ -442,12 +466,14 @@ footer p {
     line-height: 1.42;
   }
 
-  .hero .panel-media {
+  .hero .panel-media,
+  .hero .panel-poster img {
     object-position: 56% 50%;
     --media-scale: 1.16;
   }
 
-  .statement .panel-media {
+  .statement .panel-media,
+  .statement .panel-poster img {
     object-position: 53% 50%;
     --media-scale: 1.16;
   }
@@ -459,12 +485,14 @@ footer p {
 }
 
 @media (max-width: 768px) {
-  .hero .panel-media {
+  .hero .panel-media,
+  .hero .panel-poster img {
     object-position: 56% 50%;
     --media-scale: 1.16;
   }
 
-  .statement .panel-media {
+  .statement .panel-media,
+  .statement .panel-poster img {
     object-position: 53% 50%;
     --media-scale: 1.16;
   }
@@ -531,7 +559,9 @@ footer p {
   }
 
   .hero .panel-media,
-  .statement .panel-media {
+  .hero .panel-poster img,
+  .statement .panel-media,
+  .statement .panel-poster img {
     --media-scale: 1.08;
   }
 }
@@ -554,7 +584,9 @@ footer p {
     transition: none;
   }
 
+  .panel-poster,
   .panel-media {
-    transform: none;
+    transition: none;
   }
+
 }

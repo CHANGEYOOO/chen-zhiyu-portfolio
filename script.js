@@ -18,6 +18,10 @@ function dataSaverEnabled() {
   return Boolean(connection?.saveData);
 }
 
+function posterOnlyMode() {
+  return reducedMotion.matches || dataSaverEnabled();
+}
+
 function prepareCharacters(copy) {
   const characters = [];
 
@@ -72,11 +76,12 @@ function loadDeferredVideo(video) {
   if (sourceChanged) video.load();
 }
 
-function hasLoadedSource(video) {
-  return (
-    video.hasAttribute("src") ||
-    [...video.querySelectorAll("source")].some((source) => source.hasAttribute("src"))
-  );
+function unloadVideo(video) {
+  video.pause();
+  video.removeAttribute("src");
+  video.querySelectorAll("source[src]").forEach((source) => source.removeAttribute("src"));
+  video.closest(".media-panel")?.classList.remove("has-video-frame");
+  video.load();
 }
 
 function showAutoplayNote(video, visible) {
@@ -92,8 +97,7 @@ function pauseOtherVideos(activeVideo) {
 
 function tryPlay(video) {
   if (
-    reducedMotion.matches ||
-    dataSaverEnabled() ||
+    posterOnlyMode() ||
     userPausedVideos.has(video) ||
     !video.paused
   ) {
@@ -116,6 +120,8 @@ document.querySelectorAll("[data-video-toggle]").forEach((button) => {
   const video = panel.querySelector("video");
 
   button.addEventListener("click", () => {
+    if (posterOnlyMode()) return;
+
     loadDeferredVideo(video);
     if (video.paused) {
       userPausedVideos.delete(video);
@@ -135,8 +141,13 @@ document.querySelectorAll("[data-video-toggle]").forEach((button) => {
     showAutoplayNote(video, false);
     setToggleState(video, button);
   });
+  video.addEventListener("playing", () => panel.classList.add("has-video-frame"));
   video.addEventListener("pause", () => setToggleState(video, button));
-  video.addEventListener("error", () => showAutoplayNote(video, true));
+  video.addEventListener("emptied", () => panel.classList.remove("has-video-frame"));
+  video.addEventListener("error", () => {
+    panel.classList.remove("has-video-frame");
+    showAutoplayNote(video, true);
+  });
   setToggleState(video, button);
 });
 
@@ -178,7 +189,10 @@ function setActiveScene(index) {
   }
 
   const activeVideo = scenes[activeSceneIndex]?.querySelector("video");
-  if (activeVideo && hasLoadedSource(activeVideo)) tryPlay(activeVideo);
+  if (activeVideo && !posterOnlyMode()) {
+    loadDeferredVideo(activeVideo);
+    tryPlay(activeVideo);
+  }
 }
 
 function measureIntroSequence() {
@@ -270,12 +284,22 @@ function requestFrameUpdate() {
 }
 
 function applyMotionPreference() {
-  if (reducedMotion.matches || dataSaverEnabled()) {
-    videos.forEach((video) => video.pause());
-    videos.forEach((video) => showAutoplayNote(video, true));
+  const posterOnly = posterOnlyMode();
+  document.documentElement.classList.toggle("poster-only", posterOnly);
+
+  document.querySelectorAll("[data-video-toggle]").forEach((button) => {
+    button.disabled = posterOnly;
+  });
+
+  if (posterOnly) {
+    videos.forEach(unloadVideo);
+    videos.forEach((video) => showAutoplayNote(video, false));
   } else {
     const activeVideo = scenes[activeSceneIndex]?.querySelector("video");
-    if (activeVideo && hasLoadedSource(activeVideo)) tryPlay(activeVideo);
+    if (activeVideo) {
+      loadDeferredVideo(activeVideo);
+      tryPlay(activeVideo);
+    }
   }
 
   requestFrameUpdate();

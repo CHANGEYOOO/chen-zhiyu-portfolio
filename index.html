@@ -9,8 +9,8 @@
       content="陈智宇，影视美术指导与视觉创作者。"
     />
     <title>JOEKUNI — 陈智宇</title>
-    <link rel="stylesheet" href="styles.css?v=20260729-p1" />
-    <script src="script.js?v=20260729-p1" defer></script>
+    <link rel="stylesheet" href="styles.css?v=0.2" />
+    <script src="script.js?v=0.2" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -31,22 +31,36 @@
       <section class="intro-sequence" id="top" aria-label="个人身份与创作方法" data-intro-sequence>
         <div class="scene-track" data-scene="0">
           <article class="media-panel hero" aria-label="首屏代表作" data-scene="0">
+            <picture class="panel-poster" aria-hidden="true">
+              <source
+                srcset="assets/images/posters/hero-nbpl-2024-mobile.webp?v=0.2"
+                media="(max-width: 768px), (orientation: landscape) and (max-height: 500px)"
+                type="image/webp"
+              />
+              <img
+                src="assets/images/posters/hero-nbpl-2024-desktop.webp?v=0.2"
+                alt=""
+                width="1920"
+                height="1080"
+                fetchpriority="high"
+                decoding="async"
+              />
+            </picture>
             <video
               class="panel-media"
               muted
               loop
               playsinline
-              preload="metadata"
-              poster="assets/images/posters/hero-nbpl-2024.mp4.png"
+              preload="none"
               aria-label="2024《永劫无间》春季赛宣传片节选"
               data-autoplay-video
             >
               <source
-                src="assets/video/hero-nbpl-2024-mobile.mp4?v=20260729-mobile1"
+                data-src="assets/video/hero-nbpl-2024-mobile.mp4?v=20260729-mobile1"
                 media="(max-width: 768px), (orientation: landscape) and (max-height: 500px)"
                 type="video/mp4"
               />
-              <source src="assets/video/hero-nbpl-2024.mp4?v=20260728-2354" type="video/mp4" />
+              <source data-src="assets/video/hero-nbpl-2024.mp4?v=20260728-2354" type="video/mp4" />
             </video>
             <div class="media-shade" aria-hidden="true"></div>
 
@@ -136,7 +150,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.1</p>
+      <p>HTML PROTOTYPE V0.2</p>
     </footer>
   </body>
 </html>
