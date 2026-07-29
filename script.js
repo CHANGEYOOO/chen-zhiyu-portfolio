@@ -326,11 +326,12 @@ async function loadLivestreamProjects() {
 
 loadLivestreamProjects();
 
-function setupAboutMotion() {
-  if (!about || reducedMotion.matches || !("IntersectionObserver" in window)) return;
+function setupSectionMotion(container, itemSelector, readyClass, itemClass) {
+  if (!container || reducedMotion.matches || !("IntersectionObserver" in window)) return;
 
-  const revealItems = [...about.querySelectorAll(".about-reveal")];
+  const revealItems = [...container.querySelectorAll(itemSelector)];
   if (!revealItems.length) return;
+  if (itemClass) revealItems.forEach((item) => item.classList.add(itemClass));
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -346,11 +347,12 @@ function setupAboutMotion() {
     },
   );
 
-  about.classList.add("about-motion-ready");
+  container.classList.add(readyClass);
   revealItems.forEach((item) => observer.observe(item));
 }
 
-setupAboutMotion();
+setupSectionMotion(about, ".about-reveal", "about-motion-ready");
+setupSectionMotion(works, ".works-header, .work-card", "works-motion-ready", "works-reveal");
 
 function dataSaverEnabled() {
   return Boolean(connection?.saveData);
@@ -512,7 +514,7 @@ function openWorkPlayer(card, trigger) {
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.17`;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.18`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");

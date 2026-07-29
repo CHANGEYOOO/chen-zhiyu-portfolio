@@ -1097,13 +1097,15 @@ footer {
   line-height: 1.65;
 }
 
-.about-motion-ready .about-reveal {
+.about-motion-ready .about-reveal,
+.works-motion-ready .works-reveal {
   opacity: 0;
   transform: translateY(12px);
   transition: opacity 380ms ease, transform 380ms ease;
 }
 
-.about-motion-ready .about-reveal.is-visible {
+.about-motion-ready .about-reveal.is-visible,
+.works-motion-ready .works-reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -1698,11 +1700,13 @@ footer p {
   .work-play-icon,
   .livestream-arrow,
   .contact-detail,
-  .about-reveal {
+  .about-reveal,
+  .works-reveal {
     transition: none;
   }
 
-  .about-motion-ready .about-reveal {
+  .about-motion-ready .about-reveal,
+  .works-motion-ready .works-reveal {
     opacity: 1;
     transform: none;
   }
