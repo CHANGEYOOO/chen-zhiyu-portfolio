@@ -233,20 +233,33 @@ async function loadLivestreamProjects() {
   if (!livestream || !livestreamProjects) return;
 
   try {
-    const [projectsResponse, dimensionsResponse] = await Promise.all([
-      fetch(livestream.dataset.projectsSrc),
-      fetch(livestream.dataset.dimensionsSrc),
-    ]);
-    if (!projectsResponse.ok) {
-      throw new Error(`Livestream data request failed: ${projectsResponse.status}`);
+    let projects;
+    let imageDimensions;
+
+    if (window.location.protocol === "file:" && window.LIVESTREAM_DATA) {
+      ({ projects, imageDimensions } = window.LIVESTREAM_DATA);
+    } else {
+      try {
+        const [projectsResponse, dimensionsResponse] = await Promise.all([
+          fetch(livestream.dataset.projectsSrc),
+          fetch(livestream.dataset.dimensionsSrc),
+        ]);
+        if (!projectsResponse.ok) {
+          throw new Error(`Livestream data request failed: ${projectsResponse.status}`);
+        }
+        if (!dimensionsResponse.ok) {
+          throw new Error(`Livestream dimensions request failed: ${dimensionsResponse.status}`);
+        }
+        [projects, imageDimensions] = await Promise.all([
+          projectsResponse.json(),
+          dimensionsResponse.json(),
+        ]);
+      } catch (requestError) {
+        if (!window.LIVESTREAM_DATA) throw requestError;
+        ({ projects, imageDimensions } = window.LIVESTREAM_DATA);
+      }
     }
-    if (!dimensionsResponse.ok) {
-      throw new Error(`Livestream dimensions request failed: ${dimensionsResponse.status}`);
-    }
-    const [projects, imageDimensions] = await Promise.all([
-      projectsResponse.json(),
-      dimensionsResponse.json(),
-    ]);
+
     const imageCount = projects.reduce((total, project) => total + project.images.length, 0);
     const dimensionsCount = Object.keys(imageDimensions).length;
     if (projects.length !== 8 || imageCount !== 58 || dimensionsCount !== 58) {
@@ -435,7 +448,7 @@ function openWorkPlayer(card, trigger) {
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.13`;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.14`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");
