@@ -16,6 +16,9 @@ const workPlayerVideo = workPlayer?.querySelector("[data-work-player-video]");
 const workPlayerTitle = workPlayer?.querySelector("[data-work-player-title]");
 const workPlayerStatus = workPlayer?.querySelector("[data-work-player-status]");
 const workPlayerRetry = workPlayer?.querySelector("[data-work-player-retry]");
+const contactCopyButton = document.querySelector("[data-contact-copy]");
+const contactCopyLabel = contactCopyButton?.querySelector("[data-contact-copy-label]");
+const contactFeedback = document.querySelector("#contact-feedback");
 
 let introMetrics;
 let animationFrameRequested = false;
@@ -195,7 +198,7 @@ function openWorkPlayer(card, trigger) {
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.11`;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.12`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");
@@ -263,6 +266,46 @@ if (works && workPlayer && workPlayerVideo) {
   });
 
   window.addEventListener("pagehide", () => closeWorkPlayer({ restoreFocus: false }));
+}
+
+if (contactCopyButton && contactCopyLabel && contactFeedback) {
+  let copyResetTimer;
+
+  async function copyContactValue(value) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+
+    const helper = document.createElement("textarea");
+    helper.value = value;
+    helper.setAttribute("readonly", "");
+    helper.style.position = "fixed";
+    helper.style.opacity = "0";
+    document.body.appendChild(helper);
+    helper.select();
+    const copied = document.execCommand("copy");
+    helper.remove();
+    if (!copied) throw new Error("Copy failed");
+  }
+
+  contactCopyButton.addEventListener("click", async () => {
+    const value = contactCopyButton.dataset.copyValue;
+    if (!value) return;
+
+    try {
+      await copyContactValue(value);
+      contactCopyLabel.textContent = "Copied ✓";
+      contactFeedback.textContent = "微信号已复制：18969534061";
+      window.clearTimeout(copyResetTimer);
+      copyResetTimer = window.setTimeout(() => {
+        contactCopyLabel.textContent = "Copy";
+        contactFeedback.textContent = "微信号与手机号码相同，点击可复制。";
+      }, 2400);
+    } catch {
+      contactFeedback.textContent = "复制失败，请长按号码手动复制。";
+    }
+  });
 }
 
 document.querySelectorAll("[data-video-toggle]").forEach((button) => {

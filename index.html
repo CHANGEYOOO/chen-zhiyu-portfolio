@@ -35,8 +35,8 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.11" />
-    <script src="script.js?v=0.11" defer onerror="document.documentElement.classList.remove('has-js')"></script>
+    <link rel="stylesheet" href="styles.css?v=0.12" />
+    <script src="script.js?v=0.12" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -520,10 +520,38 @@
 
       <section class="content-section contact" id="contact" aria-labelledby="contact-title">
         <p class="section-index">03</p>
-        <div>
+        <div class="contact-content">
           <p class="eyebrow">Contact</p>
           <h2 id="contact-title">LET'S CREATE<br />VISUAL WORLDS.</h2>
-          <p class="placeholder-copy">联系方式待确认，本原型暂不公开个人信息。</p>
+
+          <address class="contact-body">
+            <div class="contact-profile">
+              <p class="contact-name">陈智宇 <span lang="en">CHEN ZHIYU</span></p>
+              <p class="contact-role">美术指导及导演 <span lang="en">ART DIRECTOR / CG DIRECTOR</span></p>
+            </div>
+
+            <div class="contact-details" aria-label="联系方式">
+              <a class="contact-detail" href="tel:+8618969534061" aria-label="拨打陈智宇的电话，189 6953 4061">
+                <span class="contact-label">Phone</span>
+                <span class="contact-value">+86 189 6953 4061</span>
+                <span class="contact-action" aria-hidden="true">Call ↗</span>
+              </a>
+
+              <button
+                class="contact-detail"
+                type="button"
+                data-contact-copy
+                data-copy-value="18969534061"
+                aria-describedby="contact-feedback"
+              >
+                <span class="contact-label">WeChat</span>
+                <span class="contact-value">189 6953 4061</span>
+                <span class="contact-action" data-contact-copy-label>Copy</span>
+              </button>
+            </div>
+
+            <p class="contact-feedback" id="contact-feedback" aria-live="polite">微信号与手机号码相同，点击可复制。</p>
+          </address>
         </div>
       </section>
     </main>
@@ -547,7 +575,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.11</p>
+      <p>HTML PROTOTYPE V0.12</p>
     </footer>
   </body>
 </html>
