@@ -1,11 +1,20 @@
 document.documentElement.classList.add("has-js");
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 const videos = [...document.querySelectorAll("[data-autoplay-video]")];
 const sequence = document.querySelector("[data-intro-sequence]");
 const scenes = [...document.querySelectorAll(".scene-track[data-scene]")];
 const copyStage = document.querySelector("[data-copy-stage]");
 const copies = [...document.querySelectorAll("[data-copy]")];
+const header = document.querySelector("[data-header]");
+
+let introMetrics;
+let animationFrameRequested = false;
+
+function dataSaverEnabled() {
+  return Boolean(connection?.saveData);
+}
 
 function prepareCharacters(copy) {
   const characters = [];
@@ -45,19 +54,41 @@ function setToggleState(video, button) {
 }
 
 function loadDeferredVideo(video) {
-  if (!video.dataset.src || video.src) return;
-  video.src = video.dataset.src;
-  video.load();
+  let sourceChanged = false;
+
+  video.querySelectorAll("source[data-src]").forEach((source) => {
+    if (source.hasAttribute("src")) return;
+    source.setAttribute("src", source.dataset.src);
+    sourceChanged = true;
+  });
+
+  if (video.dataset.src && !video.hasAttribute("src")) {
+    video.setAttribute("src", video.dataset.src);
+    sourceChanged = true;
+  }
+
+  if (sourceChanged) video.load();
+}
+
+function hasLoadedSource(video) {
+  return (
+    video.hasAttribute("src") ||
+    [...video.querySelectorAll("source")].some((source) => source.hasAttribute("src"))
+  );
+}
+
+function showAutoplayNote(video, visible) {
+  const note = video.closest(".media-panel")?.querySelector("[data-autoplay-note]");
+  if (note) note.hidden = !visible;
 }
 
 function tryPlay(video) {
-  if (reducedMotion.matches) return;
+  if (reducedMotion.matches || dataSaverEnabled() || !video.paused) return;
 
   const result = video.play();
   if (result) {
     result.catch(() => {
-      const note = video.closest(".media-panel")?.querySelector("[data-autoplay-note]");
-      if (note) note.hidden = false;
+      showAutoplayNote(video, true);
       const button = video.closest(".media-panel")?.querySelector("[data-video-toggle]");
       if (button) setToggleState(video, button);
     });
@@ -71,14 +102,21 @@ document.querySelectorAll("[data-video-toggle]").forEach((button) => {
   button.addEventListener("click", () => {
     loadDeferredVideo(video);
     if (video.paused) {
-      video.play();
+      video.muted = true;
+      video.playsInline = true;
+      const result = video.play();
+      if (result) result.catch(() => showAutoplayNote(video, true));
     } else {
       video.pause();
     }
   });
 
-  video.addEventListener("play", () => setToggleState(video, button));
+  video.addEventListener("play", () => {
+    showAutoplayNote(video, false);
+    setToggleState(video, button);
+  });
   video.addEventListener("pause", () => setToggleState(video, button));
+  video.addEventListener("error", () => showAutoplayNote(video, true));
   setToggleState(video, button);
 });
 
@@ -101,40 +139,98 @@ function revealCharacters(characters, progress) {
   });
 }
 
-function updateIntroSequence() {
-  if (!sequence) return;
+function measureIntroSequence() {
+  if (!sequence || scenes.length < 2) return;
 
-  const rect = sequence.getBoundingClientRect();
-  const distance = clamp(-rect.top, 0, sequence.offsetHeight);
   const firstTrack = scenes[0];
   const secondTrack = scenes[1];
-  const firstHoldEnd = Math.max(firstTrack.offsetHeight - window.innerHeight, 1);
-  const secondStart = secondTrack.offsetTop;
-  const secondHoldEnd = secondStart + Math.max(secondTrack.offsetHeight - window.innerHeight, 1);
-  const transitionFadeEnd = firstHoldEnd + window.innerHeight * 0.42;
+  const viewportHeight = firstTrack.querySelector(".media-panel")?.offsetHeight || window.innerHeight;
+
+  introMetrics = {
+    viewportHeight,
+    sequenceHeight: sequence.offsetHeight,
+    firstHoldEnd: Math.max(firstTrack.offsetHeight - viewportHeight, 1),
+    firstExitEnd: firstTrack.offsetTop + firstTrack.offsetHeight,
+    secondHoldEnd:
+      secondTrack.offsetTop + Math.max(secondTrack.offsetHeight - viewportHeight, 1),
+  };
+}
+
+function updateIntroSequence() {
+  if (!sequence || !introMetrics) return;
+
+  const rect = sequence.getBoundingClientRect();
+  const distance = clamp(-rect.top, 0, introMetrics.sequenceHeight);
+  const transitionFadeEnd = Math.min(
+    introMetrics.firstExitEnd,
+    introMetrics.firstHoldEnd + introMetrics.viewportHeight * 0.42,
+  );
   const firstCopyOpacity = reducedMotion.matches
-    ? Number(distance < secondStart)
-    : 1 - smoothstep(firstHoldEnd, transitionFadeEnd, distance);
+    ? Number(distance < introMetrics.firstExitEnd)
+    : 1 - smoothstep(introMetrics.firstHoldEnd, transitionFadeEnd, distance);
   const secondCopyOpacity = reducedMotion.matches
-    ? Number(distance >= secondStart)
-    : smoothstep(secondStart, secondStart + window.innerHeight * 0.12, distance);
-  const secondIsActive = distance >= secondStart;
+    ? Number(distance >= introMetrics.firstExitEnd)
+    : smoothstep(
+        introMetrics.firstExitEnd,
+        introMetrics.firstExitEnd + introMetrics.viewportHeight * 0.12,
+        distance,
+      );
   const sequenceVisible = rect.bottom > 0 && rect.top < window.innerHeight;
-  const firstReveal = clamp(distance / firstHoldEnd, 0, 1);
-  const secondReveal = clamp((distance - secondStart) / (secondHoldEnd - secondStart), 0, 1);
+  const firstReveal = clamp(distance / introMetrics.firstHoldEnd, 0, 1);
+  const secondReveal = clamp(
+    (distance - introMetrics.firstExitEnd) /
+      (introMetrics.secondHoldEnd - introMetrics.firstExitEnd),
+    0,
+    1,
+  );
+
+  const secondVideo = scenes[1]?.querySelector("video");
+  const secondLoadStart = Math.max(
+    introMetrics.firstHoldEnd - introMetrics.viewportHeight * 0.2,
+    0,
+  );
+  const secondPlayStart = Math.max(
+    introMetrics.firstExitEnd - introMetrics.viewportHeight * 0.1,
+    secondLoadStart,
+  );
+
+  if (
+    secondVideo &&
+    distance >= secondLoadStart &&
+    !dataSaverEnabled() &&
+    !reducedMotion.matches
+  ) {
+    loadDeferredVideo(secondVideo);
+  }
+
+  if (
+    secondVideo &&
+    distance >= secondPlayStart &&
+    !dataSaverEnabled() &&
+    !reducedMotion.matches
+  ) {
+    tryPlay(secondVideo);
+  }
 
   copyStage.style.setProperty("--copy-one-opacity", String(firstCopyOpacity));
   copyStage.style.setProperty("--copy-two-opacity", String(secondCopyOpacity));
   copyStage.style.setProperty("--copy-stage-opacity", sequenceVisible ? "1" : "0");
   copyStage.style.setProperty("--copy-stage-visibility", sequenceVisible ? "visible" : "hidden");
 
-  copies.forEach((copy, index) => {
-    const active = index === Number(secondIsActive);
-    copy.setAttribute("aria-hidden", String(!active || !sequenceVisible));
-  });
-
   revealCharacters(copyCharacters[0], firstReveal);
   revealCharacters(copyCharacters[1], secondReveal);
+}
+
+function updateFrame() {
+  animationFrameRequested = false;
+  header?.classList.toggle("is-scrolled", window.scrollY > 24);
+  updateIntroSequence();
+}
+
+function requestFrameUpdate() {
+  if (animationFrameRequested) return;
+  animationFrameRequested = true;
+  window.requestAnimationFrame(updateFrame);
 }
 
 const mediaObserver = new IntersectionObserver(
@@ -144,8 +240,11 @@ const mediaObserver = new IntersectionObserver(
       if (!video) return;
 
       if (entry.isIntersecting) {
-        loadDeferredVideo(video);
-        tryPlay(video);
+        const isDeferredSecondScene = entry.target.dataset.scene === "1" && !hasLoadedSource(video);
+        if (!isDeferredSecondScene) {
+          loadDeferredVideo(video);
+          tryPlay(video);
+        }
       } else {
         video.pause();
       }
@@ -157,25 +256,48 @@ const mediaObserver = new IntersectionObserver(
 scenes.forEach((scene) => mediaObserver.observe(scene));
 
 function applyMotionPreference() {
-  if (reducedMotion.matches) {
+  if (reducedMotion.matches || dataSaverEnabled()) {
     videos.forEach((video) => video.pause());
+    videos.forEach((video) => showAutoplayNote(video, true));
   } else {
-    updateIntroSequence();
+    const visibleVideo = scenes.find((scene) => {
+      const rect = scene.getBoundingClientRect();
+      return rect.bottom > 0 && rect.top < window.innerHeight;
+    })?.querySelector("video");
+    if (visibleVideo && hasLoadedSource(visibleVideo)) tryPlay(visibleVideo);
   }
+
+  requestFrameUpdate();
 }
 
 reducedMotion.addEventListener("change", applyMotionPreference);
+connection?.addEventListener?.("change", applyMotionPreference);
 applyMotionPreference();
 
-const header = document.querySelector("[data-header]");
-window.addEventListener(
-  "scroll",
-  () => {
-    header.classList.toggle("is-scrolled", window.scrollY > 24);
-    updateIntroSequence();
-  },
-  { passive: true },
-);
+window.addEventListener("scroll", requestFrameUpdate, { passive: true });
 
-window.addEventListener("resize", updateIntroSequence);
-updateIntroSequence();
+window.addEventListener("resize", () => {
+  measureIntroSequence();
+  requestFrameUpdate();
+});
+
+window.addEventListener("orientationchange", () => {
+  measureIntroSequence();
+  requestFrameUpdate();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    videos.forEach((video) => video.pause());
+  } else {
+    applyMotionPreference();
+  }
+});
+
+measureIntroSequence();
+requestFrameUpdate();
+
+window.addEventListener("load", () => {
+  measureIntroSequence();
+  requestFrameUpdate();
+});
