@@ -311,6 +311,12 @@ async function loadLivestreamProjects() {
     livestreamProjects.replaceChildren(fragment);
     livestreamProjects.setAttribute("aria-busy", "false");
     livestreamProjects.querySelectorAll(".livestream-project").forEach(setupLivestreamCarousel);
+    setupSectionMotion(
+      livestream,
+      ".livestream-header, .livestream-project",
+      "livestream-motion-ready",
+      "livestream-reveal",
+    );
   } catch (error) {
     const message = document.createElement("p");
     message.className = "livestream-error";
@@ -514,7 +520,7 @@ function openWorkPlayer(card, trigger) {
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.18`;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.19`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");

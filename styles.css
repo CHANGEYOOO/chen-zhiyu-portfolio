@@ -1098,14 +1098,16 @@ footer {
 }
 
 .about-motion-ready .about-reveal,
-.works-motion-ready .works-reveal {
+.works-motion-ready .works-reveal,
+.livestream-motion-ready .livestream-reveal {
   opacity: 0;
   transform: translateY(12px);
   transition: opacity 380ms ease, transform 380ms ease;
 }
 
 .about-motion-ready .about-reveal.is-visible,
-.works-motion-ready .works-reveal.is-visible {
+.works-motion-ready .works-reveal.is-visible,
+.livestream-motion-ready .livestream-reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -1701,12 +1703,14 @@ footer p {
   .livestream-arrow,
   .contact-detail,
   .about-reveal,
-  .works-reveal {
+  .works-reveal,
+  .livestream-reveal {
     transition: none;
   }
 
   .about-motion-ready .about-reveal,
-  .works-motion-ready .works-reveal {
+  .works-motion-ready .works-reveal,
+  .livestream-motion-ready .livestream-reveal {
     opacity: 1;
     transform: none;
   }
