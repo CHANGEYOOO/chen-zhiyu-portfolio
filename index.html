@@ -33,8 +33,8 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.4" />
-    <script src="script.js?v=0.4" defer></script>
+    <link rel="stylesheet" href="styles.css?v=0.5" />
+    <script src="script.js?v=0.5" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -98,13 +98,26 @@
 
         <div class="scene-track" data-scene="1">
           <article class="media-panel statement" aria-label="个人方法影像" data-scene="1">
+            <picture class="panel-poster" aria-hidden="true">
+              <source
+                srcset="assets/images/posters/statement-last-one-standing-2023-mobile.webp?v=0.5"
+                media="(max-width: 768px), (orientation: landscape) and (max-height: 500px)"
+                type="image/webp"
+              />
+              <img
+                src="assets/images/posters/statement-last-one-standing-2023-desktop.webp?v=0.5"
+                alt=""
+                width="1920"
+                height="1080"
+                decoding="async"
+              />
+            </picture>
             <video
               class="panel-media"
               muted
               loop
               playsinline
               preload="none"
-              poster="assets/images/posters/statement-last-one-standing-2023.mp4.png"
               aria-label="2023《永劫无间》世界冠军赛宣传片节选"
               data-autoplay-video
             >
@@ -174,7 +187,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.4</p>
+      <p>HTML PROTOTYPE V0.5</p>
     </footer>
   </body>
 </html>
