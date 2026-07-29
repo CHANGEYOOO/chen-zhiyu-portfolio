@@ -152,6 +152,19 @@ button:focus-visible {
   background: #17120e;
 }
 
+.has-js .media-panel {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 160ms linear;
+}
+
+.has-js .media-panel.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
 .panel-media,
 .media-shade {
   position: absolute;
@@ -529,6 +542,10 @@ footer p {
   }
 
   .fixed-copy-stage .panel-copy {
+    transition: none;
+  }
+
+  .has-js .media-panel {
     transition: none;
   }
 

@@ -11,6 +11,8 @@ const header = document.querySelector("[data-header]");
 
 let introMetrics;
 let animationFrameRequested = false;
+let activeSceneIndex = -1;
+const userPausedVideos = new WeakSet();
 
 function dataSaverEnabled() {
   return Boolean(connection?.saveData);
@@ -82,9 +84,23 @@ function showAutoplayNote(video, visible) {
   if (note) note.hidden = !visible;
 }
 
-function tryPlay(video) {
-  if (reducedMotion.matches || dataSaverEnabled() || !video.paused) return;
+function pauseOtherVideos(activeVideo) {
+  videos.forEach((video) => {
+    if (video !== activeVideo && !video.paused) video.pause();
+  });
+}
 
+function tryPlay(video) {
+  if (
+    reducedMotion.matches ||
+    dataSaverEnabled() ||
+    userPausedVideos.has(video) ||
+    !video.paused
+  ) {
+    return;
+  }
+
+  pauseOtherVideos(video);
   const result = video.play();
   if (result) {
     result.catch(() => {
@@ -102,16 +118,20 @@ document.querySelectorAll("[data-video-toggle]").forEach((button) => {
   button.addEventListener("click", () => {
     loadDeferredVideo(video);
     if (video.paused) {
+      userPausedVideos.delete(video);
       video.muted = true;
       video.playsInline = true;
+      pauseOtherVideos(video);
       const result = video.play();
       if (result) result.catch(() => showAutoplayNote(video, true));
     } else {
+      userPausedVideos.add(video);
       video.pause();
     }
   });
 
   video.addEventListener("play", () => {
+    pauseOtherVideos(video);
     showAutoplayNote(video, false);
     setToggleState(video, button);
   });
@@ -137,6 +157,28 @@ function revealCharacters(characters, progress) {
     const opacity = reducedMotion.matches ? 1 : smoothstep(start, start + 0.14, progress);
     character.style.setProperty("--char-opacity", String(opacity));
   });
+}
+
+function setActiveScene(index) {
+  const nextIndex = Number.isInteger(index) ? index : -1;
+
+  if (activeSceneIndex !== nextIndex) {
+    activeSceneIndex = nextIndex;
+
+    scenes.forEach((scene, sceneIndex) => {
+      const panel = scene.querySelector(".media-panel");
+      const video = scene.querySelector("video");
+      const button = scene.querySelector("[data-video-toggle]");
+      const isActive = sceneIndex === activeSceneIndex;
+
+      panel?.classList.toggle("is-active", isActive);
+      if (button) button.tabIndex = isActive ? 0 : -1;
+      if (!isActive && video && !video.paused) video.pause();
+    });
+  }
+
+  const activeVideo = scenes[activeSceneIndex]?.querySelector("video");
+  if (activeVideo && hasLoadedSource(activeVideo)) tryPlay(activeVideo);
 }
 
 function measureIntroSequence() {
@@ -186,12 +228,8 @@ function updateIntroSequence() {
 
   const secondVideo = scenes[1]?.querySelector("video");
   const secondLoadStart = Math.max(
-    introMetrics.firstHoldEnd - introMetrics.viewportHeight * 0.2,
-    0,
-  );
-  const secondPlayStart = Math.max(
     introMetrics.firstExitEnd - introMetrics.viewportHeight * 0.1,
-    secondLoadStart,
+    0,
   );
 
   if (
@@ -203,14 +241,12 @@ function updateIntroSequence() {
     loadDeferredVideo(secondVideo);
   }
 
-  if (
-    secondVideo &&
-    distance >= secondPlayStart &&
-    !dataSaverEnabled() &&
-    !reducedMotion.matches
-  ) {
-    tryPlay(secondVideo);
-  }
+  const nextActiveScene = sequenceVisible
+    ? distance < introMetrics.firstExitEnd
+      ? 0
+      : 1
+    : -1;
+  setActiveScene(nextActiveScene);
 
   copyStage.style.setProperty("--copy-one-opacity", String(firstCopyOpacity));
   copyStage.style.setProperty("--copy-two-opacity", String(secondCopyOpacity));
@@ -233,38 +269,13 @@ function requestFrameUpdate() {
   window.requestAnimationFrame(updateFrame);
 }
 
-const mediaObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      const video = entry.target.querySelector("video");
-      if (!video) return;
-
-      if (entry.isIntersecting) {
-        const isDeferredSecondScene = entry.target.dataset.scene === "1" && !hasLoadedSource(video);
-        if (!isDeferredSecondScene) {
-          loadDeferredVideo(video);
-          tryPlay(video);
-        }
-      } else {
-        video.pause();
-      }
-    });
-  },
-  { rootMargin: "20% 0px 20% 0px", threshold: 0.05 },
-);
-
-scenes.forEach((scene) => mediaObserver.observe(scene));
-
 function applyMotionPreference() {
   if (reducedMotion.matches || dataSaverEnabled()) {
     videos.forEach((video) => video.pause());
     videos.forEach((video) => showAutoplayNote(video, true));
   } else {
-    const visibleVideo = scenes.find((scene) => {
-      const rect = scene.getBoundingClientRect();
-      return rect.bottom > 0 && rect.top < window.innerHeight;
-    })?.querySelector("video");
-    if (visibleVideo && hasLoadedSource(visibleVideo)) tryPlay(visibleVideo);
+    const activeVideo = scenes[activeSceneIndex]?.querySelector("video");
+    if (activeVideo && hasLoadedSource(activeVideo)) tryPlay(activeVideo);
   }
 
   requestFrameUpdate();
