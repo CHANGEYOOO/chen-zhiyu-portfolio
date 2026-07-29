@@ -8,11 +8,23 @@ const scenes = [...document.querySelectorAll(".scene-track[data-scene]")];
 const copyStage = document.querySelector("[data-copy-stage]");
 const copies = [...document.querySelectorAll("[data-copy]")];
 const header = document.querySelector("[data-header]");
+const works = document.querySelector("#work");
+const worksToggle = document.querySelector("[data-works-toggle]");
 
 let introMetrics;
 let animationFrameRequested = false;
 let activeSceneIndex = -1;
 const userPausedVideos = new WeakSet();
+
+if (works && worksToggle) {
+  const worksToggleLabel = worksToggle.querySelector("[data-works-toggle-label]");
+
+  worksToggle.addEventListener("click", () => {
+    const expanded = works.classList.toggle("is-expanded");
+    worksToggle.setAttribute("aria-expanded", String(expanded));
+    if (worksToggleLabel) worksToggleLabel.textContent = expanded ? "收起" : "查看更多";
+  });
+}
 
 function dataSaverEnabled() {
   return Boolean(connection?.saveData);

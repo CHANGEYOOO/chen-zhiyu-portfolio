@@ -10,6 +10,8 @@
     />
     <title>JOEKUNI — 陈智宇</title>
     <script>
+      document.documentElement.classList.add("has-js");
+
       if ("scrollRestoration" in history) {
         history.scrollRestoration = "manual";
       }
@@ -33,8 +35,8 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.8" />
-    <script src="script.js?v=0.7" defer></script>
+    <link rel="stylesheet" href="styles.css?v=0.9" />
+    <script src="script.js?v=0.9" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -45,7 +47,7 @@
       </a>
 
       <nav aria-label="主要导航">
-        <a href="#work">Portfolio</a>
+        <a href="#work">TVC</a>
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
       </nav>
@@ -159,11 +161,11 @@
 
       <section class="works" id="work" aria-labelledby="work-title">
         <header class="works-header">
-          <h2 id="work-title">Portfolio</h2>
+          <h2 id="work-title">TVC</h2>
           <p id="works-note" class="sr-only">当前版本展示作品封面，视频播放将在后续版本开放。</p>
         </header>
 
-        <div class="works-grid" aria-describedby="works-note">
+        <div class="works-grid" id="works-grid" aria-describedby="works-note">
           <article class="work-card" data-work="naraka-nbpl-2024">
             <picture class="work-poster">
               <source srcset="assets/images/works/naraka-nbpl-2024-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
@@ -494,6 +496,12 @@
             </div>
           </article>
         </div>
+
+        <div class="works-actions">
+          <button class="works-more" type="button" aria-expanded="false" aria-controls="works-grid" data-works-toggle>
+            <span data-works-toggle-label>查看更多</span>
+          </button>
+        </div>
       </section>
 
       <section class="content-section" id="about" aria-labelledby="about-title">
@@ -517,7 +525,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.8</p>
+      <p>HTML PROTOTYPE V0.9</p>
     </footer>
   </body>
 </html>
