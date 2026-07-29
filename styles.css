@@ -371,14 +371,76 @@ footer {
 }
 
 .works {
+  --works-pad: clamp(20px, 1.65vw, 26px);
+  padding:
+    clamp(104px, 9vw, 138px) max(var(--works-pad), var(--safe-right))
+    calc(clamp(88px, 9vw, 132px) + var(--safe-bottom))
+    max(var(--works-pad), var(--safe-left));
+  border-top: 1px solid var(--line);
   background: #e8e2d8;
   color: #171513;
 }
 
-.works .section-index,
-.works .eyebrow,
-.works .placeholder-copy {
-  color: #655f57;
+.works-header h2 {
+  margin: 0 0 clamp(30px, 3.3vw, 48px);
+  font-family: var(--nav);
+  font-size: clamp(23px, 2vw, 30px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.works-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: clamp(9px, 0.8vw, 13px);
+  row-gap: clamp(26px, 2.5vw, 38px);
+}
+
+.work-card {
+  min-width: 0;
+}
+
+.work-poster {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 2 / 1;
+  background: #d3cec5;
+}
+
+.work-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.work-meta {
+  padding-top: 6px;
+  font-family: var(--nav);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.28;
+}
+
+.work-meta-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  color: #232323;
+}
+
+.work-meta-line span:last-child {
+  text-align: right;
+}
+
+.work-card h3 {
+  margin: 2px 0 0;
+  color: #636363;
+  font: inherit;
+  font-weight: 400;
+  overflow-wrap: anywhere;
 }
 
 .contact {
@@ -415,6 +477,10 @@ footer p {
     grid-template-columns: 1fr;
     align-content: center;
     gap: 36px;
+  }
+
+  .works-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -481,6 +547,25 @@ footer p {
   .autoplay-note {
     left: max(var(--page-pad), var(--safe-left));
     right: calc(max(var(--page-pad), var(--safe-right)) + 62px);
+  }
+
+  .works {
+    --works-pad: 18px;
+    padding-top: calc(92px + var(--safe-top));
+  }
+
+  .works-header h2 {
+    margin-bottom: 28px;
+    font-size: 22px;
+  }
+
+  .works-grid {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 27px;
+  }
+
+  .work-meta {
+    padding-top: 7px;
   }
 }
 

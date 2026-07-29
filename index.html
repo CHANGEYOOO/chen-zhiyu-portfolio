@@ -33,8 +33,8 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.5" />
-    <script src="script.js?v=0.5" defer></script>
+    <link rel="stylesheet" href="styles.css?v=0.6" />
+    <script src="script.js?v=0.6" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -157,12 +157,342 @@
           </div>
       </section>
 
-      <section class="content-section works" id="work" aria-labelledby="work-title">
-        <p class="section-index">01</p>
-        <div>
-          <p class="eyebrow">Selected Works</p>
-          <h2 id="work-title">作品，正在进入下一幕。</h2>
-          <p class="placeholder-copy">本轮保留清晰入口，后续将加入 5–7 个重点项目与作品矩阵。</p>
+      <section class="works" id="work" aria-labelledby="work-title">
+        <header class="works-header">
+          <h2 id="work-title">Portfolio</h2>
+          <p id="works-note" class="sr-only">当前版本展示作品封面，视频播放将在后续版本开放。</p>
+        </header>
+
+        <div class="works-grid" aria-describedby="works-note">
+          <article class="work-card" data-work="naraka-nbpl-2024">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/naraka-nbpl-2024-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/naraka-nbpl-2024-desktop.webp?v=0.6" alt="2024《永劫无间》NBPL 春季赛宣传片视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>永劫无间</span><span>游戏影视／首要代表作</span></p>
+              <h3>2024《永劫无间》NBPL 春季赛宣传片</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="naraka-last-one-standing-2023">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/naraka-last-one-standing-2023-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/naraka-last-one-standing-2023-desktop.webp?v=0.6" alt="2023《永劫无间》世界冠军赛 MV《Last One Standing》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>永劫无间</span><span>游戏影视／系列前作</span></p>
+              <h3>2023《永劫无间》世界冠军赛 MV《Last One Standing》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="genshin-natlan-5">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/genshin-natlan-5-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/genshin-natlan-5-desktop.webp?v=0.6" alt="《原神》5.0 宣传短片《燃动纳塔》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>原神</span><span>游戏影视</span></p>
+              <h3>《原神》5.0 宣传短片《燃动纳塔》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="three-kingdoms-gulnazar">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/three-kingdoms-gulnazar-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/three-kingdoms-gulnazar-desktop.webp?v=0.6" alt="《三国：谋定天下》与古力娜扎合作视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>三国：谋定天下</span><span>东方游戏影视</span></p>
+              <h3>《三国：谋定天下》× 古力娜扎</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="three-kingdoms-chi-bi">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/three-kingdoms-chi-bi-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/three-kingdoms-chi-bi-desktop.webp?v=0.6" alt="《三国群英传·策定九州》与唐国强合作《赤壁之战》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>三国群英传·策定九州</span><span>东方游戏影视</span></p>
+              <h3>《三国群英传·策定九州》× 唐国强《赤壁之战》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="life-makeup-luo-yunxi">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/life-makeup-luo-yunxi-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/life-makeup-luo-yunxi-desktop.webp?v=0.6" alt="《浮生忆玲珑》与罗云熙合作《玲珑局》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>浮生忆玲珑</span><span>东方游戏影视</span></p>
+              <h3>《浮生忆玲珑》× 罗云熙《玲珑局》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="wild-rift-asian-league">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/wild-rift-asian-league-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/wild-rift-asian-league-desktop.webp?v=0.6" alt="英雄联盟手游亚洲联赛决赛片《任凭浪起》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>英雄联盟手游</span><span>电竞赛事系列</span></p>
+              <h3>英雄联盟手游亚洲联赛决赛片《任凭浪起》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="wild-rift-a2">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/wild-rift-a2-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/wild-rift-a2-desktop.webp?v=0.6" alt="英雄联盟手游亚洲联赛第二赛季 A2 决赛片《破浪》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>英雄联盟手游</span><span>电竞赛事系列</span></p>
+              <h3>英雄联盟手游亚洲联赛第二赛季 A2 决赛片《破浪》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="genshin-pizza-hut">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/genshin-pizza-hut-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/genshin-pizza-hut-desktop.webp?v=0.6" alt="原神与必胜客《奇妙夜》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>必胜客 × 原神</span><span>游戏品牌合作</span></p>
+              <h3>原神 × 必胜客《奇妙夜》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="shandong-lanting">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/shandong-lanting-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/shandong-lanting-desktop.webp?v=0.6" alt="山东卫视 2024 春晚《兰亭》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>山东卫视</span><span>文化节目</span></p>
+              <h3>山东卫视 2024 春晚《兰亭》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="shandong-xiang-yu">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/shandong-xiang-yu-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/shandong-xiang-yu-desktop.webp?v=0.6" alt="山东卫视《像·羽》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>山东卫视</span><span>文化节目</span></p>
+              <h3>山东卫视《像·羽》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="henan-youth-wellness">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/henan-youth-wellness-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/henan-youth-wellness-desktop.webp?v=0.6" alt="2026 河南卫视春晚与小鹿《青年养生》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>河南卫视</span><span>文化节目</span></p>
+              <h3>2026 河南卫视春晚 × 小鹿《青年养生》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="lego-cny-home">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/lego-cny-home-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/lego-cny-home-desktop.webp?v=0.6" alt="乐高 CNY《妙会开在家》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>LEGO 乐高</span><span>乐高 CNY 系列</span></p>
+              <h3>乐高 CNY《妙会开在家》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="lego-cny-flowers">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/lego-cny-flowers-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/lego-cny-flowers-desktop.webp?v=0.6" alt="乐高 CNY《心意如花绽放》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>LEGO 乐高</span><span>乐高 CNY 系列</span></p>
+              <h3>乐高 CNY《心意如花绽放》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="lego-cny-wishes-2025">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/lego-cny-wishes-2025-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/lego-cny-wishes-2025-desktop.webp?v=0.6" alt="乐高 2025 CNY《新年许愿大法！》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>LEGO 乐高</span><span>乐高 CNY 系列</span></p>
+              <h3>乐高 2025 CNY《新年许愿大法！》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="beatbot-s1-pro">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/beatbot-s1-pro-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/beatbot-s1-pro-desktop.webp?v=0.6" alt="BEATBOT S1 PRO 泳池清洁机器人视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>BEATBOT</span><span>产品／CG</span></p>
+              <h3>BEATBOT S1 PRO 泳池清洁机器人</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="mova-x10">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/mova-x10-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/mova-x10-desktop.webp?v=0.6" alt="Mova X10 泳池机器人视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>MOVA</span><span>产品／CG</span></p>
+              <h3>Mova X10 泳池机器人</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="xgimi-mira">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/xgimi-mira-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/xgimi-mira-desktop.webp?v=0.6" alt="极米 MIRA《光影一日》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>XGIMI 极米</span><span>科技产品</span></p>
+              <h3>极米 MIRA《光影一日》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="xiaomi-pro-oled">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/xiaomi-pro-oled-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/xiaomi-pro-oled-desktop.webp?v=0.6" alt="小米笔记本 Pro OLED 大师屏视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>Xiaomi 小米</span><span>科技产品</span></p>
+              <h3>小米笔记本 Pro OLED 大师屏</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="dingtalk-xiaomei">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/dingtalk-xiaomei-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/dingtalk-xiaomei-desktop.webp?v=0.6" alt="钉钉《小美的三分钟挑战》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>DingTalk 钉钉</span><span>互联网品牌内容</span></p>
+              <h3>钉钉《小美的三分钟挑战》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="jd-business-challenge">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/jd-business-challenge-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/jd-business-challenge-desktop.webp?v=0.6" alt="京东大学生商业挑战赛病毒视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>JD 京东</span><span>互联网品牌内容</span></p>
+              <h3>京东大学生商业挑战赛病毒视频</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="mercedes-pidan">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/mercedes-pidan-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/mercedes-pidan-desktop.webp?v=0.6" alt="奔驰 MPV 与 pidan 创始人马文飞合作视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>Mercedes-Benz 奔驰</span><span>奔驰人物系列</span></p>
+              <h3>奔驰 MPV × pidan 创始人马文飞</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="mercedes-daily-black">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/mercedes-daily-black-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/mercedes-daily-black-desktop.webp?v=0.6" alt="奔驰 MPV 与每日黑巧创始人林希合作视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>Mercedes-Benz 奔驰</span><span>奔驰人物系列</span></p>
+              <h3>奔驰 MPV × 每日黑巧创始人林希</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="mercedes-bond-coffee">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/mercedes-bond-coffee-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/mercedes-bond-coffee-desktop.webp?v=0.6" alt="奔驰 MPV 与邦德咖啡创始人蔡旺庭合作视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>Mercedes-Benz 奔驰</span><span>奔驰人物系列</span></p>
+              <h3>奔驰 MPV × 邦德咖啡创始人蔡旺庭</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="nars-mika">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/nars-mika-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/nars-mika-desktop.webp?v=0.6" alt="NARS 与米卡《持久定妆大白饼》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>NARS</span><span>美妆／艺人</span></p>
+              <h3>NARS × 米卡《持久定妆大白饼》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="dr-jart-hydration">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/dr-jart-hydration-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/dr-jart-hydration-desktop.webp?v=0.6" alt="DR.JART 与王嘉尔《一起来探索补水奥秘吧！》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>Dr.Jart+ 蒂佳婷</span><span>美妆／艺人</span></p>
+              <h3>DR.JART × 王嘉尔《一起来探索补水奥秘吧！》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="dr-jart-red-crisis">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/dr-jart-red-crisis-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/dr-jart-red-crisis-desktop.webp?v=0.6" alt="DR.JART 与王嘉尔《红色危肌一片救场》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>Dr.Jart+ 蒂佳婷</span><span>美妆／艺人</span></p>
+              <h3>DR.JART × 王嘉尔《红色危“肌”一片救场》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="yinhua-fund">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/yinhua-fund-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/yinhua-fund-desktop.webp?v=0.6" alt="银华基金《致正在坚持的你》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>银华基金</span><span>情感品牌片</span></p>
+              <h3>银华基金《致正在坚持的你》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="tmall-health-water">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/tmall-health-water-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/tmall-health-water-desktop.webp?v=0.6" alt="天猫超级品类日与荣梓杉《升级你的健康快乐水》视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>Tmall 天猫</span><span>消费品牌／艺人</span></p>
+              <h3>天猫超级品类日 × 荣梓杉《升级你的健康快乐水》</h3>
+            </div>
+          </article>
+
+          <article class="work-card" data-work="nestle-nan-3">
+            <picture class="work-poster">
+              <source srcset="assets/images/works/nestle-nan-3-mobile.webp?v=0.6" media="(max-width: 700px)" type="image/webp" />
+              <img src="assets/images/works/nestle-nan-3-desktop.webp?v=0.6" alt="雀巢超启能恩 3 与黄晓明侦探篇视频封面" width="1280" height="640" loading="lazy" decoding="async" />
+            </picture>
+            <div class="work-meta">
+              <p class="work-meta-line"><span>Nestlé 雀巢</span><span>消费品牌／艺人</span></p>
+              <h3>雀巢超启能恩 3 × 黄晓明侦探篇</h3>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -187,7 +517,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.5</p>
+      <p>HTML PROTOTYPE V0.6</p>
     </footer>
   </body>
 </html>
