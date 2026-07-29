@@ -429,6 +429,7 @@ footer {
   gap: 12px;
   margin: 0;
   color: #232323;
+  font-weight: 600;
 }
 
 .work-meta-line span:last-child {
