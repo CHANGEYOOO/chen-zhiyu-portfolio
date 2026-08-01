@@ -91,7 +91,7 @@ function requestMultipartKey(request) {
 }
 
 function validUploadId(uploadId) {
-  return typeof uploadId === "string" && /^[a-zA-Z0-9_-]{1,512}$/.test(uploadId);
+  return typeof uploadId === "string" && uploadId.length > 0 && uploadId.length <= 512 && !/[\u0000-\u001F\u007F]/.test(uploadId);
 }
 
 function completedMedia(object, env, key, fallbackContentType) {

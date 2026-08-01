@@ -17,7 +17,7 @@ function signedToken(payload, privateKey) {
   return `${signingInput}.${signature}`;
 }
 
-function mediaBinding() {
+function mediaBinding(configuredUploadId = null) {
   const calls = [];
   const uploads = new Map();
   return {
@@ -28,7 +28,7 @@ function mediaBinding() {
       return { key };
     },
     async createMultipartUpload(key, options) {
-      const uploadId = `upload-${uploads.size + 1}`;
+      const uploadId = configuredUploadId || `upload-${uploads.size + 1}`;
       uploads.set(uploadId, { key, options, parts: new Map(), aborted: false });
       calls.push({ method: "createMultipartUpload", key, options, uploadId });
       return { key, uploadId };
@@ -86,9 +86,9 @@ function uploadDb() {
   };
 }
 
-function accessEnv() {
+function accessEnv(configuredUploadId = null) {
   const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
-  const media = mediaBinding();
+  const media = mediaBinding(configuredUploadId);
   const db = uploadDb();
   return {
     media,
@@ -219,6 +219,17 @@ test("rejects invalid multipart part numbers", async (t) => {
 
   assert.equal(response.status, 422);
   assert.equal((await response.json()).error.code, "INVALID_PART_NUMBER");
+});
+
+test("resumes a multipart upload with an opaque URL-encoded R2 upload ID", async (t) => {
+  const access = accessEnv("opaque=upload+1");
+  const upload = await createUpload(t, access);
+  const response = await request(t, access, `/api/admin/uploads/multipart/${encodeURIComponent(upload.data.uploadId)}`, {
+    headers: { "x-upload-key": upload.data.key },
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data.uploadId, "opaque=upload+1");
 });
 
 test("rejects a multipart part that exceeds its stored total size", async (t) => {
