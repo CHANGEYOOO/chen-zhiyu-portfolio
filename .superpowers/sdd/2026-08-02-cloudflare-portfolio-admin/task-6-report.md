@@ -29,3 +29,19 @@
 ## Remaining concern
 
 No browser-level interaction run was performed in this task. The pointer implementation uses standard Pointer Events with up/down controls as the touch-safe and keyboard-accessible fallback; final deployment QA should exercise a real iOS and desktop browser.
+
+## Review follow-up — explicit-save boundary
+
+- `SortableList` now exposes a read-only normalized `serverItems` snapshot. Ordinary media attachment uses this snapshot plus newly uploaded images, so an unsaved local reorder cannot be persisted indirectly by the normal work-save flow.
+- Extracted the one API call to `admin/image-order.js`. Only the editor's explicit `保存排序` handler invokes it; the helper commits the new server baseline only after a successful response. A rejected request leaves the local order dirty and retryable.
+- Added regression tests for server-order-preserving media attachment, rejected explicit saves, and pointer/keyboard/touch-source local reorders. The pointer handler now updates its drag index before rendering so the active `aria-grabbed` state tracks the moved row.
+
+Final verification after the follow-up:
+
+```text
+node --test admin/tests/*.test.js                    20 passed, 0 failed
+node --test cloudflare-portfolio-api/test/*.test.js  32 passed, 0 failed
+node --check admin/admin.js                          passed
+node --check admin/sortable-list.js                  passed
+git diff --check                                     passed
+```

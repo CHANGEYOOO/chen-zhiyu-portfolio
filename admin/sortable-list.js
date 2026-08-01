@@ -42,6 +42,10 @@ export class SortableList extends EventTarget {
     return normalizedItems(this._items);
   }
 
+  get serverItems() {
+    return normalizedItems(this._serverItems);
+  }
+
   get entries() {
     return this.items.map((item, index) => ({ item, index, isFirst: index === 0 }));
   }
@@ -147,7 +151,9 @@ export class SortableList extends EventTarget {
     if (this.dragIndex === null) return;
     const targetIndex = this.indexFor(this.targetAt(event));
     if (targetIndex === null || targetIndex === this.dragIndex) return;
-    if (this.move(this.dragIndex, targetIndex, "pointer")) this.dragIndex = targetIndex;
+    const from = this.dragIndex;
+    this.dragIndex = targetIndex;
+    if (!this.move(from, targetIndex, "pointer")) this.dragIndex = from;
   }
 
   handlePointerEnd(event) {

@@ -1,5 +1,6 @@
 import { PortfolioApi, PortfolioApiError } from "./api-client.js";
 import { DraftStore } from "./draft-store.js";
+import { saveImageOrder as persistImageOrder } from "./image-order.js";
 import { mediaAttachmentPayload } from "./media-attachment.js";
 import { SortableList } from "./sortable-list.js";
 import { UploadManager } from "./upload-manager.js";
@@ -162,10 +163,7 @@ async function saveImageOrder() {
   syncImageOrderUi();
   feedback(setup.imageOrderFeedback, "正在保存排序…");
   try {
-    const orderedImages = imageSorter.items;
-    await api.saveImageOrder(state.editorWorkId, orderedImages.map((image) => image.id));
-    imageSorter.commit();
-    state.existingImages = imageSorter.items;
+    state.existingImages = await persistImageOrder(api, state.editorWorkId, imageSorter);
     const work = state.works.find((item) => item.id === state.editorWorkId);
     if (work) work.work_images = state.existingImages;
     saveDraft();
@@ -376,7 +374,7 @@ function recordFromForm(status) {
 }
 
 function mediaFields() {
-  return mediaAttachmentPayload(setup.form.elements.section.value, state.existingImages, state.uploadItems);
+  return mediaAttachmentPayload(setup.form.elements.section.value, imageSorter.serverItems, state.uploadItems);
 }
 
 async function saveWork(event) {
