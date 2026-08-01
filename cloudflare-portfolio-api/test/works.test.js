@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { updateWork, saveWorkOrder } from "../src/works.js";
+import { archiveWork, saveImageOrder, saveWorkOrder, updateWork } from "../src/works.js";
 
 function d1(result = { success: true, meta: { changes: 1 } }) {
   const statements = [];
@@ -19,6 +19,39 @@ function d1(result = { success: true, meta: { changes: 1 } }) {
       };
     },
     async batch(batch) { return Promise.all(batch.map((statement) => statement.run())); },
+  };
+}
+
+function imageOrderD1(initialOrders) {
+  const orders = new Map(Object.entries(initialOrders));
+  return {
+    prepare(sql) {
+      return {
+        bind(...params) {
+          return {
+            async all() {
+              return { results: params.slice(1).map((id) => orders.has(id) ? { id } : null).filter(Boolean) };
+            },
+            async run() {
+              if (sql.includes("SET sort_order = sort_order +")) {
+                const maximum = Math.max(...orders.values());
+                for (const imageId of params.slice(2)) orders.set(imageId, orders.get(imageId) + maximum + 1);
+                return { success: true, meta: { changes: params.length - 2 } };
+              }
+              if (sql.startsWith("UPDATE work_images SET sort_order = ?")) {
+                const [sortOrder, imageId] = params;
+                if ([...orders.entries()].some(([id, current]) => id !== imageId && current === sortOrder)) throw new Error("UNIQUE constraint failed: work_images.work_id, work_images.sort_order");
+                orders.set(imageId, sortOrder);
+                return { success: true, meta: { changes: 1 } };
+              }
+              return { success: true, meta: { changes: 1 } };
+            },
+          };
+        },
+      };
+    },
+    async batch(statements) { return Promise.all(statements.map((statement) => statement.run())); },
+    orders,
   };
 }
 
@@ -79,4 +112,36 @@ test("saves a validated section order in a single D1 batch", async () => {
   assert.equal(response.status, 200);
   assert.equal(receivedBatch.length, 3);
   assert.deepEqual((await response.json()).data.ids, ["tvc-2", "tvc-1"]);
+});
+
+test("renumbers images through a temporary range before swapping their order", async () => {
+  const db = imageOrderD1({ "image-a": 0, "image-b": 1 });
+  const response = await saveImageOrder(new Request("https://api.example.test", {
+    method: "PUT",
+    body: JSON.stringify({ ids: ["image-b", "image-a"] }),
+  }), { DB: db }, "work-1", { email: "admin@example.com" });
+
+  assert.equal(response.status, 200);
+  assert.equal(db.orders.get("image-b"), 0);
+  assert.equal(db.orders.get("image-a"), 1);
+});
+
+test("returns a validation error when archiving with a null JSON body", async () => {
+  const response = await archiveWork(new Request("https://api.example.test", {
+    method: "POST",
+    body: "null",
+  }), { DB: d1() }, "work-1", { email: "admin@example.com" });
+
+  assert.equal(response.status, 422);
+  assert.equal((await response.json()).error.code, "VALIDATION_FAILED");
+});
+
+test("returns a validation error when ordering works with an array JSON body", async () => {
+  const response = await saveWorkOrder(new Request("https://api.example.test", {
+    method: "PUT",
+    body: "[]",
+  }), { DB: d1() }, { email: "admin@example.com" });
+
+  assert.equal(response.status, 422);
+  assert.equal((await response.json()).error.code, "VALIDATION_FAILED");
 });

@@ -7,7 +7,11 @@ function id() {
 
 async function body(request) {
   try {
-    return { value: await request.json() };
+    const value = await request.json();
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return { response: problem(422, "VALIDATION_FAILED", "Request body must be a JSON object") };
+    }
+    return { value };
   } catch {
     return { response: problem(400, "INVALID_JSON", "Request body must be valid JSON") };
   }
@@ -116,7 +120,9 @@ export async function saveImageOrder(request, env, workId, actor) {
   const placeholders = ids.map(() => "?").join(", ");
   const found = await env.DB.prepare(`SELECT id FROM work_images WHERE work_id = ? AND id IN (${placeholders})`).bind(workId, ...ids).all();
   if (found.results.length !== ids.length) return problem(422, "INVALID_ORDER", "Every image must belong to the selected work");
-  const statements = ids.map((imageId, sortOrder) => env.DB.prepare("UPDATE work_images SET sort_order = ? WHERE id = ? AND work_id = ?").bind(sortOrder, imageId, workId));
+  const temporaryOrder = env.DB.prepare(`UPDATE work_images SET sort_order = sort_order + (SELECT COALESCE(MAX(sort_order), 0) - COALESCE(MIN(sort_order), 0) + 1 FROM work_images WHERE work_id = ?) WHERE work_id = ? AND id IN (${placeholders})`)
+    .bind(workId, workId, ...ids);
+  const statements = [temporaryOrder, ...ids.map((imageId, sortOrder) => env.DB.prepare("UPDATE work_images SET sort_order = ? WHERE id = ? AND work_id = ?").bind(sortOrder, imageId, workId))];
   statements.push(env.DB.prepare("INSERT INTO audit_log (id, work_id, actor_email, action, details_json) VALUES (?, ?, ?, ?, ?)").bind(id(), workId, actor.email, "ORDER_IMAGES", JSON.stringify({ ids })));
   await env.DB.batch(statements);
   return json({ data: { work_id: workId, ids } });
