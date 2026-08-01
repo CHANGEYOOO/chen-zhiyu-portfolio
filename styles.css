@@ -2268,6 +2268,10 @@ footer p {
   color: rgba(236, 232, 223, 0.78);
 }
 
+.cinematic-v2 .about-method > p:last-child {
+  color: rgba(236, 232, 223, 0.74);
+}
+
 .cinematic-v2 .about-methods {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(150px, auto));
