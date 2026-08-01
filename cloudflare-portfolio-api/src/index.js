@@ -1,6 +1,7 @@
 import { json, problem } from "./http.js";
 import { requireAccess } from "./auth.js";
 import { archiveWork, createWork, getWork, listWorks, saveImageOrder, saveWorkOrder, updateWork } from "./works.js";
+import { abortMultipartUpload, completeMultipartUpload, createMultipartUpload, getMultipartUpload, uploadImage, uploadMultipartPart } from "./uploads.js";
 
 export default {
   async fetch(request, env) {
@@ -14,6 +15,20 @@ export default {
     const access = await requireAccess(request, env);
     if (access.response) return access.response;
     const { identity } = access;
+
+    if (request.method === "POST" && pathname === "/api/admin/uploads/image") return uploadImage(request, env, identity);
+    if (request.method === "POST" && pathname === "/api/admin/uploads/multipart/create") return createMultipartUpload(request, env, identity);
+
+    const multipartPartMatch = pathname.match(/^\/api\/admin\/uploads\/multipart\/([^/]+)\/parts\/(\d+)$/);
+    if (multipartPartMatch && request.method === "PUT") return uploadMultipartPart(request, env, decodeURIComponent(multipartPartMatch[1]), multipartPartMatch[2], identity);
+    const multipartCompleteMatch = pathname.match(/^\/api\/admin\/uploads\/multipart\/([^/]+)\/complete$/);
+    if (multipartCompleteMatch && request.method === "POST") return completeMultipartUpload(request, env, decodeURIComponent(multipartCompleteMatch[1]), identity);
+    const multipartMatch = pathname.match(/^\/api\/admin\/uploads\/multipart\/([^/]+)$/);
+    if (multipartMatch) {
+      const uploadId = decodeURIComponent(multipartMatch[1]);
+      if (request.method === "GET") return getMultipartUpload(request, env, uploadId, identity);
+      if (request.method === "DELETE") return abortMultipartUpload(request, env, uploadId, identity);
+    }
 
     if (request.method === "GET" && pathname === "/api/admin/works") return listWorks(request, env, identity);
     if (request.method === "POST" && pathname === "/api/admin/works") return createWork(request, env, identity);
