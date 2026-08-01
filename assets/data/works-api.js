@@ -2,8 +2,8 @@
 window.PORTFOLIO_CONTENT = {
   publicApiUrl: "https://ykhvsawnjjunhiffzbjz.supabase.co/rest/v1/works?select=*,work_images(*)&status=eq.published&order=section,sort_order",
   publicApiHeaders: {
-    apikey: "sb_publishable_jU-R5tY9qDiSIsAQHuZnZQ_aXCEdeD",
-    Authorization: "Bearer sb_publishable_jU-R5tY9qDiSIsAQHuZnZQ_aXCEdeD",
+    apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlraHZzYXduamp1bmhpZmZ6Ymp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1ODYxNTAsImV4cCI6MjEwMTE2MjE1MH0.Rl_Za0lRL-PJksANN8LSLdx5mo7zCRjq_069eq4i3dk",
+    Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlraHZzYXduamp1bmhpZmZ6Ymp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1ODYxNTAsImV4cCI6MjEwMTE2MjE1MH0.Rl_Za0lRL-PJksANN8LSLdx5mo7zCRjq_069eq4i3dk",
   },
   async loadPublished() {
     if (!this.publicApiUrl) return null;
