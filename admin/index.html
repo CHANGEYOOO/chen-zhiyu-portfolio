@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0a0908" />
     <title>作品管理 / Chen Zhiyu</title>
-    <link rel="stylesheet" href="admin.css?v=0.22" />
+    <link rel="stylesheet" href="admin.css?v=0.23" />
     <script src="config.js" defer></script>
-    <script type="module" src="admin.js?v=0.22"></script>
+    <script type="module" src="admin.js?v=0.23"></script>
   </head>
   <body>
     <main class="admin-shell">
@@ -64,6 +64,14 @@
           <div class="livestream-only image-manager" hidden>
             <div class="field-heading"><span>项目图片</span><small>数量不设上限</small></div>
             <label class="file-field">添加项目图片<input name="image_files" type="file" accept="image/webp,image/jpeg,image/png" multiple /></label>
+            <div class="image-order-actions" data-image-order-actions hidden>
+              <p class="form-feedback" data-image-order-feedback role="status" aria-live="polite"></p>
+              <div>
+                <button type="button" data-cancel-image-order>取消排序</button>
+                <button class="primary-button" type="button" data-save-image-order>保存排序</button>
+              </div>
+            </div>
+            <div class="image-list" data-image-list aria-label="项目图片排序"></div>
           </div>
           <section class="upload-manager" aria-labelledby="upload-title">
             <div class="field-heading"><span id="upload-title">上传队列</span><small>成功项目会保留，失败项目可重试</small></div>

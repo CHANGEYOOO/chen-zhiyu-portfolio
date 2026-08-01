@@ -1,6 +1,7 @@
 import { PortfolioApi, PortfolioApiError } from "./api-client.js";
 import { DraftStore } from "./draft-store.js";
 import { mediaAttachmentPayload } from "./media-attachment.js";
+import { SortableList } from "./sortable-list.js";
 import { UploadManager } from "./upload-manager.js";
 
 const config = window.PORTFOLIO_ADMIN_CONFIG || {};
@@ -23,6 +24,11 @@ const setup = {
   editorFeedback: document.querySelector("[data-editor-feedback]"),
   sectionInput: document.querySelector("[data-section-input]"),
   uploadList: document.querySelector("[data-upload-list]"),
+  imageList: document.querySelector("[data-image-list]"),
+  imageOrderActions: document.querySelector("[data-image-order-actions]"),
+  saveImageOrder: document.querySelector("[data-save-image-order]"),
+  cancelImageOrder: document.querySelector("[data-cancel-image-order]"),
+  imageOrderFeedback: document.querySelector("[data-image-order-feedback]"),
 };
 
 const state = {
@@ -32,7 +38,10 @@ const state = {
   newWorkId: "",
   existingImages: [],
   uploadItems: [],
+  orderSaving: false,
 };
+
+const imageSorter = new SortableList({ root: setup.imageList, renderItem: renderImageItem });
 
 function feedback(element, message = "", kind = "") {
   if (!element) return;
@@ -52,6 +61,12 @@ function sectionLabel(section) {
 function mediaUrl(work) {
   if (work.poster_url) return work.poster_url;
   if (work.poster_key) return `https://media.kjoe.top/${work.poster_key.split("/").map(encodeURIComponent).join("/")}`;
+  return "";
+}
+
+function imageUrl(image) {
+  if (image.image_url) return image.image_url;
+  if (image.image_key) return `https://media.kjoe.top/${image.image_key.split("/").map(encodeURIComponent).join("/")}`;
   return "";
 }
 
@@ -93,11 +108,89 @@ function restoreDraft(workId) {
   state.existingImages = drafts.orderImages(state.existingImages, saved.image_order);
 }
 
+function renderImageItem({ item, index, isFirst }) {
+  const row = document.createElement("article");
+  row.className = "image-item";
+  row.dataset.imageId = item.id;
+
+  const image = document.createElement("img");
+  image.src = imageUrl(item);
+  image.alt = `项目图片 ${index + 1}`;
+  image.loading = "lazy";
+
+  const handle = document.createElement("button");
+  handle.type = "button";
+  handle.className = "drag-handle";
+  handle.dataset.sortHandle = "";
+  handle.setAttribute("aria-label", `拖动第 ${index + 1} 张图片，或按上下方向键调整顺序`);
+  handle.textContent = "拖动";
+
+  const actions = document.createElement("div");
+  actions.className = "image-actions";
+  [["up", "上移", index === 0], ["down", "下移", index === state.existingImages.length - 1]].forEach(([direction, label, disabled]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.sortMove = direction;
+    button.textContent = label;
+    button.disabled = disabled;
+    button.setAttribute("aria-label", `将第 ${index + 1} 张图片${label}`);
+    actions.append(button);
+  });
+
+  row.append(image, handle, actions);
+  if (isFirst) {
+    const cover = document.createElement("span");
+    cover.className = "cover-marker";
+    cover.textContent = "封面";
+    row.append(cover);
+  }
+  return row;
+}
+
+function syncImageOrderUi() {
+  const hasImages = imageSorter.items.length > 0;
+  const dirty = imageSorter.dirty;
+  setup.imageList.dataset.orderDirty = String(dirty);
+  setup.imageOrderActions.hidden = !hasImages;
+  setup.saveImageOrder.disabled = !dirty || state.orderSaving;
+  setup.cancelImageOrder.disabled = !dirty || state.orderSaving;
+}
+
+async function saveImageOrder() {
+  if (!state.editorWorkId || !imageSorter.dirty || state.orderSaving) return;
+  state.orderSaving = true;
+  syncImageOrderUi();
+  feedback(setup.imageOrderFeedback, "正在保存排序…");
+  try {
+    const orderedImages = imageSorter.items;
+    await api.saveImageOrder(state.editorWorkId, orderedImages.map((image) => image.id));
+    imageSorter.commit();
+    state.existingImages = imageSorter.items;
+    const work = state.works.find((item) => item.id === state.editorWorkId);
+    if (work) work.work_images = state.existingImages;
+    saveDraft();
+    feedback(setup.imageOrderFeedback, "排序已保存。", "success");
+  } catch (error) {
+    feedback(setup.imageOrderFeedback, error.message || "排序保存失败，请稍后重试。", "error");
+  } finally {
+    state.orderSaving = false;
+    syncImageOrderUi();
+  }
+}
+
+function cancelImageOrder() {
+  if (!imageSorter.cancel()) return;
+  state.existingImages = imageSorter.items;
+  saveDraft();
+  feedback(setup.imageOrderFeedback, "已恢复到服务器排序。");
+}
+
 function resetForm(work = null) {
   setup.form.reset();
   state.newWorkId = work ? "" : state.newWorkId || crypto.randomUUID();
   state.editorWorkId = work?.id || state.newWorkId;
   state.existingImages = [...(work?.work_images || [])].sort((left, right) => left.sort_order - right.sort_order);
+  imageSorter.replaceServerItems(state.existingImages);
   state.uploadItems = [];
   setEditorValue("id", state.editorWorkId);
   setEditorValue("section", work?.section || "tvc");
@@ -107,9 +200,12 @@ function resetForm(work = null) {
   setEditorValue("sort_order", work?.sort_order ?? state.works.length);
   setEditorValue("status", work?.status || "draft");
   restoreDraft(state.editorWorkId);
+  imageSorter.setItems(state.existingImages);
   document.querySelector("[data-editor-title]").textContent = work ? "编辑作品" : "新增作品";
   feedback(setup.editorFeedback);
+  feedback(setup.imageOrderFeedback);
   syncSectionFields();
+  syncImageOrderUi();
   renderUploadItems();
 }
 
@@ -398,5 +494,12 @@ setup.form?.elements.video_file?.addEventListener("change", (event) => addFiles(
 setup.form?.elements.image_files?.addEventListener("change", (event) => addFiles([...event.target.files].filter(Boolean), "image"));
 document.querySelector(".close-button")?.addEventListener("click", () => setup.editor.close());
 setup.editor?.addEventListener("close", () => { saveDraft(); feedback(setup.editorFeedback); });
+imageSorter.addEventListener("change", (event) => {
+  state.existingImages = event.detail.items;
+  syncImageOrderUi();
+  saveDraft();
+});
+setup.saveImageOrder?.addEventListener("click", saveImageOrder);
+setup.cancelImageOrder?.addEventListener("click", cancelImageOrder);
 
 boot();
