@@ -205,15 +205,18 @@ function createLivestreamProject(project, projectIndex, imageDimensions) {
     const item = document.createElement("li");
     const image = document.createElement("img");
     const imageNumber = String(imageIndex + 1).padStart(2, "0");
-    const dimensions = imageDimensions[`${project.directory}/${filename}`];
+    const imageRef = typeof filename === "string"
+      ? { name: filename, url: `https://media.kjoe.top/media-v0.21/assets/images/livestream/${project.directory}/${filename}` }
+      : filename;
+    const dimensions = imageRef.dimensions || imageDimensions[`${project.directory}/${imageRef.name}`] || [1200, 800];
     if (!Array.isArray(dimensions) || dimensions.length !== 2) {
-      throw new Error(`Missing livestream image dimensions: ${project.directory}/${filename}`);
+      throw new Error(`Invalid livestream image dimensions: ${project.title}`);
     }
     item.className = "livestream-slide";
     image.width = dimensions[0];
     image.height = dimensions[1];
-    image.src = `https://media.kjoe.top/media-v0.21/assets/images/livestream/${project.directory}/${filename}`;
-    image.alt = `${project.title} ${livestreamImageType(filename)} ${imageNumber}`;
+    image.src = imageRef.url;
+    image.alt = `${project.title} ${livestreamImageType(imageRef.name || "项目图片")} ${imageNumber}`;
     image.decoding = "async";
     image.draggable = false;
     if (projectIndex === 0 && imageIndex < 3) {
@@ -286,10 +289,20 @@ async function loadLivestreamProjects() {
   try {
     let projects;
     let imageDimensions;
+    let usingRemote = false;
 
-    if (window.location.protocol === "file:" && window.LIVESTREAM_DATA) {
+    if (window.PORTFOLIO_CONTENT?.publicApiUrl) {
+      const published = await window.PORTFOLIO_CONTENT.loadPublished();
+      if (published?.livestream?.length) {
+        projects = published.livestream;
+        imageDimensions = published.imageDimensions || {};
+        usingRemote = true;
+      }
+    }
+
+    if (!usingRemote && window.location.protocol === "file:" && window.LIVESTREAM_DATA) {
       ({ projects, imageDimensions } = window.LIVESTREAM_DATA);
-    } else {
+    } else if (!usingRemote) {
       try {
         const [projectsResponse, dimensionsResponse] = await Promise.all([
           fetch(livestream.dataset.projectsSrc),
@@ -313,7 +326,7 @@ async function loadLivestreamProjects() {
 
     const imageCount = projects.reduce((total, project) => total + project.images.length, 0);
     const dimensionsCount = Object.keys(imageDimensions).length;
-    if (projects.length !== 8 || imageCount !== 55 || dimensionsCount !== 55) {
+    if (!usingRemote && (projects.length !== 8 || imageCount !== 55 || dimensionsCount !== 55)) {
       throw new Error(
         `Unexpected livestream data: ${projects.length} projects, ${imageCount} images, ${dimensionsCount} dimensions`,
       );
@@ -348,6 +361,49 @@ async function loadLivestreamProjects() {
 }
 
 loadLivestreamProjects();
+
+async function hydrateTvcWorks() {
+  if (!works || !window.PORTFOLIO_CONTENT?.publicApiUrl) return;
+  try {
+    const published = await window.PORTFOLIO_CONTENT.loadPublished();
+    if (!published?.tvc?.length) return;
+    const grid = works.querySelector("#works-grid");
+    if (!grid) return;
+    const fragment = document.createDocumentFragment();
+    published.tvc.forEach((work) => {
+      const card = document.createElement("article");
+      card.className = "work-card";
+      card.dataset.work = work.id;
+      if (work.video) card.dataset.videoUrl = work.video;
+      const picture = document.createElement("picture");
+      picture.className = "work-poster";
+      const image = document.createElement("img");
+      image.src = work.poster;
+      image.alt = `${work.brand} ${work.title} 视频封面`;
+      image.loading = "lazy";
+      image.decoding = "async";
+      picture.appendChild(image);
+      const meta = document.createElement("div");
+      meta.className = "work-meta";
+      const line = document.createElement("p");
+      line.className = "work-meta-line";
+      const brand = document.createElement("span");
+      brand.textContent = work.brand;
+      const category = document.createElement("span");
+      category.textContent = work.category;
+      line.append(brand, category);
+      const title = document.createElement("h3");
+      title.textContent = work.title;
+      meta.append(line, title);
+      card.append(picture, meta);
+      fragment.appendChild(card);
+    });
+    grid.replaceChildren(fragment);
+    grid.querySelectorAll(".work-card[data-work]").forEach(bindWorkPlayButton);
+  } catch (error) {
+    console.warn("Published TVC content unavailable; using bundled fallback.", error);
+  }
+}
 
 function setupSectionMotion(container, itemSelector, readyClass, itemClass) {
   if (!container || reducedMotion.matches || !("IntersectionObserver" in window)) return;
@@ -534,11 +590,12 @@ function openWorkPlayer(card, trigger) {
   const base = works.dataset.videoBase;
   const title = card.querySelector("h3")?.textContent?.trim() || "作品播放";
   const poster = card.querySelector(".work-poster img");
-  if (!slug || !base) return;
+  const remoteVideo = card.dataset.videoUrl;
+  if ((!slug || !base) && !remoteVideo) return;
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.21`;
+  workPlayerUrl = remoteVideo || `${new URL(`${slug}.mp4`, base).href}?v=0.21`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");
@@ -555,16 +612,21 @@ function openWorkPlayer(card, trigger) {
   playSelectedWork();
 }
 
+function bindWorkPlayButton(card) {
+  if (!card || card.querySelector(".work-play")) return;
+  const title = card.querySelector("h3")?.textContent?.trim() || "作品";
+  const playButton = document.createElement("button");
+  playButton.className = "work-play";
+  playButton.type = "button";
+  playButton.setAttribute("aria-label", `全屏播放：${title}`);
+  playButton.innerHTML = '<span class="work-play-icon" aria-hidden="true">▶</span>';
+  playButton.addEventListener("click", () => openWorkPlayer(card, playButton));
+  card.appendChild(playButton);
+}
+
 if (works && workPlayer && workPlayerVideo) {
   works.querySelectorAll(".work-card[data-work]").forEach((card) => {
-    const title = card.querySelector("h3")?.textContent?.trim() || "作品";
-    const playButton = document.createElement("button");
-    playButton.className = "work-play";
-    playButton.type = "button";
-    playButton.setAttribute("aria-label", `全屏播放：${title}`);
-    playButton.innerHTML = '<span class="work-play-icon" aria-hidden="true">▶</span>';
-    playButton.addEventListener("click", () => openWorkPlayer(card, playButton));
-    card.appendChild(playButton);
+    bindWorkPlayButton(card);
   });
 
   workPlayer.querySelector("[data-work-player-close]")?.addEventListener("click", () => {
@@ -850,6 +912,8 @@ function applyMotionPreference() {
 reducedMotion.addEventListener("change", applyMotionPreference);
 connection?.addEventListener?.("change", applyMotionPreference);
 applyMotionPreference();
+
+hydrateTvcWorks();
 
 if ("IntersectionObserver" in window) {
   if (scrollSentinel) {
