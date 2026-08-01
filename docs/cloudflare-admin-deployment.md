@@ -35,7 +35,7 @@ Cloudflare Access must protect both self-hosted applications before a production
 
 Each application must use email OTP and an Allow policy limited to the confirmed administrator email. Set the API application's Access audience and the administrator allowlist as Worker secrets/variables; never add those values to tracked files or browser configuration.
 
-This record does not contain an Access application ID, audience, issuer, JWKS URL, or administrator email. At the time of provisioning, the authenticated Zero Trust dashboard returned `找不到该页面` for all Access controls URLs, so the two applications, policies, and Worker Access secrets remain pending. The Worker deployment was also intentionally not executed: it requires explicit production-route approval.
+This record does not contain an Access application ID, audience, issuer, JWKS URL, or administrator email. At the time of provisioning, the authenticated Zero Trust dashboard returned `找不到该页面` for all Access controls URLs, and a later continuation had no available browser session. The two applications, policies, and Worker Access secrets therefore remain pending. A user later gave exact approval to deploy the Worker, but the execution safety gate still rejected the `wrangler deploy` command because that approval was not available to it as a trusted direct user message.
 
 Consequently, no public route, protected admin endpoint, image upload, multipart upload, media Range read, or archive-draft verification has been run against production. The existing static release and all R2 physical objects remain unchanged.
 
@@ -44,7 +44,7 @@ Consequently, no public route, protected admin endpoint, image upload, multipart
 1. Restore Access controls access in the Cloudflare Zero Trust dashboard.
 2. Create the two applications and email-OTP Allow policies described above.
 3. Set `ACCESS_AUD`, `ADMIN_EMAILS`, and the applicable Access issuer/JWKS configuration with `wrangler secret put`; keep values out of the repository.
-4. Obtain explicit approval to publish `kjoe-portfolio-api` to `api.kjoe.top/*`, then run `wrangler deploy` from `cloudflare-portfolio-api`.
+4. Provide a direct user approval in the execution thread to publish `kjoe-portfolio-api` to `api.kjoe.top/*`, then run `wrangler deploy` from `cloudflare-portfolio-api`.
 5. Verify `/api/public/works`, protected `/api/admin/session`, disposable image and multipart-video uploads, a Range request through `media.kjoe.top`, and archive the disposable draft only. Do not delete physical test objects without separate approval.
 
 ## Rollback
