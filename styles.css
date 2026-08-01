@@ -8,6 +8,7 @@
   --about-muted: rgba(23, 21, 19, 0.58);
   --about-line: rgba(23, 21, 19, 0.22);
   --page-pad: clamp(20px, 4.5vw, 68px);
+  --portfolio-pad: clamp(20px, 1.65vw, 26px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -379,11 +380,10 @@ footer {
 }
 
 .works {
-  --works-pad: clamp(20px, 1.65vw, 26px);
   padding:
-    clamp(104px, 9vw, 138px) max(var(--works-pad), var(--safe-right))
+    clamp(104px, 9vw, 138px) max(var(--portfolio-pad), var(--safe-right))
     calc(clamp(88px, 9vw, 132px) + var(--safe-bottom))
-    max(var(--works-pad), var(--safe-left));
+    max(var(--portfolio-pad), var(--safe-left));
   border-top: 1px solid var(--line);
   background: var(--about-paper);
   color: var(--about-ink);
@@ -661,14 +661,13 @@ footer {
 }
 
 .livestream {
-  --livestream-pad: clamp(20px, 2.1vw, 32px);
   --livestream-image-height: 404px;
   min-width: 0;
   overflow: clip;
   padding:
-    clamp(92px, 8vw, 122px) max(var(--livestream-pad), var(--safe-right))
+    clamp(92px, 8vw, 122px) max(var(--portfolio-pad), var(--safe-right))
     calc(clamp(108px, 10vw, 148px) + var(--safe-bottom))
-    max(var(--livestream-pad), var(--safe-left));
+    max(var(--portfolio-pad), var(--safe-left));
   border-top: 1px solid var(--line);
   background: var(--ink);
   color: #fff;
@@ -681,6 +680,16 @@ footer {
   font-style: italic;
   font-weight: 700;
   line-height: 1;
+}
+
+.livestream-kicker {
+  margin: 0 0 clamp(30px, 3.3vw, 48px);
+  color: var(--muted);
+  font-family: var(--nav);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
 }
 
 .livestream-project,
@@ -832,6 +841,43 @@ footer {
   color: var(--muted);
   font-family: var(--nav);
   font-size: 14px;
+}
+
+.livestream-actions {
+  display: none;
+  justify-content: center;
+  margin-top: clamp(50px, 5vw, 76px);
+}
+
+.has-js .livestream-actions:not([hidden]) {
+  display: flex;
+}
+
+.livestream-more {
+  min-width: 128px;
+  min-height: 44px;
+  padding: 10px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-family: var(--nav);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.livestream-more:hover,
+.livestream-more:focus-visible {
+  background: #fff;
+  color: var(--ink);
+}
+
+.has-js .livestream:not(.is-expanded) .livestream-project:nth-child(n + 4) {
+  display: none;
 }
 
 .about {
@@ -1310,6 +1356,10 @@ footer p {
 }
 
 @media (max-width: 700px) {
+  :root {
+    --portfolio-pad: 18px;
+  }
+
   .site-header {
     align-items: center;
     gap: 12px;
@@ -1363,7 +1413,6 @@ footer p {
   }
 
   .works {
-    --works-pad: 18px;
     padding-top: calc(92px + var(--safe-top));
   }
 
@@ -1390,7 +1439,6 @@ footer p {
   }
 
   .livestream {
-    --livestream-pad: 18px;
     --livestream-image-height: 240px;
     padding-top: calc(72px + var(--safe-top));
   }

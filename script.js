@@ -22,6 +22,8 @@ const contactFeedback = document.querySelector("#contact-feedback");
 const about = document.querySelector("[data-about]");
 const livestream = document.querySelector("[data-livestream]");
 const livestreamProjects = livestream?.querySelector("[data-livestream-projects]");
+const livestreamActions = livestream?.querySelector("[data-livestream-actions]");
+const livestreamToggle = livestream?.querySelector("[data-livestream-toggle]");
 const precisePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
 
 let introMetrics;
@@ -39,6 +41,16 @@ if (works && worksToggle) {
     const expanded = works.classList.toggle("is-expanded");
     worksToggle.setAttribute("aria-expanded", String(expanded));
     if (worksToggleLabel) worksToggleLabel.textContent = expanded ? "收起" : "查看更多";
+  });
+}
+
+if (livestream && livestreamToggle) {
+  const livestreamToggleLabel = livestreamToggle.querySelector("[data-livestream-toggle-label]");
+
+  livestreamToggle.addEventListener("click", () => {
+    const expanded = livestream.classList.toggle("is-expanded");
+    livestreamToggle.setAttribute("aria-expanded", String(expanded));
+    if (livestreamToggleLabel) livestreamToggleLabel.textContent = expanded ? "收起" : "查看更多";
   });
 }
 
@@ -197,7 +209,7 @@ function createLivestreamProject(project, projectIndex, imageDimensions) {
     item.className = "livestream-slide";
     image.width = dimensions[0];
     image.height = dimensions[1];
-    image.src = `assets/images/livestream/${project.directory}/${filename}`;
+    image.src = `https://media.kjoe.top/media-v0.21/assets/images/livestream/${project.directory}/${filename}`;
     image.alt = `${project.title} ${livestreamImageType(filename)} ${imageNumber}`;
     image.decoding = "async";
     image.draggable = false;
@@ -310,6 +322,7 @@ async function loadLivestreamProjects() {
     });
     livestreamProjects.replaceChildren(fragment);
     livestreamProjects.setAttribute("aria-busy", "false");
+    if (livestreamActions) livestreamActions.hidden = projects.length <= 3;
     livestreamProjects.querySelectorAll(".livestream-project").forEach(setupLivestreamCarousel);
     setupSectionMotion(
       livestream,
@@ -324,6 +337,7 @@ async function loadLivestreamProjects() {
     message.textContent = "直播作品载入失败，请刷新页面后重试。";
     livestreamProjects.replaceChildren(message);
     livestreamProjects.setAttribute("aria-busy", "false");
+    if (livestreamActions) livestreamActions.hidden = true;
     console.error(error);
   } finally {
     restoreRequestedHashPosition();
@@ -520,7 +534,7 @@ function openWorkPlayer(card, trigger) {
 
   workPlayerTrigger = trigger;
   workPlayerOpen = true;
-  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.19`;
+  workPlayerUrl = `${new URL(`${slug}.mp4`, base).href}?v=0.21`;
   workPlayerTitle.textContent = title;
   workPlayerVideo.poster = poster?.currentSrc || poster?.src || "";
   document.body.classList.add("work-player-open");
