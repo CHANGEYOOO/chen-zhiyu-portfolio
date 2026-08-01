@@ -59,10 +59,12 @@ function withWorkerCache(t) {
 
 test("exposes only ordered published works with normalized media URLs", async (t) => {
   withWorkerCache(t);
-  const response = await worker.fetch(new Request("https://api.example.test/api/public/works"), { DB: publicDb() });
+  const response = await worker.fetch(new Request("https://api.example.test/api/public/works", { headers: { Origin: "https://kjoe.top" } }), { DB: publicDb() });
 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "public, max-age=60, stale-while-revalidate=300");
+  assert.equal(response.headers.get("access-control-allow-origin"), "https://kjoe.top");
+  assert.equal(response.headers.get("vary"), "Origin");
   assert.match(response.headers.get("etag"), /^"[a-f0-9]{64}"$/);
   const payload = await response.json();
   assert.match(payload.generatedAt, /^\d{4}-\d{2}-\d{2}T/);
@@ -80,13 +82,33 @@ test("exposes only ordered published works with normalized media URLs", async (t
 test("returns 304 when If-None-Match matches the cached published response", async (t) => {
   withWorkerCache(t);
   const env = { DB: publicDb() };
-  const first = await worker.fetch(new Request("https://api.example.test/api/public/works"), env);
+  const first = await worker.fetch(new Request("https://api.example.test/api/public/works", { headers: { Origin: "https://kjoe.top" } }), env);
   const etag = first.headers.get("etag");
-  const second = await worker.fetch(new Request("https://api.example.test/api/public/works", { headers: { "If-None-Match": etag } }), env);
+  const second = await worker.fetch(new Request("https://api.example.test/api/public/works", { headers: { Origin: "https://kjoe.top", "If-None-Match": etag } }), env);
 
   assert.equal(second.status, 304);
   assert.equal(second.headers.get("etag"), etag);
+  assert.equal(second.headers.get("access-control-allow-origin"), "https://kjoe.top");
+  assert.equal(second.headers.get("vary"), "Origin");
   assert.equal(await second.text(), "");
+});
+
+test("answers public works CORS preflight for the portfolio origin", async () => {
+  const response = await worker.fetch(new Request("https://api.example.test/api/public/works", {
+    method: "OPTIONS",
+    headers: {
+      Origin: "https://kjoe.top",
+      "Access-Control-Request-Method": "GET",
+      "Access-Control-Request-Headers": "Accept, If-None-Match",
+    },
+  }), { DB: publicDb() });
+
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get("access-control-allow-origin"), "https://kjoe.top");
+  assert.equal(response.headers.get("access-control-allow-methods"), "GET, OPTIONS");
+  assert.equal(response.headers.get("access-control-allow-headers"), "Accept, If-None-Match");
+  assert.equal(response.headers.get("vary"), "Origin");
+  assert.equal(await response.text(), "");
 });
 
 test("invalidates the public cache after a work publication change", async (t) => {

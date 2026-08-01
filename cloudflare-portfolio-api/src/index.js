@@ -1,6 +1,6 @@
 import { json, problem } from "./http.js";
 import { requireAccess } from "./auth.js";
-import { getPublicWorks } from "./public.js";
+import { getPublicWorks, publicWorksPreflight } from "./public.js";
 import { attachMedia } from "./media.js";
 import { archiveWork, createWork, getWork, listWorks, saveImageOrder, saveWorkOrder, updateWork } from "./works.js";
 import { abortMultipartUpload, completeMultipartUpload, createMultipartUpload, getMultipartUpload, uploadImage, uploadMultipartPart } from "./uploads.js";
@@ -13,7 +13,10 @@ export default {
       return json({ ok: true });
     }
 
-    if (request.method === "GET" && pathname === "/api/public/works") return getPublicWorks(request, env);
+    if (pathname === "/api/public/works") {
+      if (request.method === "OPTIONS") return publicWorksPreflight();
+      if (request.method === "GET") return getPublicWorks(request, env);
+    }
 
     if (!pathname.startsWith("/api/admin/")) return problem(404, "NOT_FOUND", "Route not found");
     const access = await requireAccess(request, env);

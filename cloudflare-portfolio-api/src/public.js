@@ -2,6 +2,14 @@ import { json } from "./http.js";
 
 const CACHE_CONTROL = "public, max-age=60, stale-while-revalidate=300";
 const MEDIA_ORIGIN = "https://media.kjoe.top";
+const PORTFOLIO_ORIGIN = "https://kjoe.top";
+
+function publicCorsHeaders(init = {}) {
+  const headers = new Headers(init);
+  headers.set("access-control-allow-origin", PORTFOLIO_ORIGIN);
+  headers.set("vary", "Origin");
+  return headers;
+}
 
 function cacheForPublicWorks() {
   return globalThis.caches?.default;
@@ -48,7 +56,17 @@ function matchesEtag(request, value) {
 }
 
 function notModified(value) {
-  return new Response(null, { status: 304, headers: { etag: value, "cache-control": CACHE_CONTROL } });
+  return new Response(null, { status: 304, headers: publicCorsHeaders({ etag: value, "cache-control": CACHE_CONTROL }) });
+}
+
+export function publicWorksPreflight() {
+  return new Response(null, {
+    status: 204,
+    headers: publicCorsHeaders({
+      "access-control-allow-methods": "GET, OPTIONS",
+      "access-control-allow-headers": "Accept, If-None-Match",
+    }),
+  });
 }
 
 export async function getPublicWorks(request, env) {
@@ -71,7 +89,7 @@ export async function getPublicWorks(request, env) {
   const payload = { works: works.results.map((work) => publicWork(work, byWork.get(work.id) || [])), generatedAt: new Date().toISOString() };
   const serialized = JSON.stringify(payload);
   const value = await etag(serialized);
-  const response = json(payload, { headers: { etag: value, "cache-control": CACHE_CONTROL } });
+  const response = json(payload, { headers: publicCorsHeaders({ etag: value, "cache-control": CACHE_CONTROL }) });
   if (cache) await cache.put(key, response.clone());
   return matchesEtag(request, value) ? notModified(value) : response;
 }
