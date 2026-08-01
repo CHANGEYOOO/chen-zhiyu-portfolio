@@ -118,8 +118,9 @@ export async function saveImageOrder(request, env, workId, actor) {
   const ids = orderIds(parsed.value.ids);
   if (!ids) return problem(422, "INVALID_ORDER", "Unique image ids are required");
   const placeholders = ids.map(() => "?").join(", ");
-  const found = await env.DB.prepare(`SELECT id FROM work_images WHERE work_id = ? AND id IN (${placeholders})`).bind(workId, ...ids).all();
-  if (found.results.length !== ids.length) return problem(422, "INVALID_ORDER", "Every image must belong to the selected work");
+  const existing = await env.DB.prepare("SELECT id FROM work_images WHERE work_id = ?").bind(workId).all();
+  const existingIds = new Set(existing.results.map((image) => image.id));
+  if (existingIds.size !== ids.length || !ids.every((imageId) => existingIds.has(imageId))) return problem(422, "INVALID_ORDER", "Submitted ids must include every image for the selected work");
   const temporaryOrder = env.DB.prepare(`UPDATE work_images SET sort_order = sort_order + (SELECT COALESCE(MAX(sort_order), 0) - COALESCE(MIN(sort_order), 0) + 1 FROM work_images WHERE work_id = ?) WHERE work_id = ? AND id IN (${placeholders})`)
     .bind(workId, workId, ...ids);
   const statements = [temporaryOrder, ...ids.map((imageId, sortOrder) => env.DB.prepare("UPDATE work_images SET sort_order = ? WHERE id = ? AND work_id = ?").bind(sortOrder, imageId, workId))];

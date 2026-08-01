@@ -30,6 +30,7 @@ function imageOrderD1(initialOrders) {
         bind(...params) {
           return {
             async all() {
+              if (params.length === 1) return { results: [...orders.keys()].map((id) => ({ id })) };
               return { results: params.slice(1).map((id) => orders.has(id) ? { id } : null).filter(Boolean) };
             },
             async run() {
@@ -124,6 +125,18 @@ test("renumbers images through a temporary range before swapping their order", a
   assert.equal(response.status, 200);
   assert.equal(db.orders.get("image-b"), 0);
   assert.equal(db.orders.get("image-a"), 1);
+});
+
+test("rejects a partial image order before it can collide with an omitted image", async () => {
+  const db = imageOrderD1({ "image-a": 0, "image-b": 1, "image-c": 2 });
+  const response = await saveImageOrder(new Request("https://api.example.test", {
+    method: "PUT",
+    body: JSON.stringify({ ids: ["image-b", "image-c"] }),
+  }), { DB: db }, "work-1", { email: "admin@example.com" });
+
+  assert.equal(response.status, 422);
+  assert.equal((await response.json()).error.code, "INVALID_ORDER");
+  assert.deepEqual(Object.fromEntries(db.orders), { "image-a": 0, "image-b": 1, "image-c": 2 });
 });
 
 test("returns a validation error when archiving with a null JSON body", async () => {
