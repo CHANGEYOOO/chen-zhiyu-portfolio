@@ -39,55 +39,62 @@ export class UploadManager {
     if (!file.size) throw new Error("视频文件不能为空。");
     const key = this.resumeKey(file, context);
     let session = this.read(key);
-    if (!session || session.totalBytes !== file.size) {
-      const created = await this.api.createMultipartUpload({ section: context.section, workId: context.workId, fileName: file.name, contentType: file.type, totalBytes: file.size });
-      session = { uploadId: created.uploadId, objectKey: created.key, totalBytes: file.size, etags: {} };
-      this.save(key, session);
-    }
     const task = { session, aborted: false, controller: new AbortController() };
     this.active.set(key, task);
-    const totalParts = Math.ceil(file.size / this.partSize);
-    const sizes = Array.from({ length: totalParts }, (_, index) => Math.min(this.partSize, file.size - index * this.partSize));
-    const doneBytes = () => sessionParts(session.etags).reduce((total, part) => total + sizes[part.partNumber - 1], 0);
-    const report = (state) => onProgress({ loaded: doneBytes(), total: file.size, state, uploadId: session.uploadId });
-    report("uploading");
-    const pending = Array.from({ length: totalParts }, (_, index) => index + 1).filter((partNumber) => !session.etags[partNumber]);
-    let next = 0;
+    let report;
+    try {
+      if (!session || session.totalBytes !== file.size) {
+        const created = await this.api.createMultipartUpload({ section: context.section, workId: context.workId, fileName: file.name, contentType: file.type, totalBytes: file.size }, task.controller.signal);
+        if (task.aborted) {
+          try { await this.api.abortMultipartUpload(created.uploadId, created.key); } catch { /* Cancellation is already reflected locally. */ }
+          throw cancelled();
+        }
+        session = { uploadId: created.uploadId, objectKey: created.key, totalBytes: file.size, etags: {} };
+        task.session = session;
+        this.save(key, session);
+      }
+      if (task.aborted) throw cancelled();
+      const totalParts = Math.ceil(file.size / this.partSize);
+      const sizes = Array.from({ length: totalParts }, (_, index) => Math.min(this.partSize, file.size - index * this.partSize));
+      const doneBytes = () => sessionParts(session.etags).reduce((total, part) => total + sizes[part.partNumber - 1], 0);
+      report = (state) => onProgress({ loaded: doneBytes(), total: file.size, state, uploadId: session.uploadId });
+      report("uploading");
+      const pending = Array.from({ length: totalParts }, (_, index) => index + 1).filter((partNumber) => !session.etags[partNumber]);
+      let next = 0;
 
-    const uploadPart = async () => {
-      while (!task.aborted) {
-        const partNumber = pending[next++];
-        if (!partNumber) return;
-        const bytes = file.slice((partNumber - 1) * this.partSize, Math.min(partNumber * this.partSize, file.size));
-        let attempt = 0;
-        while (true) {
-          if (task.aborted) throw cancelled();
-          try {
-            const result = await this.api.uploadPart(session.uploadId, session.objectKey, partNumber, bytes, task.controller.signal);
+      const uploadPart = async () => {
+        while (!task.aborted) {
+          const partNumber = pending[next++];
+          if (!partNumber) return;
+          const bytes = file.slice((partNumber - 1) * this.partSize, Math.min(partNumber * this.partSize, file.size));
+          let attempt = 0;
+          while (true) {
             if (task.aborted) throw cancelled();
-            session.etags[partNumber] = result.etag;
-            this.save(key, session);
-            report("uploading");
-            break;
-          } catch (error) {
-            if (task.aborted) throw cancelled();
-            attempt += 1;
-            if (attempt > this.retries) throw error;
+            try {
+              const result = await this.api.uploadPart(session.uploadId, session.objectKey, partNumber, bytes, task.controller.signal);
+              if (task.aborted) throw cancelled();
+              session.etags[partNumber] = result.etag;
+              this.save(key, session);
+              report("uploading");
+              break;
+            } catch (error) {
+              if (task.aborted) throw cancelled();
+              attempt += 1;
+              if (attempt > this.retries) throw error;
+            }
           }
         }
-      }
-      throw cancelled();
-    };
-
-    try {
+        throw cancelled();
+      };
       await Promise.all(Array.from({ length: Math.min(this.concurrency, pending.length) }, uploadPart));
       if (task.aborted) throw cancelled();
-      const result = await this.api.completeMultipartUpload(session.uploadId, session.objectKey, sessionParts(session.etags));
+      const result = await this.api.completeMultipartUpload(session.uploadId, session.objectKey, sessionParts(session.etags), task.controller.signal);
       this.storage.removeItem(key);
       report("complete");
       return result;
     } catch (error) {
-      report(task.aborted ? "cancelled" : "failed");
+      if (report) report(task.aborted ? "cancelled" : "failed");
+      else onProgress({ loaded: 0, total: file.size, state: task.aborted ? "cancelled" : "failed", uploadId: session?.uploadId });
       throw error;
     } finally {
       this.active.delete(key);
@@ -98,12 +105,12 @@ export class UploadManager {
     const key = this.resumeKey(file, context);
     const task = this.active.get(key);
     const session = task?.session || this.read(key);
-    if (!session) return;
     if (task) {
       task.aborted = true;
       task.controller.abort();
     }
     this.storage.removeItem(key);
+    if (!session) return true;
     try {
       await this.api.abortMultipartUpload(session.uploadId, session.objectKey);
       return true;

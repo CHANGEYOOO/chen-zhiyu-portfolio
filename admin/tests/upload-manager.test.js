@@ -115,3 +115,27 @@ test("aborts an active multipart upload and clears its resume record", async () 
   assert.equal(api.calls.abort.length, 1);
   assert.equal(storage.getItem(manager.resumeKey(file, { section: "tvc", workId: "work-1" })), null);
 });
+
+test("cancels multipart creation before its upload session is returned", async () => {
+  let resolveCreate;
+  let createSignal;
+  const api = uploadApi();
+  api.createMultipartUpload = (value, signal) => {
+    api.calls.create += 1;
+    createSignal = signal;
+    return new Promise((resolve) => { resolveCreate = resolve; });
+  };
+  const manager = new UploadManager(api, { storage: memoryStorage() });
+  const file = video([PART_SIZE]);
+  const promise = manager.uploadVideo(file, { section: "tvc", workId: "work-1" });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  await manager.abort(file, { section: "tvc", workId: "work-1" });
+  resolveCreate({ uploadId: "upload-1", key: "portfolio/tvc/work-1/clip.mp4", partSize: PART_SIZE, maxConcurrentUploads: 3 });
+
+  await assert.rejects(promise, /aborted/i);
+  assert.equal(createSignal.aborted, true);
+  assert.equal(api.calls.parts.length, 0);
+  assert.equal(api.calls.complete.length, 0);
+  assert.equal(api.calls.abort.length, 1);
+});

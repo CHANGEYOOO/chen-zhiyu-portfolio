@@ -43,3 +43,9 @@ The configurable `apiBaseUrl` defaults to same-origin `/api`. If production inst
 - Changing a work to TVC now deletes only its D1 `work_images` rows after the successful optimistic-lock update; original R2 objects remain untouched.
 - `PortfolioApi` enforces `credentials: "same-origin"` after caller options. Multipart cancellation aborts each in-flight part request and absorbs a failed server-side abort request so the queue remains in a handled cancelled state.
 - Added red-green regression coverage for each behavior. Fresh verification passed 10 admin tests and 32 API tests, plus both syntax checks and `git diff --check`.
+
+## Follow-up fix — cancel during multipart creation
+
+- The upload manager now registers its active task and `AbortController` before creating an R2 multipart session. The same signal reaches creation, part, and completion requests.
+- Cancelling before creation resolves aborts the request; if a non-cooperative create still returns a session, the manager immediately issues a best-effort server abort and never starts parts or completion.
+- Added a red-green regression test for this creation-stage race. Fresh verification passed 11 admin tests and 32 API tests, with syntax checks and `git diff --check` clean.

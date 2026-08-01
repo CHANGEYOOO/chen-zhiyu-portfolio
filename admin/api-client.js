@@ -50,8 +50,8 @@ export class PortfolioApi {
     });
   }
 
-  createMultipartUpload(value) {
-    return this.request("/api/admin/uploads/multipart/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(value) });
+  createMultipartUpload(value, signal) {
+    return this.request("/api/admin/uploads/multipart/create", { method: "POST", signal, headers: { "content-type": "application/json" }, body: JSON.stringify(value) });
   }
 
   uploadPart(uploadId, key, partNumber, bytes, signal) {
@@ -63,9 +63,10 @@ export class PortfolioApi {
     });
   }
 
-  completeMultipartUpload(uploadId, key, parts) {
+  completeMultipartUpload(uploadId, key, parts, signal) {
     return this.request(`/api/admin/uploads/multipart/${encodeURIComponent(uploadId)}/complete`, {
       method: "POST",
+      signal,
       headers: { "content-type": "application/json", "x-upload-key": key },
       body: JSON.stringify({ parts }),
     });
