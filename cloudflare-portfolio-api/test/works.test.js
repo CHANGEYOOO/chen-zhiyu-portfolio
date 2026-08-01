@@ -67,6 +67,16 @@ test("reports a version conflict instead of overwriting a newer work", async () 
   assert.equal((await response.json()).error.code, "VERSION_CONFLICT");
 });
 
+test("removes persisted Livestream image rows when the work changes to TVC", async () => {
+  const db = d1();
+  await updateWork(new Request("https://api.example.test", {
+    method: "PUT",
+    body: JSON.stringify({ section: "tvc", brand_name: "Brand", work_title: "Film", work_type: "TVC", status: "draft", version: 1 }),
+  }), { DB: db }, "work-1", { email: "admin@example.com" });
+
+  assert.ok(db.statements.some((statement) => statement.sql.startsWith("DELETE FROM work_images WHERE work_id = ?") && statement.params[0] === "work-1"));
+});
+
 test("rejects a section order containing a work from another section before batching", async () => {
   const db = d1();
   db.prepare = (sql) => ({

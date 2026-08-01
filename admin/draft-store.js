@@ -42,4 +42,12 @@ export class DraftStore {
   remove(workId) {
     this.storage.removeItem(this.key(workId));
   }
+
+  orderImages(images, order) {
+    if (!Array.isArray(order)) return [...images];
+    const byId = new Map(images.map((image) => [image.id, image]));
+    const ordered = order.map((id) => byId.get(id)).filter(Boolean);
+    const seen = new Set(ordered.map((image) => image.id));
+    return [...ordered, ...images.filter((image) => !seen.has(image.id))];
+  }
 }

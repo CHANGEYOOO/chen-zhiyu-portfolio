@@ -75,6 +75,7 @@ export async function updateWork(request, env, workId, actor) {
   const result = await env.DB.prepare("UPDATE works SET section = ?, brand_name = ?, work_title = ?, work_type = ?, status = ?, version = version + 1, updated_at = CURRENT_TIMESTAMP, published_at = CASE WHEN ? = 'published' AND published_at IS NULL THEN CURRENT_TIMESTAMP WHEN ? <> 'published' THEN NULL ELSE published_at END WHERE id = ? AND version = ?")
     .bind(value.section, value.brand_name, value.work_title, value.work_type, value.status, value.status, value.status, workId, expectedVersion).run();
   if (!result.meta?.changes) return problem(409, "VERSION_CONFLICT", "This work has changed; refresh and try again");
+  if (value.section === "tvc") await env.DB.prepare("DELETE FROM work_images WHERE work_id = ?").bind(workId).run();
   await invalidatePublicWorksCache(request);
   await audit(env, workId, actor, "UPDATE_WORK", { ...value, version: expectedVersion });
   return getWork(request, env, workId);

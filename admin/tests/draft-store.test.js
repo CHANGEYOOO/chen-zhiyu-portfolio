@@ -44,3 +44,16 @@ test("removes a saved draft", () => {
 
   assert.equal(drafts.load("work-1"), null);
 });
+
+test("restores saved image order for persisted project images after reload", () => {
+  const localStorage = storage();
+  const drafts = new DraftStore(localStorage);
+  drafts.save("work-1", { image_order: ["image-2", "image-1"] });
+
+  const ordered = drafts.orderImages([
+    { id: "image-1", image_key: "first.webp" },
+    { id: "image-2", image_key: "second.webp" },
+  ], drafts.load("work-1").image_order);
+
+  assert.deepEqual(ordered.map((image) => image.id), ["image-2", "image-1"]);
+});

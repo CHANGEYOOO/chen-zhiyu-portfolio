@@ -91,9 +91,17 @@ test("resumes a stored upload id and ETags without reuploading completed parts",
 
 test("aborts an active multipart upload and clears its resume record", async () => {
   let resolvePart;
+  let partSignal;
   const api = uploadApi({
-    uploadPart() { return new Promise((resolve) => { resolvePart = resolve; }); },
+    uploadPart(uploadId, key, partNumber, bytes, signal) {
+      partSignal = signal;
+      return new Promise((resolve) => { resolvePart = resolve; });
+    },
   });
+  api.abortMultipartUpload = async (uploadId, key) => {
+    api.calls.abort.push({ uploadId, key });
+    throw new Error("network closed");
+  };
   const storage = memoryStorage();
   const manager = new UploadManager(api, { storage });
   const file = video([PART_SIZE]);
@@ -103,6 +111,7 @@ test("aborts an active multipart upload and clears its resume record", async () 
   resolvePart({ partNumber: 1, etag: "etag-1" });
 
   await assert.rejects(promise, /aborted/i);
+  assert.equal(partSignal.aborted, true);
   assert.equal(api.calls.abort.length, 1);
   assert.equal(storage.getItem(manager.resumeKey(file, { section: "tvc", workId: "work-1" })), null);
 });

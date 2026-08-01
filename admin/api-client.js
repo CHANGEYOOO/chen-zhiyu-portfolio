@@ -15,8 +15,8 @@ export class PortfolioApi {
 
   async request(path, options = {}) {
     const response = await this.fetch(`${this.baseUrl}${path}`, {
-      credentials: "same-origin",
       ...options,
+      credentials: "same-origin",
       headers: { accept: "application/json", ...options.headers },
     });
     const payload = response.status === 204 ? null : await response.json().catch(() => null);
@@ -54,9 +54,10 @@ export class PortfolioApi {
     return this.request("/api/admin/uploads/multipart/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(value) });
   }
 
-  uploadPart(uploadId, key, partNumber, bytes) {
+  uploadPart(uploadId, key, partNumber, bytes, signal) {
     return this.request(`/api/admin/uploads/multipart/${encodeURIComponent(uploadId)}/parts/${partNumber}`, {
       method: "PUT",
+      signal,
       headers: { "content-type": "application/octet-stream", "x-upload-key": key },
       body: bytes,
     });

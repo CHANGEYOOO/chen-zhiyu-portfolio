@@ -44,7 +44,7 @@ export class UploadManager {
       session = { uploadId: created.uploadId, objectKey: created.key, totalBytes: file.size, etags: {} };
       this.save(key, session);
     }
-    const task = { session, aborted: false };
+    const task = { session, aborted: false, controller: new AbortController() };
     this.active.set(key, task);
     const totalParts = Math.ceil(file.size / this.partSize);
     const sizes = Array.from({ length: totalParts }, (_, index) => Math.min(this.partSize, file.size - index * this.partSize));
@@ -63,7 +63,7 @@ export class UploadManager {
         while (true) {
           if (task.aborted) throw cancelled();
           try {
-            const result = await this.api.uploadPart(session.uploadId, session.objectKey, partNumber, bytes);
+            const result = await this.api.uploadPart(session.uploadId, session.objectKey, partNumber, bytes, task.controller.signal);
             if (task.aborted) throw cancelled();
             session.etags[partNumber] = result.etag;
             this.save(key, session);
@@ -99,8 +99,16 @@ export class UploadManager {
     const task = this.active.get(key);
     const session = task?.session || this.read(key);
     if (!session) return;
-    if (task) task.aborted = true;
+    if (task) {
+      task.aborted = true;
+      task.controller.abort();
+    }
     this.storage.removeItem(key);
-    await this.api.abortMultipartUpload(session.uploadId, session.objectKey);
+    try {
+      await this.api.abortMultipartUpload(session.uploadId, session.objectKey);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

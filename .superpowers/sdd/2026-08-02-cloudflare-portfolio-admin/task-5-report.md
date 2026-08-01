@@ -36,3 +36,10 @@ The configurable `apiBaseUrl` defaults to same-origin `/api`. If production inst
 - Extracted media-attachment payload construction into `admin/media-attachment.js`.
 - A Livestream now calls the draft-only media attachment endpoint only after at least one newly uploaded image is present. Text-only edits to published Livestream records call the normal work update endpoint and no longer receive `MEDIA_REQUIRES_DRAFT`.
 - Added regression coverage for the text-only published-Livestream case and for preserving existing images when appending a new upload. The fresh final run passed 8 admin tests and 31 API tests, with both syntax checks and `git diff --check` clean.
+
+## Follow-up fix — draft order, section conversion, and cancellation
+
+- Draft restoration now reapplies persisted `image_order` to existing Livestream image metadata after reload, while continuing to exclude local file bytes from storage.
+- Changing a work to TVC now deletes only its D1 `work_images` rows after the successful optimistic-lock update; original R2 objects remain untouched.
+- `PortfolioApi` enforces `credentials: "same-origin"` after caller options. Multipart cancellation aborts each in-flight part request and absorbs a failed server-side abort request so the queue remains in a handled cancelled state.
+- Added red-green regression coverage for each behavior. Fresh verification passed 10 admin tests and 32 API tests, plus both syntax checks and `git diff --check`.

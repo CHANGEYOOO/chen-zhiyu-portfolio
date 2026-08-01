@@ -78,7 +78,7 @@ function draftValue() {
     work_type: form.get("work_type"),
     sort_order: form.get("sort_order"),
     status: form.get("status"),
-    image_order: state.uploadItems.filter((item) => item.kind === "image").map((item) => item.id),
+    image_order: state.existingImages.map((image) => image.id),
   };
 }
 
@@ -90,6 +90,7 @@ function restoreDraft(workId) {
   const saved = drafts.load(workId);
   if (!saved) return;
   ["section", "brand_name", "work_title", "work_type", "sort_order", "status"].forEach((name) => setEditorValue(name, saved[name]));
+  state.existingImages = drafts.orderImages(state.existingImages, saved.image_order);
 }
 
 function resetForm(work = null) {
