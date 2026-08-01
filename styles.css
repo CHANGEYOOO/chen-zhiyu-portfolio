@@ -2112,6 +2112,13 @@ footer p {
 
 .cinematic-v2 .work-poster {
   background: #181817;
+  border: 1px solid rgba(236, 232, 223, 0.22);
+  box-shadow: 0 0 0 4px rgba(236, 232, 223, 0.025);
+}
+
+.cinematic-v2 .work-card:hover .work-poster,
+.cinematic-v2 .work-card:focus-within .work-poster {
+  border-color: rgba(183, 154, 120, 0.68);
 }
 
 .cinematic-v2 .work-play {
