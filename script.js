@@ -291,8 +291,8 @@ async function loadLivestreamProjects() {
     let imageDimensions;
     let usingRemote = false;
 
-    if (window.PORTFOLIO_CONTENT?.publicApiUrl) {
-      const published = await window.PORTFOLIO_CONTENT.loadPublished();
+    if (window.PORTFOLIO_CONTENT?.publicApiUrl && typeof window.PORTFOLIO_CONTENT.loadPublished === "function") {
+      const published = await loadPublishedContent();
       if (published?.livestream?.length) {
         projects = published.livestream;
         imageDimensions = published.imageDimensions || {};
@@ -363,9 +363,9 @@ async function loadLivestreamProjects() {
 loadLivestreamProjects();
 
 async function hydrateTvcWorks() {
-  if (!works || !window.PORTFOLIO_CONTENT?.publicApiUrl) return;
+  if (!works || !window.PORTFOLIO_CONTENT?.publicApiUrl || typeof window.PORTFOLIO_CONTENT.loadPublished !== "function") return;
   try {
-    const published = await window.PORTFOLIO_CONTENT.loadPublished();
+    const published = await loadPublishedContent();
     if (!published?.tvc?.length) return;
     const grid = works.querySelector("#works-grid");
     if (!grid) return;
@@ -402,6 +402,15 @@ async function hydrateTvcWorks() {
     grid.querySelectorAll(".work-card[data-work]").forEach(bindWorkPlayButton);
   } catch (error) {
     console.warn("Published TVC content unavailable; using bundled fallback.", error);
+  }
+}
+
+async function loadPublishedContent() {
+  try {
+    return await window.PORTFOLIO_CONTENT.loadPublished();
+  } catch (error) {
+    console.warn("Published works content unavailable; using bundled fallback.", error);
+    return null;
   }
 }
 
