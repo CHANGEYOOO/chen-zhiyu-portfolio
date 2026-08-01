@@ -1,0 +1,12 @@
+name = "kjoe-portfolio-api"
+main = "src/index.js"
+compatibility_date = "2026-08-02"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kjoe-portfolio-content"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "kjoe-portfolio-media"
