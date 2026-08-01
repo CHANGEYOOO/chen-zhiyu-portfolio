@@ -30,3 +30,9 @@ Independent review found and this task fixed: preservation of pre-existing Lives
 ## Remaining operational concern
 
 The configurable `apiBaseUrl` defaults to same-origin `/api`. If production instead uses `api.kjoe.top`, the deployment must provide an Access-compatible proxy/CORS and cookie strategy; this task intentionally does not choose or deploy that routing configuration.
+
+## Follow-up fix — published Livestream metadata edits
+
+- Extracted media-attachment payload construction into `admin/media-attachment.js`.
+- A Livestream now calls the draft-only media attachment endpoint only after at least one newly uploaded image is present. Text-only edits to published Livestream records call the normal work update endpoint and no longer receive `MEDIA_REQUIRES_DRAFT`.
+- Added regression coverage for the text-only published-Livestream case and for preserving existing images when appending a new upload. The fresh final run passed 8 admin tests and 31 API tests, with both syntax checks and `git diff --check` clean.

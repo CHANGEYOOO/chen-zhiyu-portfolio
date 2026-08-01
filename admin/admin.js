@@ -1,5 +1,6 @@
 import { PortfolioApi, PortfolioApiError } from "./api-client.js";
 import { DraftStore } from "./draft-store.js";
+import { mediaAttachmentPayload } from "./media-attachment.js";
 import { UploadManager } from "./upload-manager.js";
 
 const config = window.PORTFOLIO_ADMIN_CONFIG || {};
@@ -278,22 +279,7 @@ function recordFromForm(status) {
 }
 
 function mediaFields() {
-  const section = setup.form.elements.section.value;
-  if (section === "livestream") {
-    const uploaded = state.uploadItems.filter((item) => item.kind === "image" && item.result).map((item) => ({ image_key: item.result.key, width: item.result.width, height: item.result.height }));
-    if (!uploaded.length) return {};
-    const images = [
-      ...state.existingImages.map((image) => ({ image_key: image.image_key, width: image.width, height: image.height })),
-      ...uploaded,
-    ].map((image, sort_order) => ({ ...image, sort_order }));
-    return images.length ? { work_images: images } : {};
-  }
-  const poster = state.uploadItems.find((item) => item.kind === "poster" && item.result)?.result;
-  const video = state.uploadItems.find((item) => item.kind === "video" && item.result)?.result;
-  return {
-    ...(poster?.desktop?.key ? { poster_key: poster.desktop.key, poster_mobile_key: poster.mobile?.key || null } : {}),
-    ...(video?.key ? { video_key: video.key } : {}),
-  };
+  return mediaAttachmentPayload(setup.form.elements.section.value, state.existingImages, state.uploadItems);
 }
 
 async function saveWork(event) {
