@@ -164,8 +164,11 @@ function validateManifest(manifest, authoritativeProjects, sourceTvc) {
     if (!source) fail(`Livestream ${work.id} is not present in the authoritative JSON`);
     if (work.id !== authoritativeProjects[index]?.id) fail(`Livestream source order mismatch for ${work.id}`);
     if (work.work_title !== source.title || work.work_type !== source.category) fail(`Livestream text mismatch for ${work.id}`);
-    const filenames = work.images.map((image) => image.image_key.split("/").at(-1));
-    if (filenames.join("\n") !== source.images.join("\n")) fail(`Livestream image order mismatch for ${work.id}`);
+    const release = work.cover_key.split("/")[0];
+    for (const [imageIndex, image] of work.images.entries()) {
+      const expectedKey = `${release}/assets/images/livestream/${source.directory}/${source.images[imageIndex]}`;
+      if (image.image_key !== expectedKey) fail(`Livestream image key mismatch for ${work.id} at index ${imageIndex}`);
+    }
   }
 
   return { tvc: tvc.length, livestream: livestream.length, images: totalManifestImages };
