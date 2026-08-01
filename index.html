@@ -8,7 +8,7 @@
       name="description"
       content="陈智宇，影视美术指导与视觉创作者。"
     />
-    <title>JOEKUNI — 陈智宇</title>
+    <title>JOEKUNI - 陈智宇</title>
     <script>
       document.documentElement.classList.add("has-js");
 
@@ -42,8 +42,9 @@
     <script src="assets/data/livestream-data.js?v=0.21" defer></script>
     <script src="script.js?v=0.21" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
-  <body>
+  <body class="cinematic-v2">
     <a class="skip-link" href="#main">跳到主要内容</a>
+    <span class="scroll-sentinel" aria-hidden="true"></span>
 
     <header class="site-header" data-header>
       <a class="brand" href="#top" aria-label="JOEKUNI，返回页面顶部">
@@ -149,7 +150,6 @@
 
           <div class="fixed-copy-stage" data-copy-stage>
             <div class="panel-copy hero-copy" data-copy="0">
-              <p class="chapter-label intro-chapter-label">01 / OPENING</p>
               <h1 id="hero-title" data-reveal-text>陈智宇，影视美术指导与视觉创作者。</h1>
               <p class="identity-en">
                 <span data-reveal-text>CHEN ZHIYU</span>
@@ -170,11 +170,8 @@
         aria-labelledby="work-title"
         data-video-base="https://media.kjoe.top/media-v0.21/works/"
       >
-        <header class="works-header">
-          <div class="chapter-rail">
-            <p class="chapter-label">02 / FILM INDEX</p>
-            <p class="works-kicker">PORTFOLIO / FILM</p>
-          </div>
+        <header class="works-header film-heading">
+          <p class="works-kicker">PORTFOLIO / FILM</p>
           <h2 id="work-title">TVC</h2>
           <p id="works-note" class="sr-only">点击作品封面可进入全屏播放器。视频只会在点击后加载。</p>
         </header>
@@ -526,11 +523,7 @@
         data-projects-src="assets/data/livestream-projects.json?v=0.21"
         data-dimensions-src="assets/data/livestream-image-dimensions.json?v=0.21"
       >
-        <header class="livestream-header">
-          <div class="chapter-rail">
-            <p class="chapter-label">03 / SPATIAL INTERLUDE</p>
-            <p class="livestream-kicker">PORTFOLIO / SPACE</p>
-          </div>
+        <header class="livestream-header film-heading">
           <h2 id="livestream-title">Livestream Set Design</h2>
         </header>
 
@@ -557,12 +550,7 @@
 
       <section class="about" id="about" aria-labelledby="about-title" data-about>
         <div class="about-inner">
-          <div class="chapter-rail">
-            <p class="chapter-label">04 / PROFILE</p>
-            <p class="about-kicker">ABOUT / PROFILE</p>
-          </div>
-
-          <div class="about-intro">
+          <div class="about-intro about-credit-layout">
             <div class="about-identity about-reveal">
               <h2 class="about-name" id="about-title">
                 <span class="about-name-zh">陈智宇</span>
@@ -621,7 +609,7 @@
 
             <ol class="about-timeline">
               <li class="about-experience-item about-reveal">
-                <p class="about-year">2025—2026</p>
+                <p class="about-year">2025-2026</p>
                 <div class="about-position">
                   <h4>荒原视觉工作室</h4>
                   <p>美术指导</p>
@@ -648,7 +636,7 @@
               </li>
 
               <li class="about-experience-item about-reveal">
-                <p class="about-year">2023—2024</p>
+                <p class="about-year">2023-2024</p>
                 <div class="about-position">
                   <h4>LOOKwhat</h4>
                   <p>美术指导</p>
@@ -675,11 +663,8 @@
       </section>
 
       <section class="content-section contact" id="contact" aria-labelledby="contact-title">
-        <div class="contact-content">
-          <div class="chapter-rail">
-            <p class="chapter-label">05 / END CREDITS</p>
-            <p class="eyebrow">CONTACT</p>
-          </div>
+        <div class="contact-content contact-ending">
+          <p class="eyebrow">CONTACT</p>
           <h2 id="contact-title">LET'S CREATE<br />VISUAL WORLDS.</h2>
 
           <address class="contact-body">

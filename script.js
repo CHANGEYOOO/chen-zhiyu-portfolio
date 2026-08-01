@@ -8,6 +8,7 @@ const scenes = [...document.querySelectorAll(".scene-track[data-scene]")];
 const copyStage = document.querySelector("[data-copy-stage]");
 const copies = [...document.querySelectorAll("[data-copy]")];
 const header = document.querySelector("[data-header]");
+const scrollSentinel = document.querySelector(".scroll-sentinel");
 const works = document.querySelector("#work");
 const worksToggle = document.querySelector("[data-works-toggle]");
 const workPlayer = document.querySelector("[data-work-player]");
@@ -19,6 +20,7 @@ const workPlayerRetry = workPlayer?.querySelector("[data-work-player-retry]");
 const contactCopyButton = document.querySelector("[data-contact-copy]");
 const contactCopyLabel = contactCopyButton?.querySelector("[data-contact-copy-label]");
 const contactFeedback = document.querySelector("#contact-feedback");
+const contact = document.querySelector("#contact");
 const about = document.querySelector("[data-about]");
 const livestream = document.querySelector("[data-livestream]");
 const livestreamProjects = livestream?.querySelector("[data-livestream-projects]");
@@ -28,6 +30,7 @@ const precisePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
 
 let introMetrics;
 let animationFrameRequested = false;
+let sequenceInView = true;
 let activeSceneIndex = -1;
 let workPlayerOpen = false;
 let workPlayerTrigger = null;
@@ -373,6 +376,7 @@ function setupSectionMotion(container, itemSelector, readyClass, itemClass) {
 
 setupSectionMotion(about, ".about-reveal", "about-motion-ready");
 setupSectionMotion(works, ".works-header, .work-card", "works-motion-ready", "works-reveal");
+setupSectionMotion(contact, ".contact-ending", "contact-motion-ready", "contact-reveal");
 
 function dataSaverEnabled() {
   return Boolean(connection?.saveData);
@@ -811,8 +815,8 @@ function updateIntroSequence() {
 
 function updateFrame() {
   animationFrameRequested = false;
-  header?.classList.toggle("is-scrolled", window.scrollY > 24);
   updateIntroSequence();
+  if (sequenceInView && !document.hidden) requestFrameUpdate();
 }
 
 function requestFrameUpdate() {
@@ -847,7 +851,22 @@ reducedMotion.addEventListener("change", applyMotionPreference);
 connection?.addEventListener?.("change", applyMotionPreference);
 applyMotionPreference();
 
-window.addEventListener("scroll", requestFrameUpdate, { passive: true });
+if ("IntersectionObserver" in window) {
+  if (scrollSentinel) {
+    const headerObserver = new IntersectionObserver(([entry]) => {
+      header?.classList.toggle("is-scrolled", !entry.isIntersecting);
+    });
+    headerObserver.observe(scrollSentinel);
+  }
+
+  if (sequence) {
+    const sequenceObserver = new IntersectionObserver(([entry]) => {
+      sequenceInView = entry.isIntersecting;
+      requestFrameUpdate();
+    });
+    sequenceObserver.observe(sequence);
+  }
+}
 
 window.addEventListener("resize", () => {
   measureIntroSequence();
