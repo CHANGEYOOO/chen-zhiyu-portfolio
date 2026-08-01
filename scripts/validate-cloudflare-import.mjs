@@ -164,6 +164,7 @@ function validateManifest(manifest, authoritativeProjects, sourceTvc) {
     if (!source) fail(`Livestream ${work.id} is not present in the authoritative JSON`);
     if (work.id !== authoritativeProjects[index]?.id) fail(`Livestream source order mismatch for ${work.id}`);
     if (work.work_title !== source.title || work.work_type !== source.category) fail(`Livestream text mismatch for ${work.id}`);
+    if (work.images.length !== source.images.length) fail(`Livestream image count mismatch for ${work.id}`);
     const release = work.cover_key.split("/")[0];
     for (const [imageIndex, image] of work.images.entries()) {
       const expectedKey = `${release}/assets/images/livestream/${source.directory}/${source.images[imageIndex]}`;
