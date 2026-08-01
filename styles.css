@@ -2083,7 +2083,8 @@ footer p {
   margin: 0;
   color: var(--paper);
   font-family: var(--nav);
-  font-size: clamp(48px, 8.6vw, 132px);
+  max-width: 9em;
+  font-size: clamp(44px, 6.8vw, 104px);
   font-style: normal;
   font-weight: 650;
   letter-spacing: -0.065em;
@@ -2114,6 +2115,15 @@ footer p {
   background: #181817;
   border: 1px solid rgba(236, 232, 223, 0.22);
   box-shadow: 0 0 0 4px rgba(236, 232, 223, 0.025);
+}
+
+.cinematic-v2 .work-poster img {
+  transform: scale(1.16);
+}
+
+.cinematic-v2 .work-card:hover .work-poster img,
+.cinematic-v2 .work-card:focus-within .work-poster img {
+  transform: scale(1.175);
 }
 
 .cinematic-v2 .work-card:hover .work-poster,
@@ -2442,7 +2452,8 @@ footer p {
   }
 
   .cinematic-v2 .film-heading h2 {
-    font-size: clamp(48px, 17vw, 76px);
+    max-width: 10em;
+    font-size: clamp(42px, 12.5vw, 58px);
     line-height: 0.9;
   }
 
