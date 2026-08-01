@@ -45,3 +45,19 @@ node --check admin/admin.js                          passed
 node --check admin/sortable-list.js                  passed
 git diff --check                                     passed
 ```
+
+## Re-review follow-up — pending-save lock
+
+- The explicit image-order save helper now freezes the sortable list before it sends its ID snapshot, and always restores it in `finally`. Pointer, keyboard, and button handlers reject reorders while frozen; rendered drag handles and up/down controls are disabled as well.
+- Added a pending-request regression test that attempts a keyboard reorder before the save promise resolves. It verifies the order is unchanged, the list is frozen during the request, and it becomes clean and interactive only after the request completes.
+
+Final verification after the re-review follow-up:
+
+```text
+node --test admin/tests/*.test.js                    21 passed, 0 failed
+node --test cloudflare-portfolio-api/test/*.test.js  32 passed, 0 failed
+node --check admin/admin.js                          passed
+node --check admin/sortable-list.js                  passed
+node --check admin/image-order.js                    passed
+git diff --check                                     passed
+```

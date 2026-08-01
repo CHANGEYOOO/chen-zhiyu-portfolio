@@ -38,3 +38,19 @@ test("pointer, keyboard, and touch reorders stay local until the explicit save h
   assert.equal(saves, 1);
   assert.equal(list.dirty, false);
 });
+
+test("locks local ordering while an explicit save request is pending", async () => {
+  const list = createList();
+  list.move(2, 0, "pointer");
+  let completeRequest;
+  const saving = saveImageOrder({ saveImageOrder: () => new Promise((resolve) => { completeRequest = resolve; }) }, "work-1", list);
+
+  assert.equal(list.disabled, true);
+  assert.equal(list.move(0, 1, "keyboard"), false);
+  assert.deepEqual(list.items.map((item) => item.id), ["image-c", "image-a", "image-b"]);
+
+  completeRequest();
+  await saving;
+  assert.equal(list.disabled, false);
+  assert.equal(list.dirty, false);
+});

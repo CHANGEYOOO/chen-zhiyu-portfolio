@@ -29,6 +29,7 @@ export class SortableList extends EventTarget {
     this._serverItems = normalizedItems(items);
     this._items = normalizedItems(items);
     this.dragIndex = null;
+    this.disabled = false;
     this.handlePointerDown = this.handlePointerDown.bind(this);
     this.handlePointerMove = this.handlePointerMove.bind(this);
     this.handlePointerEnd = this.handlePointerEnd.bind(this);
@@ -78,6 +79,15 @@ export class SortableList extends EventTarget {
     this._serverItems = normalizedItems(this._items);
   }
 
+  setDisabled(disabled) {
+    this.disabled = Boolean(disabled);
+    if (this.disabled) {
+      this.dragIndex = null;
+      delete this.root?.dataset.sortDragging;
+    }
+    this.render();
+  }
+
   moveUp(index) {
     return this.move(index, index - 1, "button");
   }
@@ -87,6 +97,7 @@ export class SortableList extends EventTarget {
   }
 
   move(from, to, source = "programmatic") {
+    if (this.disabled) return false;
     const ordered = moveItem(this._items, from, to);
     if (sameOrder(ordered, this._items)) return false;
     const movedId = this._items[from].id;
@@ -113,7 +124,11 @@ export class SortableList extends EventTarget {
       row.dataset.sortableIndex = String(entry.index);
       row.classList.add("sortable-list-item");
       const handle = row.querySelector("[data-sort-handle]");
-      if (handle) handle.setAttribute("aria-grabbed", String(this.dragIndex === entry.index));
+      if (handle) {
+        handle.disabled = this.disabled;
+        handle.setAttribute("aria-grabbed", String(this.dragIndex === entry.index));
+      }
+      row.querySelectorAll("[data-sort-move]").forEach((button) => { button.disabled = this.disabled || button.disabled; });
       this.root.append(row);
     }
   }
@@ -137,6 +152,7 @@ export class SortableList extends EventTarget {
   }
 
   handlePointerDown(event) {
+    if (this.disabled) return;
     const handle = this.closest(event.target, "[data-sort-handle]");
     const index = this.indexFor(handle);
     if (!handle || index === null) return;
@@ -148,6 +164,7 @@ export class SortableList extends EventTarget {
   }
 
   handlePointerMove(event) {
+    if (this.disabled) return;
     if (this.dragIndex === null) return;
     const targetIndex = this.indexFor(this.targetAt(event));
     if (targetIndex === null || targetIndex === this.dragIndex) return;
@@ -165,6 +182,7 @@ export class SortableList extends EventTarget {
   }
 
   handleKeyDown(event) {
+    if (this.disabled) return;
     const handle = this.closest(event.target, "[data-sort-handle]");
     const index = this.indexFor(handle);
     if (!handle || index === null) return;
@@ -178,6 +196,7 @@ export class SortableList extends EventTarget {
   }
 
   handleClick(event) {
+    if (this.disabled) return;
     const button = this.closest(event.target, "[data-sort-move]");
     const index = this.indexFor(button);
     if (!button || index === null) return;
