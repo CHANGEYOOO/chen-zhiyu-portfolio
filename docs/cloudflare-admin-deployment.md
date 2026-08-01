@@ -5,6 +5,7 @@ Deployment record: 2026-08-02
 ## Provisioned resources
 
 - Worker: `kjoe-portfolio-api` (configuration validated; not deployed to production in this record).
+- Worker compatibility date: `2026-08-01`.
 - D1: `kjoe-portfolio-content` (`42b6c0fa-8994-4dfc-97eb-c3449e559bb8`), created in APAC.
 - R2 binding: `MEDIA` -> existing `kjoe-portfolio-media` bucket.
 - D1 binding: `DB` -> `kjoe-portfolio-content`.
