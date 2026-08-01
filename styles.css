@@ -15,6 +15,8 @@
   --safe-left: env(safe-area-inset-left, 0px);
   --display: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif;
   --nav: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  --chapter-gap: clamp(22px, 2.3vw, 34px);
+  --chapter-label-size: 10px;
 }
 
 *,
@@ -29,12 +31,23 @@ html {
 }
 
 body {
+  position: relative;
   margin: 0;
   overflow-x: hidden;
   background: var(--ink);
   color: var(--paper);
   font-family: var(--display);
   text-rendering: optimizeLegibility;
+}
+
+body::before {
+  position: fixed;
+  z-index: 18;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
+  content: "";
+  opacity: 0.025;
+  pointer-events: none;
 }
 
 body.work-player-open {
@@ -422,6 +435,16 @@ footer {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: filter 520ms ease, transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .work-card:hover .work-poster img,
+  .work-card:focus-within .work-poster img {
+    filter: contrast(1.025) saturate(0.96);
+    transform: scale(1.018);
+  }
 }
 
 .work-play {
@@ -444,6 +467,10 @@ footer {
 .work-play:hover,
 .work-play:focus-visible {
   background: rgba(10, 9, 8, 0.18);
+}
+
+.work-play:active .work-play-icon {
+  transform: scale(0.96);
 }
 
 .work-play-icon {
@@ -648,7 +675,7 @@ footer {
   letter-spacing: 0.08em;
   cursor: pointer;
   touch-action: manipulation;
-  transition: background-color 180ms ease, color 180ms ease;
+  transition: background-color 220ms ease, color 220ms ease, transform 220ms ease;
 }
 
 .works-more:hover {
@@ -658,6 +685,10 @@ footer {
 
 .works-more:focus-visible {
   outline-color: #171513;
+}
+
+.works-more:active {
+  transform: translateY(1px) scale(0.985);
 }
 
 .livestream {
@@ -690,6 +721,114 @@ footer {
   letter-spacing: 0.14em;
   line-height: 1.4;
   text-transform: uppercase;
+}
+
+/* Cinematic chapter system: one quiet slate language across the long-form page. */
+.chapter-rail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: var(--chapter-gap);
+  padding-bottom: 12px;
+  border-bottom: 1px solid currentColor;
+  color: inherit;
+}
+
+.chapter-label {
+  margin: 0;
+  color: currentColor;
+  font-family: var(--nav);
+  font-size: var(--chapter-label-size);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1.4;
+  opacity: 0.62;
+  text-transform: uppercase;
+}
+
+.intro-chapter-label {
+  margin-bottom: clamp(16px, 1.8vw, 26px);
+  color: #fff;
+  opacity: 0.72;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.52);
+}
+
+.chapter-rail .works-kicker,
+.chapter-rail .livestream-kicker,
+.chapter-rail .about-kicker,
+.chapter-rail .eyebrow {
+  margin: 0;
+  color: currentColor;
+  font-size: var(--chapter-label-size);
+  opacity: 0.48;
+}
+
+.works .chapter-rail,
+.about .chapter-rail {
+  border-color: var(--about-line);
+}
+
+.livestream .chapter-rail,
+.contact .chapter-rail {
+  border-color: var(--line);
+}
+
+.works-header h2,
+.livestream-header h2 {
+  text-wrap: balance;
+}
+
+.about-summary,
+.about-method > p:last-child,
+.about-description,
+.about-secondary-block > p:last-child {
+  text-wrap: pretty;
+}
+
+.livestream {
+  position: relative;
+  padding-top: clamp(116px, 11vw, 168px);
+}
+
+.livestream::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: clamp(180px, 22vw, 360px);
+  background: radial-gradient(ellipse at 50% 0%, rgba(232, 226, 216, 0.09), transparent 68%);
+  content: "";
+  pointer-events: none;
+}
+
+.livestream > * {
+  position: relative;
+}
+
+.livestream-projects {
+  padding-top: clamp(12px, 1.5vw, 24px);
+}
+
+.contact-content h2 {
+  text-wrap: balance;
+}
+
+.contact {
+  position: relative;
+  overflow: clip;
+}
+
+.contact::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 78% 22%, rgba(232, 226, 216, 0.075), transparent 30%),
+    linear-gradient(115deg, transparent 55%, rgba(255, 255, 255, 0.025));
+  content: "";
+  pointer-events: none;
+}
+
+.contact-content {
+  position: relative;
 }
 
 .livestream-project,
@@ -748,6 +887,14 @@ footer {
   height: var(--livestream-image-height);
   object-fit: contain;
   user-select: none;
+  transition: filter 520ms ease, transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .livestream-slide:hover img {
+    filter: contrast(1.025) saturate(0.96);
+    transform: scale(1.008);
+  }
 }
 
 .livestream-slide img.is-missing {
@@ -867,13 +1014,17 @@ footer {
   letter-spacing: 0.08em;
   cursor: pointer;
   touch-action: manipulation;
-  transition: background-color 180ms ease, color 180ms ease;
+  transition: background-color 220ms ease, color 220ms ease, transform 220ms ease;
 }
 
 .livestream-more:hover,
 .livestream-more:focus-visible {
   background: #fff;
   color: var(--ink);
+}
+
+.livestream-more:active {
+  transform: translateY(1px) scale(0.985);
 }
 
 .has-js .livestream:not(.is-expanded) .livestream-project:nth-child(n + 4) {
@@ -1147,8 +1298,10 @@ footer {
 .works-motion-ready .works-reveal,
 .livestream-motion-ready .livestream-reveal {
   opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 380ms ease, transform 380ms ease;
+  transform: translateY(16px);
+  transition:
+    opacity 520ms ease,
+    transform 680ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .about-motion-ready .about-reveal.is-visible,
@@ -1156,6 +1309,20 @@ footer {
 .livestream-motion-ready .livestream-reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+.works-motion-ready .work-card:nth-child(3n + 2),
+.about-motion-ready .about-method:nth-child(3n + 2) {
+  transition-delay: 55ms;
+}
+
+.works-motion-ready .work-card:nth-child(3n),
+.about-motion-ready .about-method:nth-child(3n) {
+  transition-delay: 110ms;
+}
+
+.livestream-motion-ready .livestream-project:nth-child(even) {
+  transition-delay: 70ms;
 }
 
 .contact {
@@ -1364,6 +1531,16 @@ footer p {
     align-items: center;
     gap: 12px;
     padding-top: calc(14px + var(--safe-top));
+  }
+
+  .chapter-rail {
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 10px;
+  }
+
+  .chapter-rail > :last-child {
+    text-align: right;
   }
 
   .brand {
@@ -1748,6 +1925,8 @@ footer p {
 
   .work-play,
   .work-play-icon,
+  .work-poster img,
+  .livestream-slide img,
   .livestream-arrow,
   .contact-detail,
   .about-reveal,
@@ -1761,5 +1940,6 @@ footer p {
   .livestream-motion-ready .livestream-reveal {
     opacity: 1;
     transform: none;
+    transition-delay: 0ms;
   }
 }
