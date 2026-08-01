@@ -1,4 +1,5 @@
 import { json, problem } from "./http.js";
+import { invalidatePublicWorksCache } from "./public.js";
 import { validateWork } from "./validation.js";
 
 function id() {
@@ -58,6 +59,7 @@ export async function createWork(request, env, actor) {
   const value = validated.value;
   await env.DB.prepare("INSERT INTO works (id, section, brand_name, work_title, work_type, status, sort_order, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'published' THEN CURRENT_TIMESTAMP ELSE NULL END)")
     .bind(workId, value.section, value.brand_name, value.work_title, value.work_type, value.status, Number.isSafeInteger(parsed.value.sort_order) ? parsed.value.sort_order : 0, value.status).run();
+  await invalidatePublicWorksCache(request);
   await audit(env, workId, actor, "CREATE_WORK", value);
   return getWork(request, env, workId);
 }
@@ -73,6 +75,7 @@ export async function updateWork(request, env, workId, actor) {
   const result = await env.DB.prepare("UPDATE works SET section = ?, brand_name = ?, work_title = ?, work_type = ?, status = ?, version = version + 1, updated_at = CURRENT_TIMESTAMP, published_at = CASE WHEN ? = 'published' AND published_at IS NULL THEN CURRENT_TIMESTAMP WHEN ? <> 'published' THEN NULL ELSE published_at END WHERE id = ? AND version = ?")
     .bind(value.section, value.brand_name, value.work_title, value.work_type, value.status, value.status, value.status, workId, expectedVersion).run();
   if (!result.meta?.changes) return problem(409, "VERSION_CONFLICT", "This work has changed; refresh and try again");
+  await invalidatePublicWorksCache(request);
   await audit(env, workId, actor, "UPDATE_WORK", { ...value, version: expectedVersion });
   return getWork(request, env, workId);
 }
@@ -85,6 +88,7 @@ export async function archiveWork(request, env, workId, actor) {
   const result = await env.DB.prepare("UPDATE works SET status = 'archived', version = version + 1, updated_at = CURRENT_TIMESTAMP, published_at = NULL WHERE id = ? AND version = ?")
     .bind(workId, expectedVersion).run();
   if (!result.meta?.changes) return problem(409, "VERSION_CONFLICT", "This work has changed; refresh and try again");
+  await invalidatePublicWorksCache(request);
   await audit(env, workId, actor, "ARCHIVE_WORK", { version: expectedVersion });
   return getWork(request, env, workId);
 }
@@ -109,6 +113,7 @@ export async function saveWorkOrder(request, env, actor) {
   const statements = ids.map((workId, sortOrder) => env.DB.prepare("UPDATE works SET sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(sortOrder, workId));
   statements.push(env.DB.prepare("INSERT INTO audit_log (id, actor_email, action, details_json) VALUES (?, ?, ?, ?)").bind(id(), actor.email, "ORDER_WORKS", JSON.stringify({ section, ids })));
   await env.DB.batch(statements);
+  await invalidatePublicWorksCache(request);
   return json({ data: { section, ids } });
 }
 
@@ -126,5 +131,6 @@ export async function saveImageOrder(request, env, workId, actor) {
   const statements = [temporaryOrder, ...ids.map((imageId, sortOrder) => env.DB.prepare("UPDATE work_images SET sort_order = ? WHERE id = ? AND work_id = ?").bind(sortOrder, imageId, workId))];
   statements.push(env.DB.prepare("INSERT INTO audit_log (id, work_id, actor_email, action, details_json) VALUES (?, ?, ?, ?, ?)").bind(id(), workId, actor.email, "ORDER_IMAGES", JSON.stringify({ ids })));
   await env.DB.batch(statements);
+  await invalidatePublicWorksCache(request);
   return json({ data: { work_id: workId, ids } });
 }
