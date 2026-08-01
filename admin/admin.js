@@ -246,6 +246,7 @@ document.querySelectorAll("[data-section-filter]").forEach((button) => button.ad
 document.querySelector("[data-new-work]")?.addEventListener("click", () => { resetForm(); editor.showModal(); });
 sectionInput?.addEventListener("change", syncSectionFields);
 editorForm?.addEventListener("submit", saveWork);
+document.querySelector(".close-button")?.addEventListener("click", () => editor.close());
 editor?.addEventListener("close", () => feedback(editorFeedback));
 
 boot().catch((error) => feedback(globalFeedback, error.message || "后台连接失败。", "error"));
