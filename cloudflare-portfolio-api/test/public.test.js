@@ -7,7 +7,7 @@ function publicDb() {
   const works = [
     { id: "draft", section: "tvc", brand_name: "Hidden", work_title: "Draft", work_type: "TVC", poster_key: "portfolio/tvc/draft.webp", video_key: "portfolio/tvc/draft.mp4", sort_order: 0, status: "draft", version: 4 },
     { id: "tvc-later", section: "tvc", brand_name: "Brand B", work_title: "Second", work_type: "TVC", poster_key: "portfolio/tvc/second poster.webp", video_key: "portfolio/tvc/second.mp4", sort_order: 2, status: "published", version: 8 },
-    { id: "tvc-first", section: "tvc", brand_name: "Brand A", work_title: "First", work_type: "TVC", poster_key: "portfolio/tvc/first.webp", video_key: "portfolio/tvc/first.mp4", sort_order: 1, status: "published", version: 2 },
+    { id: "tvc-first", section: "tvc", brand_name: "Brand A", work_title: "First", work_type: "TVC", poster_key: "portfolio/tvc/first.webp", poster_mobile_key: "portfolio/tvc/first-mobile.webp", video_key: "portfolio/tvc/first.mp4", sort_order: 1, status: "published", version: 2 },
     { id: "archived", section: "livestream", brand_name: null, work_title: "Archived", work_type: "Set", poster_key: null, video_key: null, sort_order: 0, status: "archived", version: 7 },
     { id: "live", section: "livestream", brand_name: null, work_title: "Live", work_type: "Set", poster_key: null, video_key: null, sort_order: 0, status: "published", version: 3 },
   ];
@@ -67,8 +67,9 @@ test("exposes only ordered published works with normalized media URLs", async (t
   const payload = await response.json();
   assert.match(payload.generatedAt, /^\d{4}-\d{2}-\d{2}T/);
   assert.deepEqual(payload.works.map((work) => work.id), ["live", "tvc-first", "tvc-later"]);
-  assert.deepEqual(Object.keys(payload.works[1]).sort(), ["brand_name", "id", "poster_url", "section", "sort_order", "video_url", "work_images", "work_title", "work_type"]);
+  assert.deepEqual(Object.keys(payload.works[1]).sort(), ["brand_name", "id", "poster_mobile_url", "poster_url", "section", "sort_order", "video_url", "work_images", "work_title", "work_type"]);
   assert.equal(payload.works[1].poster_url, "https://media.kjoe.top/portfolio/tvc/first.webp");
+  assert.equal(payload.works[1].poster_mobile_url, "https://media.kjoe.top/portfolio/tvc/first-mobile.webp");
   assert.equal(payload.works[2].poster_url, "https://media.kjoe.top/portfolio/tvc/second%20poster.webp");
   assert.equal(payload.works[0].work_images[0].image_url, "https://media.kjoe.top/portfolio/livestream/live/first.webp");
   assert.deepEqual(payload.works[0].work_images.map((image) => image.id), ["first", "late"]);

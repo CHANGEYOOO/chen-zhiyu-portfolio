@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0a0908" />
     <title>作品管理 / Chen Zhiyu</title>
-    <link rel="stylesheet" href="admin.css?v=0.1" />
+    <link rel="stylesheet" href="admin.css?v=0.22" />
     <script src="config.js" defer></script>
-    <script type="module" src="admin.js?v=0.1"></script>
+    <script type="module" src="admin.js?v=0.22"></script>
   </head>
   <body>
     <main class="admin-shell">
       <header class="admin-topbar">
         <a class="admin-mark" href="../">CHEN ZHIYU <span>/ WORKS ADMIN</span></a>
-        <button class="text-button" type="button" data-signout hidden>退出登录</button>
+        <div class="access-state" data-access-state hidden><span data-access-email></span><a class="text-button" data-signout>退出登录</a></div>
       </header>
 
       <section class="admin-intro" aria-labelledby="admin-title">
@@ -22,21 +22,11 @@
         <p>只管理前台作品下方显示的文字、封面、视频与项目图片。</p>
       </section>
 
-      <section class="setup-card" data-setup hidden>
-        <p class="eyebrow">FIRST-TIME SETUP</p>
-        <h2>等待连接 Supabase</h2>
-        <p>复制 <code>config.example.js</code> 为 <code>config.js</code>，填入项目 URL 和匿名 Key，然后刷新本页。</p>
-      </section>
-
       <section class="login-card" data-login hidden>
-        <p class="eyebrow">ADMIN LOGIN</p>
+        <p class="eyebrow">CLOUDFLARE ACCESS</p>
         <h2>进入作品管理</h2>
-        <form data-login-form>
-          <label>邮箱<input name="email" type="email" autocomplete="username" required /></label>
-          <label>密码<input name="password" type="password" autocomplete="current-password" required /></label>
-          <button class="primary-button" type="submit">登录</button>
-          <p class="form-feedback" data-login-feedback role="status"></p>
-        </form>
+        <p>使用获授权的邮箱接收一次性验证码后，即可进入内容工作台。</p>
+        <a class="primary-button login-link" data-access-login>使用邮箱验证码登录</a>
       </section>
 
       <section class="workspace" data-workspace hidden>
@@ -67,15 +57,18 @@
             <label class="tvc-only">品牌名<input name="brand_name" type="text" /></label>
             <label>作品名称 / 直播名<input name="work_title" type="text" required /></label>
             <label>作品类型 / 类型<input name="work_type" type="text" required /></label>
-            <label class="tvc-only">视频地址<input name="video_url" type="url" placeholder="https://…/作品.mp4" /></label>
-            <label>封面地址<input name="poster_url" type="url" placeholder="上传后自动填入，或粘贴现有地址" required /></label>
-            <label class="file-field">上传封面<input name="poster_file" type="file" accept="image/webp,image/jpeg,image/png" /></label>
+            <label class="file-field tvc-only">上传封面原图<input name="poster_file" type="file" accept="image/webp,image/jpeg,image/png" /></label>
+            <label class="file-field tvc-only">上传影片<input name="video_file" type="file" accept="video/mp4,video/webm" /></label>
           </div>
+          <p class="file-note tvc-only">封面会由原图生成 1600×900 与 960×540 两张 WebP。仅保留本地选择的原文件，不可填写外部地址。</p>
           <div class="livestream-only image-manager" hidden>
             <div class="field-heading"><span>项目图片</span><small>数量不设上限</small></div>
-            <div class="image-list" data-image-list></div>
             <label class="file-field">添加项目图片<input name="image_files" type="file" accept="image/webp,image/jpeg,image/png" multiple /></label>
           </div>
+          <section class="upload-manager" aria-labelledby="upload-title">
+            <div class="field-heading"><span id="upload-title">上传队列</span><small>成功项目会保留，失败项目可重试</small></div>
+            <div class="upload-list" data-upload-list></div>
+          </section>
           <div class="editor-actions">
             <select name="status"><option value="draft">保存为草稿</option><option value="published">发布到前台</option><option value="archived">归档</option></select>
             <button class="primary-button" type="submit">保存</button>

@@ -54,3 +54,17 @@ test("rejects a verified identity outside the administrator allowlist", async (t
   assert.equal(response.status, 403);
   assert.equal((await response.json()).error.code, "FORBIDDEN");
 });
+
+test("returns the verified Access email and logout URL for an admin session", async (t) => {
+  const access = accessEnv("admin@example.com");
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json(access.jwks);
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  const response = await worker.fetch(new Request("https://api.example.test/api/admin/session", {
+    headers: { "Cf-Access-Jwt-Assertion": access.token("admin@example.com") },
+  }), access.env);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).data, { email: "admin@example.com", logoutUrl: "/cdn-cgi/access/logout" });
+});

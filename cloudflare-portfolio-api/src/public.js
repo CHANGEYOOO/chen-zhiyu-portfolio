@@ -25,6 +25,7 @@ function publicWork(work, images) {
     work_title: work.work_title,
     work_type: work.work_type,
     poster_url: mediaUrl(work.poster_key),
+    poster_mobile_url: mediaUrl(work.poster_mobile_key),
     video_url: mediaUrl(work.video_key),
     sort_order: work.sort_order,
     work_images: images.map((image) => ({
@@ -59,7 +60,7 @@ export async function getPublicWorks(request, env) {
     return value && matchesEtag(request, value) ? notModified(value) : cached;
   }
 
-  const works = await env.DB.prepare("SELECT id, section, brand_name, work_title, work_type, poster_key, video_key, sort_order FROM works WHERE status = 'published' ORDER BY section, sort_order, created_at").bind().all();
+  const works = await env.DB.prepare("SELECT id, section, brand_name, work_title, work_type, poster_key, poster_mobile_key, video_key, sort_order FROM works WHERE status = 'published' ORDER BY section, sort_order, created_at").bind().all();
   const images = await env.DB.prepare("SELECT image.id, image.work_id, image.image_key, image.width, image.height, image.sort_order FROM work_images AS image JOIN works AS work ON work.id = image.work_id WHERE work.status = 'published' ORDER BY image.work_id, image.sort_order, image.created_at").bind().all();
   const byWork = new Map();
   for (const image of images.results) {
