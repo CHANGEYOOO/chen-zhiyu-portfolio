@@ -66,3 +66,27 @@ test("normalizes network failures without leaking the fetch diagnostic", async (
     return true;
   });
 });
+
+test("uploads converted WebP poster variants and binds their returned server keys", async () => {
+  const calls = [];
+  const api = createDashboardApi(async (url, options) => {
+    calls.push({ url, options });
+    if (options.method === "POST") return Response.json({ data: { key: `portfolio/tvc/work-1/poster-${url.endsWith("desktop") ? "desktop" : "mobile"}.webp` } });
+    return Response.json({ data: { version: 2 } });
+  });
+  const desktop = new Blob(["desktop"], { type: "image/webp" });
+  const mobile = new Blob(["mobile"], { type: "image/webp" });
+
+  const uploads = await api.uploadPosters("work-1", [
+    { variant: "desktop", blob: desktop },
+    { variant: "mobile", blob: mobile },
+  ]);
+  await api.attachPosterMedia("work-1", { version: 1, poster_key: uploads.desktop.key, poster_mobile_key: uploads.mobile.key });
+
+  assert.equal(calls[0].url, "/admin/dashboard/api/works/work-1/posters/desktop");
+  assert.equal(calls[0].options.headers["content-type"], "image/webp");
+  assert.equal(calls[0].options.body, desktop);
+  assert.equal(calls[1].url, "/admin/dashboard/api/works/work-1/posters/mobile");
+  assert.equal(calls[2].url, "/admin/dashboard/api/works/work-1/media");
+  assert.deepEqual(JSON.parse(calls[2].options.body), { version: 1, poster_key: uploads.desktop.key, poster_mobile_key: uploads.mobile.key });
+});

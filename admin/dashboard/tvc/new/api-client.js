@@ -70,5 +70,19 @@ export function createDashboardApi(fetchImpl = fetch) {
     getTvcOrder() {
       return request("/tvc/order");
     },
+    async uploadPosters(workId, variants) {
+      const uploads = await Promise.all(variants.map(async ({ variant, blob }) => [variant, await request(`/works/${encodeURIComponent(workId)}/posters/${encodeURIComponent(variant)}`, {
+        method: "POST",
+        headers: { "content-type": "image/webp" },
+        body: blob,
+      })]));
+      return Object.fromEntries(uploads);
+    },
+    attachPosterMedia(workId, fields) {
+      if (!Number.isSafeInteger(fields?.version) || fields.version <= 0) {
+        return Promise.reject(new DashboardApiError("version must be a positive integer", 422, "VALIDATION_FAILED"));
+      }
+      return draftRequest(`/works/${encodeURIComponent(workId)}/media`, "PUT", fields);
+    },
   };
 }
