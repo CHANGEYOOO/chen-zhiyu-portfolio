@@ -2,6 +2,7 @@ import { requireDashboardAccess } from "./auth.js";
 import { json, problem } from "./http.js";
 import { getTvcOrder } from "./order.js";
 import { attachDraftMedia, uploadPoster } from "./media.js";
+import { abortVideoMultipart, completeVideoMultipart, createVideoMultipart, getVideoMultipart, uploadVideoPart } from "./uploads.js";
 import { createTvcDraft, getTvcDraft, updateTvcDraft } from "./works.js";
 import { safeWorkId } from "./validation.js";
 
@@ -41,6 +42,28 @@ export default {
     const mediaMatch = pathname.match(/^\/admin\/dashboard\/api\/works\/([^/]+)\/media$/);
     if (mediaMatch && safeWorkId(mediaMatch[1]) && request.method === "PUT") {
       return attachDraftMedia(request, env, mediaMatch[1], access.identity);
+    }
+
+    const multipartCreateMatch = pathname.match(/^\/admin\/dashboard\/api\/works\/([^/]+)\/video\/multipart$/);
+    if (multipartCreateMatch && safeWorkId(multipartCreateMatch[1]) && request.method === "POST") {
+      return createVideoMultipart(request, env, multipartCreateMatch[1], access.identity);
+    }
+
+    const multipartPartMatch = pathname.match(/^\/admin\/dashboard\/api\/works\/([^/]+)\/video\/multipart\/([^/]+)\/parts\/(\d+)$/);
+    if (multipartPartMatch && safeWorkId(multipartPartMatch[1]) && request.method === "PUT") {
+      return uploadVideoPart(request, env, multipartPartMatch[1], decodeURIComponent(multipartPartMatch[2]), multipartPartMatch[3], access.identity);
+    }
+
+    const multipartCompleteMatch = pathname.match(/^\/admin\/dashboard\/api\/works\/([^/]+)\/video\/multipart\/([^/]+)\/complete$/);
+    if (multipartCompleteMatch && safeWorkId(multipartCompleteMatch[1]) && request.method === "POST") {
+      return completeVideoMultipart(request, env, multipartCompleteMatch[1], decodeURIComponent(multipartCompleteMatch[2]), access.identity);
+    }
+
+    const multipartMatch = pathname.match(/^\/admin\/dashboard\/api\/works\/([^/]+)\/video\/multipart\/([^/]+)$/);
+    if (multipartMatch && safeWorkId(multipartMatch[1])) {
+      const uploadId = decodeURIComponent(multipartMatch[2]);
+      if (request.method === "GET") return getVideoMultipart(request, env, multipartMatch[1], uploadId, access.identity);
+      if (request.method === "DELETE") return abortVideoMultipart(request, env, multipartMatch[1], uploadId, access.identity);
     }
 
     return problem(404, "NOT_FOUND", "Route not found");

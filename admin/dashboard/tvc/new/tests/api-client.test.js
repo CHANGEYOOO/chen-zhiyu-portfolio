@@ -90,3 +90,33 @@ test("uploads converted WebP poster variants and binds their returned server key
   assert.equal(calls[2].url, "/admin/dashboard/api/works/work-1/media");
   assert.deepEqual(JSON.parse(calls[2].options.body), { version: 1, poster_key: uploads.desktop.key, poster_mobile_key: uploads.mobile.key });
 });
+
+test("uses work-bound video multipart routes without submitting an object key", async () => {
+  const calls = [];
+  const api = createDashboardApi(async (url, options) => {
+    calls.push({ url, options });
+    if (options.method === "POST" && url.endsWith("/multipart")) return Response.json({ data: { uploadId: "upload-1", key: "portfolio/tvc/work-1/video-server.mp4", totalBytes: 3 } });
+    if (options.method === "GET") return Response.json({ data: { uploadId: "upload-1", key: "portfolio/tvc/work-1/video-server.mp4", totalBytes: 3, contentType: "video/mp4" } });
+    if (options.method === "PUT") return Response.json({ data: { partNumber: 1, etag: "etag-1" } });
+    if (options.method === "DELETE") return new Response(null, { status: 204 });
+    return Response.json({ data: { key: "portfolio/tvc/work-1/video-server.mp4" } });
+  });
+  const file = new Blob([new Uint8Array(3)], { type: "video/mp4" });
+  Object.defineProperty(file, "name", { value: "cut.mp4" });
+
+  await api.createVideoMultipart("work-1", file);
+  await api.getVideoMultipart("work-1", "upload-1");
+  await api.uploadVideoPart("work-1", "upload-1", 1, file);
+  await api.completeVideoMultipart("work-1", "upload-1", [{ partNumber: 1, etag: "etag-1" }]);
+  await api.abortVideoMultipart("work-1", "upload-1");
+
+  assert.equal(calls[0].url, "/admin/dashboard/api/works/work-1/video/multipart");
+  assert.deepEqual(JSON.parse(calls[0].options.body), { fileName: "cut.mp4", contentType: "video/mp4", totalBytes: 3 });
+  assert.equal(calls[1].url, "/admin/dashboard/api/works/work-1/video/multipart/upload-1");
+  assert.equal(calls[2].url, "/admin/dashboard/api/works/work-1/video/multipart/upload-1/parts/1");
+  assert.equal(calls[2].options.headers["x-upload-key"], undefined);
+  assert.equal(calls[3].url, "/admin/dashboard/api/works/work-1/video/multipart/upload-1/complete");
+  assert.deepEqual(JSON.parse(calls[3].options.body), { parts: [{ partNumber: 1, etag: "etag-1" }] });
+  assert.equal(calls[4].url, "/admin/dashboard/api/works/work-1/video/multipart/upload-1");
+  assert.equal(calls[4].options.method, "DELETE");
+});

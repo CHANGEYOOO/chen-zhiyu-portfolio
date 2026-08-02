@@ -84,5 +84,35 @@ export function createDashboardApi(fetchImpl = fetch) {
       }
       return draftRequest(`/works/${encodeURIComponent(workId)}/media`, "PUT", fields);
     },
+    createVideoMultipart(workId, file, signal) {
+      return request(`/works/${encodeURIComponent(workId)}/video/multipart`, {
+        method: "POST",
+        signal,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, contentType: file.type, totalBytes: file.size }),
+      });
+    },
+    getVideoMultipart(workId, uploadId, signal) {
+      return request(`/works/${encodeURIComponent(workId)}/video/multipart/${encodeURIComponent(uploadId)}`, { signal });
+    },
+    uploadVideoPart(workId, uploadId, partNumber, bytes, signal) {
+      return request(`/works/${encodeURIComponent(workId)}/video/multipart/${encodeURIComponent(uploadId)}/parts/${partNumber}`, {
+        method: "PUT",
+        signal,
+        headers: { "content-type": "application/octet-stream" },
+        body: bytes,
+      });
+    },
+    completeVideoMultipart(workId, uploadId, parts, signal) {
+      return request(`/works/${encodeURIComponent(workId)}/video/multipart/${encodeURIComponent(uploadId)}/complete`, {
+        method: "POST",
+        signal,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ parts }),
+      });
+    },
+    abortVideoMultipart(workId, uploadId, signal) {
+      return request(`/works/${encodeURIComponent(workId)}/video/multipart/${encodeURIComponent(uploadId)}`, { method: "DELETE", signal });
+    },
   };
 }
