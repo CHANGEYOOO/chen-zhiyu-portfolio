@@ -4,6 +4,8 @@ export class PortfolioApiError extends Error {
     this.name = "PortfolioApiError";
     this.status = status;
     this.code = code;
+    this.isAuth = status === 401;
+    this.isConflict = status === 409;
   }
 }
 
@@ -29,6 +31,7 @@ export class PortfolioApi {
   getWork(workId) { return this.request(`/api/admin/works/${encodeURIComponent(workId)}`); }
   createWork(value) { return this.request("/api/admin/works", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(value) }); }
   updateWork(workId, value) { return this.request(`/api/admin/works/${encodeURIComponent(workId)}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(value) }); }
+  setWorkStatus(workId, status, version) { return this.updateWork(workId, { status, version }); }
   attachMedia(workId, value) { return this.request(`/api/admin/works/${encodeURIComponent(workId)}/media`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(value) }); }
   archiveWork(workId, version) { return this.request(`/api/admin/works/${encodeURIComponent(workId)}/archive`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ version }) }); }
   saveWorkOrder(section, ids) { return this.request("/api/admin/order/works", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ section, ids }) }); }
