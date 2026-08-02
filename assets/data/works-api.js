@@ -1,38 +1,94 @@
 /* Optional published-content adapter. Leave the URL empty to keep the bundled fallback data. */
+const defaultPublicApiUrl = "https://api.kjoe.top/api/public/works";
+const configuredPublicApiUrl = window.PORTFOLIO_PUBLIC_API_URL;
+
+function text(value) {
+  return typeof value === "string" ? value : "";
+}
+
+function mediaUrl(value) {
+  if (typeof value !== "string") return "";
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname === "media.kjoe.top" ? value : "";
+  } catch {
+    return "";
+  }
+}
+
+function dimensionsFor(image) {
+  return Number.isInteger(image.width) && image.width > 0 && Number.isInteger(image.height) && image.height > 0
+    ? [image.width, image.height]
+    : undefined;
+}
+
+function imageName(url) {
+  return new URL(url).pathname.split("/").pop() || "项目图片";
+}
+
+function normalizeLivestreamImages(images, imageDimensions) {
+  if (!Array.isArray(images)) return [];
+  return images
+    .slice()
+    .sort((first, second) => Number(first?.sort_order) - Number(second?.sort_order))
+    .reduce((normalized, image) => {
+      const url = mediaUrl(image?.image_url);
+      if (!url) return normalized;
+      const dimensions = dimensionsFor(image);
+      if (dimensions) imageDimensions[url] = dimensions;
+      normalized.push({ url, dimensions, name: imageName(url) });
+      return normalized;
+    }, []);
+}
+
 window.PORTFOLIO_CONTENT = {
-  publicApiUrl: "https://ykhvsawnjjunhiffzbjz.supabase.co/rest/v1/works?select=*,work_images(*)&status=eq.published&order=section,sort_order",
-  publicApiHeaders: {
-    apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlraHZzYXduamp1bmhpZmZ6Ymp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1ODYxNTAsImV4cCI6MjEwMTE2MjE1MH0.Rl_Za0lRL-PJksANN8LSLdx5mo7zCRjq_069eq4i3dk",
-    Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlraHZzYXduamp1bmhpZmZ6Ymp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1ODYxNTAsImV4cCI6MjEwMTE2MjE1MH0.Rl_Za0lRL-PJksANN8LSLdx5mo7zCRjq_069eq4i3dk",
-  },
+  publicApiUrl: typeof configuredPublicApiUrl === "string" ? configuredPublicApiUrl : defaultPublicApiUrl,
   async loadPublished() {
     if (!this.publicApiUrl) return null;
-    const response = await fetch(this.publicApiUrl, { headers: { Accept: "application/json", ...this.publicApiHeaders } });
-    if (!response.ok) throw new Error(`Published works request failed: ${response.status}`);
-    const payload = await response.json();
-    const rows = Array.isArray(payload) ? payload : payload.works || [];
-    const dimensions = payload.imageDimensions || {};
-    return {
-      tvc: rows.filter((row) => row.section === "tvc" && row.status === "published").map((row) => ({
-        id: row.id,
-        brand: row.brand_name || "",
-        title: row.work_title || "",
-        category: row.work_type || "",
-        poster: row.poster_url || "",
-        video: row.video_url || "",
-      })),
-      livestream: rows.filter((row) => row.section === "livestream" && row.status === "published").map((row) => ({
-        id: row.id,
-        title: row.work_title || "",
-        category: row.work_type || "",
-        directory: row.id,
-        images: (row.work_images || []).sort((a, b) => a.sort_order - b.sort_order).map((image) => ({
-          url: image.image_url,
-          dimensions: image.width && image.height ? [image.width, image.height] : dimensions[image.image_url],
-          name: image.image_url.split("/").pop() || "项目图片",
-        })),
-      })),
-      imageDimensions: dimensions,
-    };
+    try {
+      const response = await fetch(this.publicApiUrl, { headers: { Accept: "application/json" } });
+      if (!response.ok) return null;
+      const payload = await response.json();
+      if (!payload || !Array.isArray(payload.works)) return null;
+      const imageDimensions = {};
+      const tvc = [];
+      const livestream = [];
+
+      payload.works.forEach((work) => {
+        if (!work || typeof work !== "object") return;
+        if (work.section === "tvc") {
+          const id = text(work.id);
+          const poster = mediaUrl(work.poster_url);
+          if (!id || !poster) return;
+          tvc.push({
+            id,
+            brand: text(work.brand_name),
+            title: text(work.work_title),
+            category: text(work.work_type),
+            poster,
+            video: mediaUrl(work.video_url),
+          });
+          return;
+        }
+        if (work.section === "livestream") {
+          const id = text(work.id);
+          if (!id) return;
+          const images = normalizeLivestreamImages(work.work_images, imageDimensions);
+          if (!images.length) return;
+          livestream.push({
+            id,
+            title: text(work.work_title),
+            category: text(work.work_type),
+            directory: id,
+            images,
+          });
+        }
+      });
+
+      if (!tvc.length && !livestream.length) return null;
+      return { tvc, livestream, imageDimensions };
+    } catch {
+      return null;
+    }
   },
 };

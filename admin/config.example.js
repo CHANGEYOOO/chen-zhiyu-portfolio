@@ -1,5 +1,6 @@
-// 复制为 config.js 后填写。Supabase anon key 可以放在前端，service_role key 绝不能放在这里。
+// Cloudflare Access 负责登录；这里不应包含 Supabase URL、匿名 Key 或其他密钥。
 window.PORTFOLIO_ADMIN_CONFIG = {
-  supabaseUrl: "https://你的项目.supabase.co",
-  supabaseAnonKey: "你的-anon-key",
+  // 若管理员 API 通过同源反向代理提供，保持为空。
+  apiBaseUrl: "",
+  accessLoginUrl: "/admin/",
 };

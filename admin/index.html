@@ -2,60 +2,65 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0908" />
     <title>作品管理 / Chen Zhiyu</title>
-    <link rel="stylesheet" href="admin.css?v=0.1" />
+    <link rel="stylesheet" href="admin.css?v=0.24" />
     <script src="config.js" defer></script>
-    <script type="module" src="admin.js?v=0.1"></script>
+    <script type="module" src="admin.js?v=0.24"></script>
   </head>
   <body>
-    <main class="admin-shell">
-      <header class="admin-topbar">
-        <a class="admin-mark" href="../">CHEN ZHIYU <span>/ WORKS ADMIN</span></a>
-        <button class="text-button" type="button" data-signout hidden>退出登录</button>
-      </header>
+    <header class="admin-topbar">
+      <a class="admin-mark" href="../">CHEN ZHIYU <span>/ WORKS ADMIN</span></a>
+      <div class="access-state" data-access-state hidden><span data-access-email></span><a class="text-button" data-signout>退出登录</a></div>
+    </header>
 
-      <section class="admin-intro" aria-labelledby="admin-title">
-        <p class="eyebrow">PRIVATE CONTENT ROOM</p>
-        <h1 id="admin-title">作品管理</h1>
-        <p>只管理前台作品下方显示的文字、封面、视频与项目图片。</p>
-      </section>
+    <main class="workbench" data-workbench>
+      <section class="work-browser" data-work-browser>
+        <section class="admin-intro" aria-labelledby="admin-title">
+          <p class="eyebrow">PRIVATE CONTENT ROOM</p>
+          <h1 id="admin-title">作品管理</h1>
+          <p>只管理前台作品下方显示的文字、封面、视频与项目图片。</p>
+        </section>
 
-      <section class="setup-card" data-setup hidden>
-        <p class="eyebrow">FIRST-TIME SETUP</p>
-        <h2>等待连接 Supabase</h2>
-        <p>复制 <code>config.example.js</code> 为 <code>config.js</code>，填入项目 URL 和匿名 Key，然后刷新本页。</p>
-      </section>
+        <section class="login-card" data-login hidden>
+          <p class="eyebrow">CLOUDFLARE ACCESS</p>
+          <h2>进入作品管理</h2>
+          <p>使用获授权的邮箱接收一次性验证码后，即可进入内容工作台。</p>
+          <a class="primary-button login-link" data-access-login>使用邮箱验证码登录</a>
+        </section>
 
-      <section class="login-card" data-login hidden>
-        <p class="eyebrow">ADMIN LOGIN</p>
-        <h2>进入作品管理</h2>
-        <form data-login-form>
-          <label>邮箱<input name="email" type="email" autocomplete="username" required /></label>
-          <label>密码<input name="password" type="password" autocomplete="current-password" required /></label>
-          <button class="primary-button" type="submit">登录</button>
-          <p class="form-feedback" data-login-feedback role="status"></p>
-        </form>
-      </section>
-
-      <section class="workspace" data-workspace hidden>
-        <div class="workspace-head">
-          <div class="filters" role="tablist" aria-label="作品筛选">
-            <button class="filter-button is-active" type="button" data-section-filter="all">全部</button>
-            <button class="filter-button" type="button" data-section-filter="tvc">TVC</button>
-            <button class="filter-button" type="button" data-section-filter="livestream">直播间</button>
+        <section class="workspace" data-workspace hidden>
+          <div class="workspace-head">
+            <div class="filters" role="tablist" aria-label="作品筛选">
+              <button class="filter-button is-active" type="button" data-section-filter="all">全部</button>
+              <button class="filter-button" type="button" data-section-filter="tvc">TVC</button>
+              <button class="filter-button" type="button" data-section-filter="livestream">直播间</button>
+            </div>
+            <div class="workbench-tools">
+              <label class="search-field">
+                <span class="sr-only">搜索作品</span>
+                <input type="search" data-search placeholder="搜索品牌、名称或类型" autocomplete="off" />
+              </label>
+              <select class="status-filter" data-status-filter aria-label="按状态筛选">
+                <option value="all">全部状态</option>
+                <option value="draft">草稿</option>
+                <option value="published">已发布</option>
+                <option value="archived">已归档</option>
+              </select>
+              <button class="primary-button" type="button" data-new-tvc>新增 TVC</button>
+              <button class="primary-button" type="button" data-new-livestream>新增直播间</button>
+            </div>
           </div>
-          <button class="primary-button" type="button" data-new-work>新增作品</button>
-        </div>
-        <p class="form-feedback" data-global-feedback role="status"></p>
-        <div class="work-list" data-work-list></div>
+          <p class="form-feedback" data-global-feedback role="status"></p>
+          <div class="work-list" data-work-list></div>
+        </section>
       </section>
 
-      <dialog class="editor" data-editor>
-        <form method="dialog" data-editor-form>
+      <section class="work-editor" data-work-editor data-editor hidden aria-labelledby="editor-title">
+        <form id="work-editor-form" data-editor-form>
           <div class="editor-head">
-            <div><p class="eyebrow">WORK ENTRY</p><h2 data-editor-title>新增作品</h2></div>
+            <div><p class="eyebrow">WORK ENTRY</p><h2 id="editor-title" data-editor-title>新增作品</h2></div>
             <button class="close-button" type="button" aria-label="关闭">×</button>
           </div>
           <input name="id" type="hidden" />
@@ -67,22 +72,83 @@
             <label class="tvc-only">品牌名<input name="brand_name" type="text" /></label>
             <label>作品名称 / 直播名<input name="work_title" type="text" required /></label>
             <label>作品类型 / 类型<input name="work_type" type="text" required /></label>
-            <label class="tvc-only">视频地址<input name="video_url" type="url" placeholder="https://…/作品.mp4" /></label>
-            <label>封面地址<input name="poster_url" type="url" placeholder="上传后自动填入，或粘贴现有地址" required /></label>
-            <label class="file-field">上传封面<input name="poster_file" type="file" accept="image/webp,image/jpeg,image/png" /></label>
+            <label class="file-field tvc-only">上传封面原图<input name="poster_file" type="file" accept="image/webp,image/jpeg,image/png" /></label>
+            <label class="file-field tvc-only">上传影片<input name="video_file" type="file" accept="video/mp4,video/webm" /></label>
           </div>
+          <p class="file-note tvc-only">封面会由原图生成 1600×900 与 960×540 两张 WebP。仅保留本地选择的原文件，不可填写外部地址。</p>
           <div class="livestream-only image-manager" hidden>
             <div class="field-heading"><span>项目图片</span><small>数量不设上限</small></div>
-            <div class="image-list" data-image-list></div>
             <label class="file-field">添加项目图片<input name="image_files" type="file" accept="image/webp,image/jpeg,image/png" multiple /></label>
+            <div class="image-order-actions" data-image-order-actions hidden>
+              <p class="form-feedback" data-image-order-feedback role="status" aria-live="polite"></p>
+              <div>
+                <button type="button" data-cancel-image-order>取消排序</button>
+                <button class="primary-button" type="button" data-save-image-order>保存排序</button>
+              </div>
+            </div>
+            <div class="image-list" data-image-list aria-label="项目图片排序"></div>
+          </div>
+          <div class="upload-summary-bar">
+            <p class="upload-summary-text" data-upload-summary>暂无上传任务</p>
+            <button class="text-button" type="button" data-upload-drawer-toggle>打开上传队列</button>
           </div>
           <div class="editor-actions">
-            <select name="status"><option value="draft">保存为草稿</option><option value="published">发布到前台</option><option value="archived">归档</option></select>
-            <button class="primary-button" type="submit">保存</button>
+            <button class="text-button" type="button" data-editor-preview>预览</button>
+            <button class="text-button" type="button" data-editor-publish>发布</button>
+            <button class="primary-button" type="submit">保存文字</button>
           </div>
           <p class="form-feedback" data-editor-feedback role="status"></p>
         </form>
-      </dialog>
+      </section>
+
+      <aside class="upload-drawer" data-upload-drawer hidden aria-labelledby="drawer-title">
+        <div class="drawer-head">
+          <div><p class="eyebrow">UPLOAD QUEUE</p><h2 id="drawer-title">上传队列 <small data-drawer-count>0</small></h2></div>
+          <button class="drawer-close" type="button" aria-label="关闭上传队列" data-drawer-close>×</button>
+        </div>
+        <div class="drawer-batch-actions">
+          <button class="text-button" type="button" data-drawer-pause-all disabled>暂停全部</button>
+          <button class="text-button" type="button" data-drawer-resume-all disabled>继续全部</button>
+          <button class="text-button" type="button" data-drawer-retry-all disabled>重试全部</button>
+          <button class="text-button" type="button" data-drawer-cancel-all disabled>取消全部</button>
+        </div>
+        <p class="form-feedback" data-drawer-feedback role="status"></p>
+
+        <div class="upload-list"></div>
+      </aside>
     </main>
+
+    <div class="panel-overlay confirm-panel" role="dialog" aria-modal="true" aria-labelledby="confirm-title" hidden>
+      <div class="panel-card">
+        <div class="panel-head">
+          <div><p class="eyebrow">CONFIRM</p><h2 id="confirm-title" data-confirm-title>确认操作</h2></div>
+          <button class="close-button panel-close" type="button" aria-label="关闭" data-confirm-close>×</button>
+        </div>
+        <p class="panel-message" data-confirm-message>确定继续该操作吗？</p>
+        <div class="panel-actions">
+          <button class="text-button" type="button" data-confirm-cancel>取消</button>
+          <button class="primary-button confirm-action" type="button" data-confirm-action>确认</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-overlay preview-panel" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden>
+      <div class="panel-card">
+        <div class="panel-head">
+          <div><p class="eyebrow">PREVIEW</p><h2 id="preview-title" data-preview-heading>作品预览</h2></div>
+          <button class="close-button panel-close" type="button" aria-label="关闭" data-preview-close>×</button>
+        </div>
+        <div class="panel-body" data-preview-body></div>
+      </div>
+    </div>
+
+    <nav class="mobile-actions" data-mobile-actions aria-label="移动端操作" hidden>
+      <button class="mobile-back" type="button" data-editor-back>返回列表</button>
+      <span class="status-chip" data-network-state aria-live="polite">网络状态</span>
+      <span class="mobile-actions-spacer"></span>
+      <button class="text-button" type="button" data-mobile-save>保存</button>
+      <button class="text-button" type="button" data-mobile-preview>预览</button>
+      <button class="primary-button" type="button" data-mobile-publish>发布</button>
+    </nav>
   </body>
 </html>
