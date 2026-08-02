@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0908" />
     <title>作品管理 / Chen Zhiyu</title>
-    <link rel="stylesheet" href="admin.css?v=0.23" />
+    <link rel="stylesheet" href="admin.css?v=0.24" />
     <script src="config.js" defer></script>
-    <script type="module" src="admin.js?v=0.23"></script>
+    <script type="module" src="admin.js?v=0.24"></script>
   </head>
   <body>
     <header class="admin-topbar">
@@ -48,7 +48,7 @@
                 <option value="published">已发布</option>
                 <option value="archived">已归档</option>
               </select>
-              <button class="primary-button" type="button" data-new-work data-new-tvc>新增 TVC</button>
+              <button class="primary-button" type="button" data-new-tvc>新增 TVC</button>
               <button class="primary-button" type="button" data-new-livestream>新增直播间</button>
             </div>
           </div>
@@ -93,8 +93,9 @@
             <div class="upload-list" data-upload-list></div>
           </section>
           <div class="editor-actions">
-            <select name="status" aria-label="保存状态"><option value="draft">保存为草稿</option><option value="published">发布到前台</option><option value="archived">归档</option></select>
-            <button class="primary-button" type="submit">保存</button>
+            <button class="text-button" type="button" data-editor-preview>预览</button>
+            <button class="text-button" type="button" data-editor-publish>发布</button>
+            <button class="primary-button" type="submit">保存文字</button>
           </div>
           <p class="form-feedback" data-editor-feedback role="status"></p>
         </form>
@@ -133,11 +134,13 @@
       </div>
     </div>
 
-    <nav class="mobile-actions" data-mobile-actions aria-label="移动端操作">
+    <nav class="mobile-actions" data-mobile-actions aria-label="移动端操作" hidden>
       <button class="mobile-back" type="button" data-editor-back>返回列表</button>
       <span class="status-chip" data-network-state aria-live="polite">网络状态</span>
       <span class="mobile-actions-spacer"></span>
-      <button class="primary-button" type="submit" form="work-editor-form">保存</button>
+      <button class="text-button" type="button" data-mobile-save>保存</button>
+      <button class="text-button" type="button" data-mobile-preview>预览</button>
+      <button class="primary-button" type="button" data-mobile-publish>发布</button>
     </nav>
   </body>
 </html>

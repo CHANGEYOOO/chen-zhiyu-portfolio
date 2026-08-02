@@ -44,6 +44,7 @@ input, select { width: 100%; color: var(--paper); background: var(--panel-deep);
 .primary-button { background: var(--paper); border-color: var(--paper); color: var(--ink); }
 .primary-button:hover { background: var(--accent); border-color: var(--accent); }
 .login-link { display: inline-block; text-decoration: none; }
+.text-button { display: inline-flex; align-items: center; text-decoration: none; cursor: pointer; }
 .text-button { color: var(--muted); text-decoration: none; }
 
 .workspace { padding-top: 12px; }
@@ -174,6 +175,9 @@ input, select { width: 100%; color: var(--paper); background: var(--panel-deep);
 
   button, select, input[type="text"], input[type="number"], input[type="search"], input[type="file"] { min-height: 44px; }
   .row-actions button, .upload-actions button, .image-actions button, .drag-handle, .filter-button, .close-button, .drawer-close { min-width: 44px; min-height: 44px; }
+
+  a.text-button, a.primary-button, .login-link, .access-state a { min-height: 44px; display: inline-flex; align-items: center; }
+  .editor-actions button { min-width: 44px; min-height: 44px; }
 
   .workspace-head { align-items: flex-start; flex-direction: column; }
   .workbench-tools { flex-direction: column; align-items: stretch; }

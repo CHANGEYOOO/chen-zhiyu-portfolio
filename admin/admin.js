@@ -1,5 +1,11 @@
+// ── Task 7A-2: Workbench wiring ──
 import { PortfolioApi, PortfolioApiError } from "./api-client.js";
 import { DraftStore } from "./draft-store.js";
+import { createClientWork, emptyStateKind, lifecycleConfirmation, networkStatusModel, previewLocalUrlKey, publishChangeSummary } from "./admin-controller.js";
+import { createWorkbenchState, filterWorks, publishReadiness, hasUnsafeExit, transitionView } from "./workbench-state.js";
+import { workRowModel, uploadRowModel, emptyStateModel, renderWorkRows, renderUploadRows, mediaUrl } from "./workbench-view.js";
+import { createConfirmPanel } from "./confirm-panel.js";
+import { createPreviewPanel } from "./preview-panel.js";
 import { saveImageOrder as persistImageOrder } from "./image-order.js";
 import { mediaAttachmentPayload } from "./media-attachment.js";
 import { SortableList } from "./sortable-list.js";
@@ -11,39 +17,57 @@ const drafts = new DraftStore();
 const uploads = new UploadManager(api);
 const MiB = 1024 * 1024;
 
+// ── Workbench state ──
+const wbState = createWorkbenchState();
+let works = [];
+let uploadItems = [];
+let existingImages = [];
+let orderSaving = false;
+let currentFilters = { section: "all", status: "all", query: "" };
+
+// ── DOM ──
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
 const setup = {
-  login: document.querySelector("[data-login]"),
-  loginLink: document.querySelector("[data-access-login]"),
-  workspace: document.querySelector("[data-workspace]"),
-  accessState: document.querySelector("[data-access-state]"),
-  accessEmail: document.querySelector("[data-access-email]"),
-  signout: document.querySelector("[data-signout]"),
-  editor: document.querySelector("[data-editor]"),
-  form: document.querySelector("[data-editor-form]"),
-  workList: document.querySelector("[data-work-list]"),
-  globalFeedback: document.querySelector("[data-global-feedback]"),
-  editorFeedback: document.querySelector("[data-editor-feedback]"),
-  sectionInput: document.querySelector("[data-section-input]"),
-  uploadList: document.querySelector("[data-upload-list]"),
-  imageList: document.querySelector("[data-image-list]"),
-  imageOrderActions: document.querySelector("[data-image-order-actions]"),
-  saveImageOrder: document.querySelector("[data-save-image-order]"),
-  cancelImageOrder: document.querySelector("[data-cancel-image-order]"),
-  imageOrderFeedback: document.querySelector("[data-image-order-feedback]"),
+  login: $("[data-login]"),
+  loginLink: $("[data-access-login]"),
+  workspace: $("[data-workspace]"),
+  accessState: $("[data-access-state]"),
+  accessEmail: $("[data-access-email]"),
+  signout: $("[data-signout]"),
+  workBrowser: $("[data-work-browser]"),
+  workEditor: $("[data-work-editor]"),
+  form: $("[data-editor-form]"),
+  workList: $("[data-work-list]"),
+  globalFeedback: $("[data-global-feedback]"),
+  editorFeedback: $("[data-editor-feedback]"),
+  sectionInput: $("[data-section-input]"),
+  uploadList: $("[data-upload-list]"),
+  imageList: $("[data-image-list]"),
+  imageOrderActions: $("[data-image-order-actions]"),
+  saveImageOrder: $("[data-save-image-order]"),
+  cancelImageOrder: $("[data-cancel-image-order]"),
+  imageOrderFeedback: $("[data-image-order-feedback]"),
+  searchInput: $("[data-search]"),
+  statusFilter: $("[data-status-filter]"),
+  sectionFilters: $$("[data-section-filter]"),
+  newTvc: $("[data-new-tvc]"),
+  newLivestream: $("[data-new-livestream]"),
+  mobileActions: $("[data-mobile-actions]"),
+  editorBack: $("[data-editor-back]"),
+  networkState: $("[data-network-state]"),
+  uploadDrawer: $("[data-upload-drawer]"),
 };
 
-const state = {
-  works: [],
-  filter: "all",
-  editorWorkId: "",
-  newWorkId: "",
-  existingImages: [],
-  uploadItems: [],
-  orderSaving: false,
-};
+// ── Panels ──
+const confirmPanel = createConfirmPanel({ root: $(".confirm-panel") });
+const previewPanel = createPreviewPanel({ root: $(".preview-panel") });
 
+// ── Image sorter ──
 const imageSorter = new SortableList({ root: setup.imageList, renderItem: renderImageItem });
 
+// ── Utilities ──
 function feedback(element, message = "", kind = "") {
   if (!element) return;
   element.textContent = message;
@@ -51,33 +75,8 @@ function feedback(element, message = "", kind = "") {
   else delete element.dataset.kind;
 }
 
-function statusLabel(status) {
-  return { draft: "草稿", published: "已发布", archived: "已归档" }[status] || status;
-}
-
-function sectionLabel(section) {
-  return section === "livestream" ? "直播间" : "TVC";
-}
-
-function mediaUrl(work) {
-  if (work.poster_url) return work.poster_url;
-  if (work.poster_key) return `https://media.kjoe.top/${work.poster_key.split("/").map(encodeURIComponent).join("/")}`;
-  return "";
-}
-
-function imageUrl(image) {
-  if (image.image_url) return image.image_url;
-  if (image.image_key) return `https://media.kjoe.top/${image.image_key.split("/").map(encodeURIComponent).join("/")}`;
-  return "";
-}
-
 function itemId() {
   return crypto.randomUUID();
-}
-
-function formatBytes(bytes) {
-  if (!bytes) return "0 B";
-  return bytes >= MiB ? `${(bytes / MiB).toFixed(bytes >= 10 * MiB ? 0 : 1)} MB` : `${Math.ceil(bytes / 1024)} KB`;
 }
 
 function setEditorValue(name, value) {
@@ -85,7 +84,38 @@ function setEditorValue(name, value) {
   if (input && value !== undefined && value !== null) input.value = value;
 }
 
-function draftValue() {
+// ── View sync ──
+function syncView() {
+  const isEditor = wbState.view === "editor";
+  setup.workEditor.hidden = !isEditor;
+  syncMobileActions();
+  syncNetworkChip();
+  if (!isEditor) renderWorkspace();
+}
+
+function syncMobileActions() {
+  if (setup.mobileActions) {
+    setup.mobileActions.hidden = wbState.view !== "editor";
+  }
+}
+
+function syncNetworkChip() {
+  if (!setup.networkState) return;
+  const model = networkStatusModel(navigator.onLine);
+  setup.networkState.textContent = model.label;
+  setup.networkState.dataset.state = model.state;
+}
+
+function syncSectionFields() {
+  const isLive = setup.sectionInput.value === "livestream";
+  $$(".tvc-only").forEach((el) => { el.hidden = isLive; });
+  $$(".livestream-only").forEach((el) => { el.hidden = !isLive; });
+  if (isLive) setEditorValue("brand_name", "");
+  saveDraft();
+}
+
+// ── Draft helpers ──
+function formDraft() {
   const form = new FormData(setup.form);
   return {
     section: form.get("section"),
@@ -94,28 +124,167 @@ function draftValue() {
     work_type: form.get("work_type"),
     sort_order: form.get("sort_order"),
     status: form.get("status"),
-    image_order: state.existingImages.map((image) => image.id),
+    image_order: existingImages.map((img) => img.id),
   };
 }
 
 function saveDraft() {
-  if (state.editorWorkId) drafts.save(state.editorWorkId, draftValue());
+  if (wbState.editorWorkId) {
+    drafts.save(wbState.editorWorkId, formDraft());
+    wbState.dirty = true;
+  }
 }
 
 function restoreDraft(workId) {
   const saved = drafts.load(workId);
   if (!saved) return;
   ["section", "brand_name", "work_title", "work_type", "sort_order", "status"].forEach((name) => setEditorValue(name, saved[name]));
-  state.existingImages = drafts.orderImages(state.existingImages, saved.image_order);
+  existingImages = drafts.orderImages(existingImages, saved.image_order);
 }
 
+// ── Workspace rendering ──
+function currentFilterState() {
+  return {
+    section: currentFilters.section,
+    status: currentFilters.status,
+    query: String(setup.searchInput?.value ?? "").trim().toLowerCase(),
+  };
+}
+
+function renderWorkspace() {
+  if (!setup.workList) return;
+  const filters = currentFilterState();
+  currentFilters = { ...filters };
+  const filtered = filterWorks(works, filters);
+  const total = works.length;
+  const filteredCount = filtered.length;
+
+  const activeWork = works.find((w) => w.id === wbState.editorWorkId);
+  const imageCount = (activeWork?.section === "livestream" && Array.isArray(activeWork?.work_images))
+    ? activeWork.work_images.length
+    : 0;
+
+  const kind = emptyStateKind({ total, filteredCount, statusFilter: filters.status, section: activeWork?.section, imageCount });
+
+  if (kind) {
+    const model = emptyStateModel(kind);
+    setup.workList.replaceChildren();
+    const el = document.createElement("div");
+    el.className = "empty-state";
+    const h3 = document.createElement("h3");
+    h3.textContent = model.title;
+    const p = document.createElement("p");
+    p.textContent = model.hint;
+    el.append(h3, p);
+    setup.workList.append(el);
+    feedback(setup.globalFeedback, total === 0 ? "0 个作品" : `${total} 个作品，当前筛选无结果`);
+    return;
+  }
+
+  const models = filtered.map((work) => workRowModel(work));
+  renderWorkRows(setup.workList, models, {
+    onEdit: (id) => openEditor(id),
+    onCopy: (id) => handleCopy(id),
+    onPublish: (id) => handlePublish(id),
+    onUnpublish: (id) => handleUnpublish(id),
+    onArchive: (id) => handleArchive(id),
+    onRestore: (id) => handleRestore(id),
+  });
+  feedback(setup.globalFeedback, `${filteredCount} 个作品`);
+}
+
+// ── Editor open/close ──
+function openEditor(workId) {
+  const work = workId ? works.find((w) => w.id === workId) : null;
+  const isNew = !work;
+  const editWork = work || createClientWork("tvc", itemId());
+
+  wbState.dirty = false;
+  wbState.activeUploadCount = uploadItems.filter((item) =>
+    ["ready", "processing", "uploading", "waiting-network"].includes(item.state)
+  ).length;
+
+  transitionView(wbState, { type: "OPEN_EDITOR", workId: editWork.id });
+  resetForm(editWork, isNew);
+  syncView();
+}
+
+function closeEditor() {
+  if (hasUnsafeExit(wbState)) {
+    confirmPanel.open({
+      title: "放弃修改？",
+      message: "当前编辑有未保存的修改或正在进行的上传，返回列表将保留本地草稿。",
+      confirmLabel: "确认返回",
+      tone: "danger",
+      onConfirm: () => {
+        saveDraft();
+        wbState.dirty = false;
+        transitionView(wbState, { type: "CLOSE_EDITOR" });
+        syncView();
+      },
+    });
+  } else {
+    transitionView(wbState, { type: "CLOSE_EDITOR" });
+    syncView();
+  }
+}
+
+function resetForm(work, isNew = false) {
+  setup.form.reset();
+  wbState.dirty = isNew;
+  existingImages = [...(work?.work_images || [])].sort((left, right) => (left.sort_order ?? 0) - (right.sort_order ?? 0));
+  imageSorter.replaceServerItems(existingImages);
+
+  setEditorValue("id", work.id);
+  setEditorValue("section", work.section || "tvc");
+  setEditorValue("brand_name", work.brand_name || "");
+  setEditorValue("work_title", work.work_title || "");
+  setEditorValue("work_type", work.work_type || "");
+  setEditorValue("sort_order", work.sort_order ?? works.length);
+  setEditorValue("status", work.status || "draft");
+
+  if (!isNew) restoreDraft(work.id);
+
+  imageSorter.setItems(existingImages);
+  $("[data-editor-title]").textContent = isNew ? "新增作品" : "编辑作品";
+
+  // Keep uploads for existing work, reset for new
+  if (isNew) {
+    uploadItems = [];
+  }
+
+  feedback(setup.editorFeedback);
+  feedback(setup.imageOrderFeedback);
+  syncSectionFields();
+  syncImageOrderUi();
+  renderUploadItems();
+}
+
+function recordFromForm(status) {
+  const form = new FormData(setup.form);
+  const section = String(form.get("section"));
+  const value = {
+    section,
+    brand_name: section === "tvc" ? String(form.get("brand_name") || "").trim() : null,
+    work_title: String(form.get("work_title") || "").trim(),
+    work_type: String(form.get("work_type") || "").trim(),
+    status,
+    sort_order: Number(form.get("sort_order") || 0),
+  };
+  if (!value.work_title || !value.work_type || (section === "tvc" && !value.brand_name)) {
+    throw new Error("请填写所有必填展示文字。");
+  }
+  return value;
+}
+
+// ── Image item rendering ──
 function renderImageItem({ item, index, isFirst }) {
   const row = document.createElement("article");
   row.className = "image-item";
   row.dataset.imageId = item.id;
 
   const image = document.createElement("img");
-  image.src = imageUrl(item);
+  image.src = mediaUrl(item);
   image.alt = `项目图片 ${index + 1}`;
   image.loading = "lazy";
 
@@ -128,7 +297,7 @@ function renderImageItem({ item, index, isFirst }) {
 
   const actions = document.createElement("div");
   actions.className = "image-actions";
-  [["up", "上移", index === 0], ["down", "下移", index === state.existingImages.length - 1]].forEach(([direction, label, disabled]) => {
+  [["up", "上移", index === 0], ["down", "下移", index === existingImages.length - 1]].forEach(([direction, label, disabled]) => {
     const button = document.createElement("button");
     button.type = "button";
     button.dataset.sortMove = direction;
@@ -153,128 +322,316 @@ function syncImageOrderUi() {
   const dirty = imageSorter.dirty;
   setup.imageList.dataset.orderDirty = String(dirty);
   setup.imageOrderActions.hidden = !hasImages;
-  setup.saveImageOrder.disabled = !dirty || state.orderSaving;
-  setup.cancelImageOrder.disabled = !dirty || state.orderSaving;
+  setup.saveImageOrder.disabled = !dirty || orderSaving;
+  setup.cancelImageOrder.disabled = !dirty || orderSaving;
 }
 
 async function saveImageOrder() {
-  if (!state.editorWorkId || !imageSorter.dirty || state.orderSaving) return;
-  state.orderSaving = true;
+  if (!wbState.editorWorkId || !imageSorter.dirty || orderSaving) return;
+  orderSaving = true;
   syncImageOrderUi();
   feedback(setup.imageOrderFeedback, "正在保存排序…");
   try {
-    state.existingImages = await persistImageOrder(api, state.editorWorkId, imageSorter);
-    const work = state.works.find((item) => item.id === state.editorWorkId);
-    if (work) work.work_images = state.existingImages;
+    existingImages = await persistImageOrder(api, wbState.editorWorkId, imageSorter);
+    const work = works.find((item) => item.id === wbState.editorWorkId);
+    if (work) work.work_images = existingImages;
     saveDraft();
     feedback(setup.imageOrderFeedback, "排序已保存。", "success");
   } catch (error) {
     feedback(setup.imageOrderFeedback, error.message || "排序保存失败，请稍后重试。", "error");
   } finally {
-    state.orderSaving = false;
+    orderSaving = false;
     syncImageOrderUi();
   }
 }
 
 function cancelImageOrder() {
   if (!imageSorter.cancel()) return;
-  state.existingImages = imageSorter.items;
+  existingImages = imageSorter.items;
   saveDraft();
   feedback(setup.imageOrderFeedback, "已恢复到服务器排序。");
 }
 
-function resetForm(work = null) {
-  setup.form.reset();
-  state.newWorkId = work ? "" : state.newWorkId || crypto.randomUUID();
-  state.editorWorkId = work?.id || state.newWorkId;
-  state.existingImages = [...(work?.work_images || [])].sort((left, right) => left.sort_order - right.sort_order);
-  imageSorter.replaceServerItems(state.existingImages);
-  state.uploadItems = [];
-  setEditorValue("id", state.editorWorkId);
-  setEditorValue("section", work?.section || "tvc");
-  setEditorValue("brand_name", work?.brand_name || "");
-  setEditorValue("work_title", work?.work_title || "");
-  setEditorValue("work_type", work?.work_type || "");
-  setEditorValue("sort_order", work?.sort_order ?? state.works.length);
-  setEditorValue("status", work?.status || "draft");
-  restoreDraft(state.editorWorkId);
-  imageSorter.setItems(state.existingImages);
-  document.querySelector("[data-editor-title]").textContent = work ? "编辑作品" : "新增作品";
-  feedback(setup.editorFeedback);
-  feedback(setup.imageOrderFeedback);
-  syncSectionFields();
-  syncImageOrderUi();
-  renderUploadItems();
+// ── Save (text only, no upload trigger) ──
+async function handleSave(event) {
+  if (event) event.preventDefault();
+  feedback(setup.editorFeedback, "正在保存…");
+  try {
+    const desired = recordFromForm(String(setup.form.elements.status.value));
+    let current = works.find((work) => work.id === wbState.editorWorkId);
+    let saved;
+    if (!current) {
+      saved = await api.createWork({ ...desired, status: "draft" });
+      works.push(saved);
+      wbState.editorWorkId = saved.id;
+      setEditorValue("id", saved.id);
+    } else {
+      saved = await api.updateWork(current.id, { ...desired, version: current.version });
+    }
+    // Refresh work from server
+    const refreshed = await api.getWork(saved.id);
+    works = works.map((w) => w.id === refreshed.id ? refreshed : w);
+    wbState.dirty = false;
+    feedback(setup.editorFeedback, "文字已保存。", "success");
+    renderWorkspace();
+  } catch (error) {
+    feedback(setup.editorFeedback, error.message || "保存失败，请稍后重试。", "error");
+  }
 }
 
-function syncSectionFields() {
-  const isLive = setup.sectionInput.value === "livestream";
-  document.querySelectorAll(".tvc-only").forEach((element) => { element.hidden = isLive; });
-  document.querySelectorAll(".livestream-only").forEach((element) => { element.hidden = !isLive; });
-  if (isLive) setEditorValue("brand_name", "");
-  saveDraft();
+// ── Preview ──
+async function handlePreview() {
+  const current = works.find((w) => w.id === wbState.editorWorkId);
+  if (!current) {
+    feedback(setup.editorFeedback, "请先保存再预览。", "error");
+    return;
+  }
+
+  // Build localUrls from completed uploadItems using previewLocalUrlKey scoped keys
+  const localUrls = {};
+  for (const item of uploadItems) {
+    if (item.state !== "complete" || !item.result || !item.file) continue;
+    if (item.kind === "poster") {
+      localUrls[previewLocalUrlKey({ workId: current.id, kind: "poster" })] = URL.createObjectURL(item.file);
+    }
+    if (item.kind === "video") {
+      localUrls[previewLocalUrlKey({ workId: current.id, kind: "video" })] = URL.createObjectURL(item.file);
+    }
+    if (item.kind === "image" && item.result) {
+      const idx = uploadItems.indexOf(item);
+      const key = previewLocalUrlKey({ workId: current.id, kind: "image", image: item.result, index: idx });
+      localUrls[key] = URL.createObjectURL(item.file);
+    }
+  }
+
+  confirmPanel.close();
+  previewPanel.open({
+    work: current,
+    images: existingImages,
+    localUrls,
+  });
 }
 
+// ── Publish ──
+async function handlePublish(workId) {
+  const id = workId || wbState.editorWorkId;
+  const work = works.find((w) => w.id === id);
+  if (!work) return;
+
+  const readiness = publishReadiness(work, uploadItems);
+  if (!readiness.ready) {
+    const target = workId ? setup.globalFeedback : setup.editorFeedback;
+    feedback(target, `发布前需要补充：${readiness.missing.join("、")}`, "error");
+    return;
+  }
+
+  let changeSummary;
+  try {
+    const serverWork = await api.getWork(work.id);
+    changeSummary = publishChangeSummary(serverWork, work);
+  } catch {
+    changeSummary = ["首次发布"];
+  }
+
+  const confirmation = lifecycleConfirmation("publish", work);
+  confirmation.message = `${confirmation.message}\n\n变更摘要：\n${changeSummary.map((line) => `• ${line}`).join("\n")}`;
+
+  previewPanel.close();
+  confirmPanel.close();
+  confirmPanel.open({
+    ...confirmation,
+    onConfirm: async () => {
+      try {
+        const updated = await api.setWorkStatus(work, "published");
+        works = works.map((w) => w.id === updated.id ? updated : w);
+        wbState.dirty = false;
+        renderWorkspace();
+        const target = workId ? setup.globalFeedback : setup.editorFeedback;
+        feedback(target, `《${updated.work_title || "作品"}》已发布。`, "success");
+      } catch (error) {
+        const target = workId ? setup.globalFeedback : setup.editorFeedback;
+        feedback(target, error.message || "发布失败。", "error");
+      }
+    },
+  });
+}
+
+// ── Copy ──
+async function handleCopy(workId) {
+  const work = works.find((w) => w.id === workId);
+  if (!work) return;
+  confirmPanel.close();
+  confirmPanel.open({
+    title: "复制作品？",
+    message: `将创建《${work.work_title || "未命名作品"}》的副本作为新草稿。`,
+    confirmLabel: "确认复制",
+    tone: "",
+    onConfirm: async () => {
+      try {
+        const copy = await api.createWork({
+          section: work.section,
+          brand_name: work.brand_name,
+          work_title: `${work.work_title || "未命名作品"} 副本`,
+          work_type: work.work_type,
+          status: "draft",
+          sort_order: works.length,
+        });
+        works.push(copy);
+        renderWorkspace();
+        feedback(setup.globalFeedback, `已创建《${copy.work_title}》副本。`, "success");
+      } catch (error) {
+        feedback(setup.globalFeedback, error.message || "复制失败。", "error");
+      }
+    },
+  });
+}
+
+// ── Unpublish ──
+async function handleUnpublish(workId) {
+  const work = works.find((w) => w.id === workId);
+  if (!work) return;
+  const confirmation = lifecycleConfirmation("unpublish", work);
+  confirmPanel.close();
+  confirmPanel.open({
+    ...confirmation,
+    onConfirm: async () => {
+      try {
+        const updated = await api.setWorkStatus(work, "draft");
+        works = works.map((w) => w.id === updated.id ? updated : w);
+        renderWorkspace();
+        feedback(setup.globalFeedback, `《${updated.work_title || "作品"}》已取消发布。`, "success");
+      } catch (error) {
+        feedback(setup.globalFeedback, error.message || "取消发布失败。", "error");
+      }
+    },
+  });
+}
+
+// ── Archive ──
+async function handleArchive(workId) {
+  const work = works.find((w) => w.id === workId);
+  if (!work) return;
+  const confirmation = lifecycleConfirmation("archive", work);
+  confirmPanel.close();
+  confirmPanel.open({
+    ...confirmation,
+    onConfirm: async () => {
+      try {
+        const updated = await api.setWorkStatus(work, "archived");
+        works = works.map((w) => w.id === updated.id ? updated : w);
+        renderWorkspace();
+        feedback(setup.globalFeedback, `《${updated.work_title || "作品"}》已归档。`, "success");
+      } catch (error) {
+        feedback(setup.globalFeedback, error.message || "归档失败。", "error");
+      }
+    },
+  });
+}
+
+// ── Restore ──
+async function handleRestore(workId) {
+  const work = works.find((w) => w.id === workId);
+  if (!work) return;
+  const confirmation = lifecycleConfirmation("restore", work);
+  confirmPanel.close();
+  confirmPanel.open({
+    ...confirmation,
+    onConfirm: async () => {
+      try {
+        const updated = await api.setWorkStatus(work, "draft");
+        works = works.map((w) => w.id === updated.id ? updated : w);
+        renderWorkspace();
+        feedback(setup.globalFeedback, `《${updated.work_title || "作品"}》已恢复为草稿。`, "success");
+      } catch (error) {
+        feedback(setup.globalFeedback, error.message || "恢复失败。", "error");
+      }
+    },
+  });
+}
+
+// ── New work (TVC / Livestream) ──
+function handleNewWork(section) {
+  const id = itemId();
+  const work = createClientWork(section, id);
+  // Push client work locally; server creation happens on first save
+  works.push(work);
+  uploadItems = [];
+  wbState.dirty = true;
+  transitionView(wbState, { type: "OPEN_EDITOR", workId: id });
+  resetForm(work, true);
+  syncView();
+}
+
+// ── Upload helpers (preserved for 7B reuse; not bound to save button) ──
 function addFiles(files, kind, replace = false) {
-  if (replace) state.uploadItems = state.uploadItems.filter((item) => item.kind !== kind);
-  for (const file of files) state.uploadItems.push({ id: itemId(), file, kind, state: "ready", loaded: 0, total: file.size, result: null, error: "" });
+  if (replace) uploadItems = uploadItems.filter((item) => item.kind !== kind);
+  for (const file of files) {
+    uploadItems.push({
+      id: itemId(),
+      file,
+      kind,
+      state: "ready",
+      loaded: 0,
+      total: file.size,
+      result: null,
+      error: "",
+      workId: wbState.editorWorkId,
+    });
+  }
+  wbState.activeUploadCount = uploadItems.filter((item) =>
+    ["ready", "processing", "uploading", "waiting-network"].includes(item.state)
+  ).length;
   renderUploadItems();
-}
-
-function itemMessage(item) {
-  if (item.state === "complete") return `已完成 · ${formatBytes(item.total)}`;
-  if (item.state === "uploading") return `正在上传 · ${formatBytes(item.loaded)} / ${formatBytes(item.total)}`;
-  if (item.state === "failed") return item.error || "上传失败，可重试。";
-  if (item.state === "cancelled") return "已取消";
-  return `等待保存 · ${formatBytes(item.total)}`;
 }
 
 function renderUploadItems() {
-  setup.uploadList.replaceChildren();
-  if (!state.uploadItems.length) {
-    const empty = document.createElement("p");
-    empty.className = "upload-empty";
-    empty.textContent = "选择本地文件后，会在这里显示上传进度。";
-    setup.uploadList.append(empty);
+  if (!setup.uploadList) return;
+  if (!uploadItems.length) {
+    const model = emptyStateModel("uploads");
+    setup.uploadList.replaceChildren();
+    const el = document.createElement("div");
+    el.className = "empty-state";
+    const h3 = document.createElement("h3");
+    h3.textContent = model.title;
+    const p = document.createElement("p");
+    p.textContent = model.hint;
+    el.append(h3, p);
+    setup.uploadList.append(el);
     return;
   }
-  for (const item of state.uploadItems) {
-    const row = document.createElement("div");
-    row.className = "upload-item";
-    row.dataset.state = item.state;
-    const copy = document.createElement("div");
-    const name = document.createElement("strong");
-    name.textContent = item.file.name;
-    const status = document.createElement("small");
-    status.textContent = itemMessage(item);
-    copy.append(name, status);
-    const actions = document.createElement("div");
-    actions.className = "upload-actions";
-    if (item.state === "failed" || item.state === "cancelled") {
-      const retry = document.createElement("button");
-      retry.type = "button";
-      retry.textContent = "重试";
-      retry.addEventListener("click", () => {
-        uploadSelectedItem(item).catch((error) => feedback(setup.editorFeedback, error.message || "上传失败，请稍后重试。", "error"));
-      });
-      actions.append(retry);
-    }
-    if (item.state === "ready" || item.state === "uploading") {
-      const cancel = document.createElement("button");
-      cancel.type = "button";
-      cancel.textContent = "取消";
-      cancel.addEventListener("click", () => cancelItem(item));
-      actions.append(cancel);
-    }
-    row.append(copy, actions);
-    setup.uploadList.append(row);
-  }
+  const models = uploadItems.map((item) => uploadRowModel(item));
+  renderUploadRows(setup.uploadList, models, {
+    onRetry: (id) => {
+      const item = uploadItems.find((i) => i.id === id);
+      if (item) uploadSelectedItem(item).catch((error) => feedback(setup.editorFeedback, error.message || "上传失败。", "error"));
+    },
+    onPause: (id) => {
+      const item = uploadItems.find((i) => i.id === id);
+      if (item) { uploads.pause(item.file, selectedContext()); renderUploadItems(); }
+    },
+    onResume: (id) => {
+      const item = uploadItems.find((i) => i.id === id);
+      if (item) {
+        uploads.resume(item.file, selectedContext(), (progress) => {
+          item.loaded = progress.loaded;
+          item.total = progress.total;
+          if (progress.state) item.state = progress.state;
+          renderUploadItems();
+        }).catch((error) => feedback(setup.editorFeedback, error.message || "上传失败。", "error"));
+      }
+    },
+    onCancel: (id) => {
+      const item = uploadItems.find((i) => i.id === id);
+      if (item) cancelItem(item);
+    },
+  });
 }
 
 function selectedContext() {
-  return { section: setup.form.elements.section.value, workId: state.editorWorkId };
+  return { section: setup.form.elements.section.value, workId: wbState.editorWorkId };
 }
 
+// ── Poster variant generation (preserved for 7B) ──
 function validateImage(file) {
   if (!["image/webp", "image/jpeg", "image/png"].includes(file.type)) throw new Error("图片必须是 WebP、JPG 或 PNG 文件。");
   if (file.size > 20 * MiB) throw new Error("图片不能超过 20 MB。");
@@ -311,8 +668,14 @@ async function posterVariants(file) {
   }
 }
 
+// ── Media attachment payload (preserved for 7B) ──
+function mediaFields() {
+  return mediaAttachmentPayload(setup.form.elements.section.value, imageSorter.serverItems, uploadItems);
+}
+
+// ── Upload selected item (preserved for 7B) ──
 async function uploadSelectedItem(item) {
-  if (!state.editorWorkId) return;
+  if (!wbState.editorWorkId) return;
   item.state = "uploading";
   item.error = "";
   item.loaded = 0;
@@ -347,6 +710,9 @@ async function uploadSelectedItem(item) {
     throw error;
   } finally {
     delete item.controller;
+    wbState.activeUploadCount = uploadItems.filter((i) =>
+      ["ready", "processing", "uploading", "waiting-network"].includes(i.state)
+    ).length;
     renderUploadItems();
   }
 }
@@ -355,111 +721,24 @@ async function cancelItem(item) {
   item.controller?.abort();
   if (item.kind === "video") await uploads.abort(item.file, selectedContext());
   item.state = "cancelled";
+  wbState.activeUploadCount = uploadItems.filter((i) =>
+    ["ready", "processing", "uploading", "waiting-network"].includes(i.state)
+  ).length;
   renderUploadItems();
 }
 
-function recordFromForm(status) {
-  const form = new FormData(setup.form);
-  const section = String(form.get("section"));
-  const value = {
-    section,
-    brand_name: section === "tvc" ? String(form.get("brand_name") || "").trim() : null,
-    work_title: String(form.get("work_title") || "").trim(),
-    work_type: String(form.get("work_type") || "").trim(),
-    status,
-    sort_order: Number(form.get("sort_order") || 0),
-  };
-  if (!value.work_title || !value.work_type || (section === "tvc" && !value.brand_name)) throw new Error("请填写所有必填展示文字。");
-  return value;
-}
-
-function mediaFields() {
-  return mediaAttachmentPayload(setup.form.elements.section.value, imageSorter.serverItems, state.uploadItems);
-}
-
-async function saveWork(event) {
-  event.preventDefault();
-  feedback(setup.editorFeedback, "正在保存…");
-  try {
-    const desired = recordFromForm(String(setup.form.elements.status.value));
-    let current = state.works.find((work) => work.id === state.editorWorkId);
-    const acceptsItem = (item) => desired.section === "tvc" ? item.kind !== "image" : item.kind === "image";
-    const hasMediaItems = state.uploadItems.some(acceptsItem);
-    if (!current) {
-      current = await api.createWork({ ...desired, status: "draft" });
-      state.works.push(current);
-      state.editorWorkId = current.id;
-      state.newWorkId = current.id;
-      setEditorValue("id", current.id);
-    }
-    if (hasMediaItems && current.status !== "draft") {
-      current = await api.updateWork(current.id, { ...desired, status: "draft", version: current.version });
-    }
-    const candidates = state.uploadItems.filter((item) => acceptsItem(item) && item.state !== "complete" && item.state !== "cancelled");
-    const results = await Promise.allSettled(candidates.map(uploadSelectedItem));
-    const failed = results.filter((result) => result.status === "rejected");
-    const attachment = mediaFields();
-    if (Object.keys(attachment).length) current = await api.attachMedia(current.id, { ...attachment, version: current.version });
-    const saved = await api.updateWork(current.id, { ...desired, version: current.version });
-    drafts.remove(current.id);
-    if (failed.length) {
-      feedback(setup.editorFeedback, `${failed.length} 个文件上传失败；已完成的文件已保留，可单独重试。`, "error");
-      state.works = state.works.map((work) => work.id === saved.id ? saved : work);
-      return;
-    }
-    setup.editor.close();
-    state.newWorkId = "";
-    await loadWorks();
-    feedback(setup.globalFeedback, "已保存", "success");
-  } catch (error) {
-    feedback(setup.editorFeedback, error.message || "保存失败，请稍后重试。", "error");
-  }
-}
-
+// ── Load works ──
 async function loadWorks() {
   feedback(setup.globalFeedback, "正在载入作品…");
-  state.works = await api.listWorks();
-  renderWorks();
-  feedback(setup.globalFeedback, `${state.works.length} 个作品`);
-}
-
-function renderWorks() {
-  setup.workList.replaceChildren();
-  const filtered = state.works.filter((work) => state.filter === "all" || work.section === state.filter);
-  if (!filtered.length) {
-    const empty = document.createElement("p");
-    empty.className = "form-feedback";
-    empty.textContent = "还没有符合条件的作品。";
-    setup.workList.append(empty);
-    return;
-  }
-  for (const work of filtered) {
-    const row = document.createElement("article");
-    row.className = "work-row";
-    const image = document.createElement("img");
-    image.src = mediaUrl(work);
-    image.alt = "";
-    image.loading = "lazy";
-    const info = document.createElement("div");
-    const title = document.createElement("h3");
-    title.textContent = work.work_title;
-    const meta = document.createElement("p");
-    meta.textContent = `${sectionLabel(work.section)} · ${work.work_type} · ${statusLabel(work.status)}`;
-    info.append(title, meta);
-    const actions = document.createElement("div");
-    actions.className = "row-actions";
-    [["编辑", () => { resetForm(work); setup.editor.showModal(); }], ["复制", () => { resetForm({ ...work, id: "", status: "draft", work_title: `${work.work_title} 副本` }); setup.editor.showModal(); }]].forEach(([label, handler]) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = label;
-      button.addEventListener("click", handler);
-      actions.append(button);
-    });
-    row.append(image, info, actions);
-    setup.workList.append(row);
+  try {
+    works = await api.listWorks();
+    renderWorkspace();
+  } catch (error) {
+    feedback(setup.globalFeedback, error.message || "后台连接失败。", "error");
   }
 }
 
+// ── Boot ──
 async function boot() {
   setup.loginLink.href = config.accessLoginUrl || window.location.href;
   try {
@@ -478,26 +757,102 @@ async function boot() {
   }
 }
 
-document.querySelectorAll("[data-section-filter]").forEach((button) => button.addEventListener("click", () => {
-  state.filter = button.dataset.sectionFilter;
-  document.querySelectorAll("[data-section-filter]").forEach((item) => item.classList.toggle("is-active", item === button));
-  renderWorks();
+// ── Event wiring ──
+
+// Section filters
+setup.sectionFilters.forEach((button) => button.addEventListener("click", () => {
+  currentFilters.section = button.dataset.sectionFilter;
+  setup.sectionFilters.forEach((item) => item.classList.toggle("is-active", item === button));
+  renderWorkspace();
 }));
-document.querySelector("[data-new-work]")?.addEventListener("click", () => { resetForm(); setup.editor.showModal(); });
+
+// Status filter
+setup.statusFilter?.addEventListener("change", () => {
+  currentFilters.status = setup.statusFilter.value;
+  renderWorkspace();
+});
+
+// Search with debounce
+let searchTimer;
+setup.searchInput?.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentFilters.query = setup.searchInput.value.trim().toLowerCase();
+    renderWorkspace();
+  }, 250);
+});
+
+// New TVC / Livestream
+setup.newTvc?.addEventListener("click", () => handleNewWork("tvc"));
+setup.newLivestream?.addEventListener("click", () => handleNewWork("livestream"));
+
+// Section change
 setup.sectionInput?.addEventListener("change", syncSectionFields);
+
+// Form input → draft
 setup.form?.addEventListener("input", saveDraft);
-setup.form?.addEventListener("submit", saveWork);
+
+// Form submit → text-only save
+setup.form?.addEventListener("submit", handleSave);
+
+// File inputs (preserved for 7B)
 setup.form?.elements.poster_file?.addEventListener("change", (event) => addFiles([...event.target.files].filter(Boolean), "poster", true));
 setup.form?.elements.video_file?.addEventListener("change", (event) => addFiles([...event.target.files].filter(Boolean), "video", true));
 setup.form?.elements.image_files?.addEventListener("change", (event) => addFiles([...event.target.files].filter(Boolean), "image"));
-document.querySelector(".close-button")?.addEventListener("click", () => setup.editor.close());
-setup.editor?.addEventListener("close", () => { saveDraft(); feedback(setup.editorFeedback); });
+
+// Editor close button → closeEditor (with unsafe exit check)
+$(".work-editor .close-button")?.addEventListener("click", closeEditor);
+
+// Mobile back button
+setup.editorBack?.addEventListener("click", closeEditor);
+
+// Editor preview button
+$("[data-editor-preview]")?.addEventListener("click", handlePreview);
+
+// Editor publish button
+$("[data-editor-publish]")?.addEventListener("click", () => handlePublish());
+
+// Mobile save button
+$("[data-mobile-save]")?.addEventListener("click", () => setup.form.requestSubmit());
+
+// Mobile preview button
+$("[data-mobile-preview]")?.addEventListener("click", handlePreview);
+
+// Mobile publish button
+$("[data-mobile-publish]")?.addEventListener("click", () => handlePublish());
+
+// Image sorter events
 imageSorter.addEventListener("change", (event) => {
-  state.existingImages = event.detail.items;
+  existingImages = event.detail.items;
   syncImageOrderUi();
   saveDraft();
 });
 setup.saveImageOrder?.addEventListener("click", saveImageOrder);
 setup.cancelImageOrder?.addEventListener("click", cancelImageOrder);
+
+// Network events
+window.addEventListener("online", () => {
+  uploads.setOnline(true);
+  syncNetworkChip();
+});
+window.addEventListener("offline", () => {
+  uploads.setOnline(false);
+  syncNetworkChip();
+});
+
+// Before unload guard
+window.addEventListener("beforeunload", (event) => {
+  if (hasUnsafeExit(wbState)) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+
+// Initial network state
+uploads.setOnline(navigator.onLine);
+syncNetworkChip();
+
+// Keep upload drawer hidden (7B placeholder)
+if (setup.uploadDrawer) setup.uploadDrawer.hidden = true;
 
 boot();
