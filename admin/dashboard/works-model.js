@@ -1,4 +1,3 @@
-const EXPECTED_COUNTS = Object.freeze({ total: 38, tvc: 30, livestream: 8 });
 const SECTIONS = new Set(["tvc", "livestream"]);
 
 export class WorksDataError extends Error {
@@ -48,7 +47,5 @@ export function buildWorksModel(payload) {
     livestream: works.filter((item) => item.section === "livestream").sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id)),
   };
   const counts = { total: works.length, tvc: groups.tvc.length, livestream: groups.livestream.length };
-  const matches = counts.total === EXPECTED_COUNTS.total && counts.tvc === EXPECTED_COUNTS.tvc && counts.livestream === EXPECTED_COUNTS.livestream;
-  const warning = matches ? "" : `作品数量异常：预期 38 个（TVC 30、Livestream 8），实际 ${counts.total} 个（TVC ${counts.tvc}、Livestream ${counts.livestream}）。`;
-  return { groups, counts, isEmpty: works.length === 0, warning };
+  return { groups, counts, isEmpty: works.length === 0, warning: "" };
 }

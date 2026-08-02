@@ -1,9 +1,43 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { DashboardRequestError, PUBLIC_WORKS_URL, createDashboardController, requestPublishedWorks } from "../dashboard.js";
+import {
+  DashboardRequestError,
+  PUBLIC_WORKS_URL,
+  createDashboardController,
+  createDomView,
+  highlightedWorkId,
+  renderDashboardActions,
+  requestPublishedWorks,
+} from "../dashboard.js";
 
 const root = new URL("../", import.meta.url);
+
+function fakeElement(tagName = "div") {
+  return {
+    tagName,
+    children: [],
+    dataset: {},
+    classList: {
+      values: new Set(),
+      add(...names) { names.forEach((name) => this.values.add(name)); },
+      contains(name) { return this.values.has(name); },
+    },
+    appendChild(child) { this.children.push(child); return child; },
+    replaceChildren(...children) { this.children = children; },
+    focus() { this.focused = true; },
+    scrollIntoView() { this.scrolledIntoView = true; },
+  };
+}
+
+function createFakeDocument() {
+  const elements = new Map();
+  return {
+    createElement: (tagName) => fakeElement(tagName),
+    querySelector: (selector) => elements.get(selector) || null,
+    register(selector, element) { elements.set(selector, element); return element; },
+  };
+}
 
 test("dashboard is an isolated read-only module", async () => {
   const html = await readFile(new URL("index.html", root), "utf8");
@@ -21,6 +55,49 @@ test("dashboard is an isolated read-only module", async () => {
 test("dashboard styles do not import runtime CDN assets", async () => {
   const css = await readFile(new URL("dashboard.css", root), "utf8");
   assert.doesNotMatch(css, /@import|https?:\/\//);
+});
+
+test("dashboard renders the isolated TVC creation action", () => {
+  const fakeDocument = createFakeDocument();
+  const root = fakeDocument.createElement("nav");
+  renderDashboardActions(fakeDocument, root);
+  const link = root.children[0];
+  assert.equal(link.href, "/admin/dashboard/tvc/new/");
+  assert.equal(link.textContent, "新增 TVC");
+});
+
+test("highlight query accepts only safe work ids", () => {
+  assert.equal(highlightedWorkId("?highlight=work-123"), "work-123");
+  assert.equal(highlightedWorkId("?highlight=%3Cscript%3E"), "");
+});
+
+test("matching work row is highlighted, focused, and scrolled into view", () => {
+  const fakeDocument = createFakeDocument();
+  const tvcBody = fakeDocument.register('[data-works-body="tvc"]', fakeElement("tbody"));
+  fakeDocument.register('[data-works-body="livestream"]', fakeElement("tbody"));
+  fakeDocument.register('[data-dashboard-status]', fakeElement());
+  fakeDocument.register('[data-dashboard-warning]', fakeElement());
+  fakeDocument.register('[data-retry]', fakeElement());
+  fakeDocument.register('[data-count="total"]', fakeElement());
+  fakeDocument.register('[data-count="tvc"]', fakeElement());
+  fakeDocument.register('[data-count="livestream"]', fakeElement());
+
+  createDomView(fakeDocument, { highlightId: "work-123" }).showModel({
+    groups: {
+      tvc: [{ id: "work-123", brand_name: "Brand", work_title: "Title", work_type: "TVC" }],
+      livestream: [],
+    },
+    counts: { total: 1, tvc: 1, livestream: 0 },
+    isEmpty: false,
+    warning: "",
+  });
+
+  const item = tvcBody.children[0];
+  assert.equal(item.dataset.workId, "work-123");
+  assert.equal(item.classList.contains("is-highlighted"), true);
+  assert.equal(item.tabIndex, -1);
+  assert.equal(item.focused, true);
+  assert.equal(item.scrolledIntoView, true);
 });
 
 test("vendored Bootstrap CSS exists", async () => {

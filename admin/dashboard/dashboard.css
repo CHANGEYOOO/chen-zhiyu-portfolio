@@ -17,6 +17,15 @@ td:first-child {
   border-color: var(--bs-danger-border-subtle);
 }
 
+.is-highlighted > td {
+  background: var(--bs-warning-bg-subtle);
+}
+
+.is-highlighted:focus {
+  outline: 3px solid var(--bs-warning-border-subtle);
+  outline-offset: -3px;
+}
+
 @media (max-width: 575.98px) {
   table,
   thead,

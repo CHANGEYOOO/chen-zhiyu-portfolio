@@ -6,8 +6,8 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>JOEKUNI ADMIN - Dashboard</title>
     <link rel="stylesheet" href="./vendor/bootstrap.min.css" />
-    <link rel="stylesheet" href="./dashboard.css?v=0.23" />
-    <script type="module" src="./dashboard.js?v=0.23"></script>
+    <link rel="stylesheet" href="./dashboard.css?v=0.24" />
+    <script type="module" src="./dashboard.js?v=0.24"></script>
   </head>
   <body class="bg-body-tertiary">
     <header class="navbar bg-dark" data-bs-theme="dark">
@@ -26,7 +26,10 @@
           <p class="text-secondary text-uppercase small mb-1">Dashboard</p>
           <h1 class="h2 mb-0">作品列表</h1>
         </div>
-        <p class="text-secondary mb-0 align-self-md-end">数据与线上前台同步</p>
+        <div class="d-flex flex-column flex-md-row align-items-md-end gap-2">
+          <p class="text-secondary mb-0">数据与线上前台同步</p>
+          <nav data-dashboard-actions aria-label="作品操作"></nav>
+        </div>
       </div>
 
       <section class="row g-3 mb-4" aria-label="作品概览">
