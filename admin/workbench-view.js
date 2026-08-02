@@ -30,7 +30,7 @@ function formatBytes(bytes) {
   return bytes >= MiB ? `${(bytes / MiB).toFixed(bytes >= 10 * MiB ? 0 : 1)} MB` : `${Math.ceil(bytes / 1024)} KB`;
 }
 
-function mediaUrl({ image_url, image_key }) {
+export function mediaUrl({ image_url, image_key } = {}) {
   if (image_url) return image_url;
   if (image_key) return `${MEDIA_BASE}${image_key.split("/").map(encodeURIComponent).join("/")}`;
   return "";
@@ -167,7 +167,7 @@ export function renderWorkRows(root, models, handlers = {}) {
     actions.className = "row-actions";
     if (handlers.onEdit) actions.append(actionButton("编辑", () => handlers.onEdit(model.id)));
     if (handlers.onCopy) actions.append(actionButton("复制", () => handlers.onCopy(model.id)));
-    if (model.status !== "published" && handlers.onPublish) actions.append(actionButton("发布", () => handlers.onPublish(model.id)));
+    if (model.status === "draft" && handlers.onPublish) actions.append(actionButton("发布", () => handlers.onPublish(model.id)));
     if (model.status === "published" && handlers.onUnpublish) actions.append(actionButton("取消发布", () => handlers.onUnpublish(model.id)));
     if (model.status !== "archived" && handlers.onArchive) actions.append(actionButton("归档", () => handlers.onArchive(model.id)));
     if (model.status === "archived" && handlers.onRestore) actions.append(actionButton("恢复", () => handlers.onRestore(model.id)));

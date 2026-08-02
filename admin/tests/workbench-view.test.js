@@ -7,6 +7,7 @@ import {
   statusSummaryModel,
   renderWorkRows,
   renderUploadRows,
+  mediaUrl,
 } from "../workbench-view.js";
 
 const MiB = 1024 * 1024;
@@ -319,11 +320,41 @@ test("renderWorkRows wires only applicable handlers and passes the work id", () 
     ], handlers);
     assert.deepEqual(rowActions(root.children[0]), ["编辑", "复制", "发布", "归档"]);
     assert.deepEqual(rowActions(root.children[1]), ["编辑", "复制", "取消发布", "归档"]);
-    assert.deepEqual(rowActions(root.children[2]), ["编辑", "复制", "发布", "恢复"]);
+    assert.deepEqual(rowActions(root.children[2]), ["编辑", "复制", "恢复"]);
     const published = root.children[1];
     published.children.find((node) => node.className === "row-actions").children[2].click();
     assert.deepEqual(called, [["unpublish", "w2"]]);
   });
+});
+
+test("renderWorkRows never renders publish for archived works, even with onPublish provided", () => {
+  withFakeDom(() => {
+    const root = new FakeElement("ul");
+    const handlers = { onPublish: () => {}, onRestore: () => {} };
+    renderWorkRows(root, [workRowModel({ id: "w3", section: "tvc", status: "archived" })], handlers);
+    assert.deepEqual(rowActions(root.children[0]), ["恢复"]);
+    assert.equal(rowActions(root.children[0]).includes("发布"), false);
+  });
+});
+
+test("renderWorkRows shows publish for drafts and unpublish for published works only", () => {
+  withFakeDom(() => {
+    const root = new FakeElement("ul");
+    const handlers = { onPublish: () => {}, onUnpublish: () => {} };
+    renderWorkRows(root, [
+      workRowModel({ id: "w1", section: "tvc", status: "draft" }),
+      workRowModel({ id: "w2", section: "tvc", status: "published" }),
+    ], handlers);
+    assert.deepEqual(rowActions(root.children[0]), ["发布"]);
+    assert.deepEqual(rowActions(root.children[1]), ["取消发布"]);
+  });
+});
+
+test("mediaUrl composes media.kjoe.top keys and prefers image_url", () => {
+  assert.equal(mediaUrl({ image_url: "https://media.kjoe.top/live/a.webp" }), "https://media.kjoe.top/live/a.webp");
+  assert.equal(mediaUrl({ image_key: "portfolio/tvc/a b.webp" }), `${MEDIA_BASE}portfolio/tvc/a%20b.webp`);
+  assert.equal(mediaUrl({}), "");
+  assert.equal(mediaUrl(undefined), "");
 });
 
 test("renderWorkRows skips action buttons for missing handlers", () => {
