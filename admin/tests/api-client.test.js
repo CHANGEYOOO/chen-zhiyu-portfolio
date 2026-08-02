@@ -64,7 +64,7 @@ test("non-auth, non-conflict errors leave both lifecycle flags false", async () 
   });
 });
 
-test("setWorkStatus reuses updateWork and sends only status and version", async () => {
+test("setWorkStatus sends the complete Worker update shape without mutating the work", async () => {
   let url;
   let options;
   const api = new PortfolioApi({
@@ -74,13 +74,66 @@ test("setWorkStatus reuses updateWork and sends only status and version", async 
       return Response.json({ data: { id: "w1", status: "published", version: 3 } });
     },
   });
+  const work = {
+    id: "w1",
+    section: "tvc",
+    brand_name: "Nike",
+    work_title: "Air Max",
+    work_type: "TVC",
+    status: "draft",
+    version: 2,
+    sort_order: 4,
+    poster_key: "portfolio/tvc/w1/poster.jpg",
+    work_images: [{ id: "image-1" }],
+    updated_at: "2026-08-02T10:00:00Z",
+  };
+  const original = structuredClone(work);
 
-  const result = await api.setWorkStatus("w1", "published", 3);
+  const result = await api.setWorkStatus(work, "published", 3);
 
   assert.equal(url, "/api/admin/works/w1");
   assert.equal(options.method, "PUT");
-  assert.deepEqual(JSON.parse(options.body), { status: "published", version: 3 });
-  assert.deepEqual(Object.keys(JSON.parse(options.body)).sort(), ["status", "version"]);
+  assert.deepEqual(JSON.parse(options.body), {
+    section: "tvc",
+    brand_name: "Nike",
+    work_title: "Air Max",
+    work_type: "TVC",
+    status: "published",
+    version: 3,
+  });
+  assert.deepEqual(work, original);
   assert.equal(result.id, "w1");
   assert.equal(result.status, "published");
+});
+
+test("setWorkStatus defaults version to the current work version", async () => {
+  let body;
+  const api = new PortfolioApi({
+    fetchImpl: async (_url, options) => {
+      body = JSON.parse(options.body);
+      return Response.json({ data: { id: "live-1", status: "draft", version: 8 } });
+    },
+  });
+  const work = {
+    id: "live-1",
+    section: "livestream",
+    brand_name: null,
+    work_title: "夏日直播间",
+    work_type: "直播",
+    status: "archived",
+    version: 7,
+    work_images: [{ id: "image-1" }],
+  };
+
+  await api.setWorkStatus(work, "draft");
+
+  assert.deepEqual(body, {
+    section: "livestream",
+    brand_name: null,
+    work_title: "夏日直播间",
+    work_type: "直播",
+    status: "draft",
+    version: 7,
+  });
+  assert.deepEqual(work.work_images, [{ id: "image-1" }]);
 });
