@@ -8,10 +8,14 @@ function composeMediaUrl(key) {
   return `${MEDIA_BASE}${key.split("/").map(encodeURIComponent).join("/")}`;
 }
 
-// localUrls maps a media source string (for local files, the file name) to a
-// blob URL created by the caller; local sources win over saved media.
+// localUrls maps a media slot to a blob URL created by the caller. Stable
+// scoped keys win: `${work.id}:poster`, `${work.id}:video`, and
+// `${work.id}:image:${image.id ?? image.sort_order ?? index}`. Legacy keys
+// (the media source string, i.e. the file name for local files) remain as a
+// fallback for callers without a stable work/image scope.
 function resolvePoster(work, localUrls) {
   if (!work) return "";
+  if (work.id && localUrls[`${work.id}:poster`]) return localUrls[`${work.id}:poster`];
   if (work.poster_url && localUrls[work.poster_url]) return localUrls[work.poster_url];
   if (work.poster_url) return work.poster_url;
   if (work.poster_key) return composeMediaUrl(work.poster_key);
@@ -20,14 +24,17 @@ function resolvePoster(work, localUrls) {
 
 function resolveVideo(work, localUrls) {
   if (!work) return "";
+  if (work.id && localUrls[`${work.id}:video`]) return localUrls[`${work.id}:video`];
   if (work.video_url && localUrls[work.video_url]) return localUrls[work.video_url];
   if (work.video_url) return work.video_url;
   if (work.video_key) return composeMediaUrl(work.video_key);
   return "";
 }
 
-function resolveImage(image, localUrls) {
+function resolveImage(image, localUrls, workId, index) {
   if (!image) return "";
+  const scopeKey = workId ? `${workId}:image:${image.id ?? image.sort_order ?? index}` : "";
+  if (scopeKey && localUrls[scopeKey]) return localUrls[scopeKey];
   if (image.image_url && localUrls[image.image_url]) return localUrls[image.image_url];
   if (image.image_url) return image.image_url;
   if (image.image_key) return composeMediaUrl(image.image_key);
@@ -78,8 +85,8 @@ export function createPreviewPanel({ root }) {
     return video;
   }
 
-  function renderLiveCover(first, title, localUrls) {
-    const src = resolveImage(first, localUrls);
+  function renderLiveCover(work, first, title, localUrls) {
+    const src = resolveImage(first, localUrls, work?.id, 0);
     if (!src) {
       const empty = element("div", "preview-cover preview-empty");
       empty.textContent = "暂无封面";
@@ -95,10 +102,10 @@ export function createPreviewPanel({ root }) {
     return figure;
   }
 
-  function renderGallery(ordered, title, localUrls) {
+  function renderGallery(work, ordered, title, localUrls) {
     const gallery = element("div", "preview-gallery");
     ordered.forEach((image, index) => {
-      const src = resolveImage(image, localUrls);
+      const src = resolveImage(image, localUrls, work?.id, index);
       if (!src) return;
       const img = element("img", "preview-gallery-image");
       img.src = src;
@@ -127,9 +134,9 @@ export function createPreviewPanel({ root }) {
     facts.textContent = isLive ? type : [brand, type].filter(Boolean).join(" · ");
     meta.append(section, workTitle, facts);
 
-    const cover = isLive ? renderLiveCover(ordered[0], title, localUrls) : renderTvcCover(work, title, localUrls);
+    const cover = isLive ? renderLiveCover(work, ordered[0], title, localUrls) : renderTvcCover(work, title, localUrls);
     const video = isLive ? null : renderVideo(work, localUrls);
-    const gallery = isLive && ordered.length > 0 ? renderGallery(ordered, title, localUrls) : null;
+    const gallery = isLive && ordered.length > 0 ? renderGallery(work, ordered, title, localUrls) : null;
     body.replaceChildren(...[meta, cover, video, gallery].filter(Boolean));
   }
 

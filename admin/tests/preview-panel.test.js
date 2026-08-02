@@ -276,6 +276,82 @@ test("localUrls replace saved media strings with blob previews", () => {
   });
 });
 
+test("scoped localUrls keys keep same-named local files separate across works", () => {
+  withFakeDom(() => {
+    const { root, body } = buildRoot();
+    const panel = createPreviewPanel({ root });
+
+    panel.open({
+      work: { id: "work-a", section: "livestream", work_title: "A 直播间", work_type: "日播间" },
+      images: [{ id: "img-1", image_url: "IMG_0001.jpg", sort_order: 1 }],
+      localUrls: { "work-a:image:img-1": "blob:a" },
+    });
+    assert.equal(find("preview-cover", body).src, "blob:a");
+
+    panel.open({
+      work: { id: "work-b", section: "livestream", work_title: "B 直播间", work_type: "日播间" },
+      images: [{ id: "img-1", image_url: "IMG_0001.jpg", sort_order: 1 }],
+      localUrls: { "work-b:image:img-1": "blob:b" },
+    });
+    assert.equal(find("preview-cover", body).src, "blob:b");
+    assert.equal(findAll("preview-gallery-image", body)[0].src, "blob:b");
+  });
+});
+
+test("scoped localUrls override key-only media without any _url field", () => {
+  withFakeDom(() => {
+    const { root, body } = buildRoot();
+    const panel = createPreviewPanel({ root });
+    const localUrls = {
+      "work-1:poster": "blob:poster",
+      "work-1:video": "blob:video",
+      "work-1:image:img-9": "blob:image",
+    };
+
+    panel.open({
+      work: {
+        id: "work-1",
+        section: "tvc",
+        work_title: "夜晚航线",
+        work_type: "品牌片",
+        poster_key: "portfolio/tvc/poster.webp",
+        video_key: "portfolio/tvc/clip.mp4",
+      },
+      images: [],
+      localUrls,
+    });
+    assert.equal(find("preview-cover", body).src, "blob:poster");
+    assert.equal(find("preview-video", body).src, "blob:video");
+
+    panel.open({
+      work: { id: "work-1", section: "livestream", work_title: "深夜直播间", work_type: "日播间" },
+      images: [{ id: "img-9", image_key: "portfolio/live/one.webp", sort_order: 1 }],
+      localUrls,
+    });
+    assert.equal(find("preview-cover", body).src, "blob:image");
+    assert.equal(findAll("preview-gallery-image", body)[0].src, "blob:image");
+  });
+});
+
+test("scoped localUrls keys take priority over legacy file-name keys", () => {
+  withFakeDom(() => {
+    const { root, body } = buildRoot();
+    const panel = createPreviewPanel({ root });
+    const localUrls = {
+      "work-1:poster": "blob:scoped",
+      "poster-local.webp": "blob:legacy",
+    };
+
+    panel.open({
+      work: { id: "work-1", section: "tvc", work_title: "夜晚航线", work_type: "品牌片", poster_url: "poster-local.webp" },
+      images: [],
+      localUrls,
+    });
+
+    assert.equal(find("preview-cover", body).src, "blob:scoped");
+  });
+});
+
 test("preview is read-only: renders no editing controls", () => {
   withFakeDom(() => {
     const { root, body } = buildRoot();
