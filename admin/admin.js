@@ -860,39 +860,51 @@ async function uploadSelectedItem(item) {
 
   const promise = (async () => {
     try {
-  try {
-    const context = selectedContext();
-    if (item.kind === "video") {
-      item.result = await uploads.uploadVideo(item.file, context, (progress) => {
-        item.loaded = progress.loaded;
-        item.total = progress.total;
-        if (progress.state === "cancelled") item.state = "cancelled";
-        renderUploadItems();
-      });
-    } else if (item.kind === "poster") {
-      const variants = await posterVariants(item.file);
-      const [desktop, mobile] = await Promise.all([
-        api.uploadImage(variants.desktop, { ...context, width: 1600, height: 900, signal: item.controller.signal }),
-        api.uploadImage(variants.mobile, { ...context, width: 960, height: 540, signal: item.controller.signal }),
-      ]);
-      item.result = { desktop, mobile };
-    } else {
-      validateImage(item.file);
-      const size = await dimensions(item.file);
-      item.result = await api.uploadImage(item.file, { ...context, ...size, signal: item.controller.signal });
+      const context = selectedContext();
+      if (item.kind === "video") {
+        item.result = await uploads.uploadVideo(item.file, context, (progress) => {
+          item.loaded = progress.loaded;
+          item.total = progress.total;
+          if (progress.state === "cancelled") item.state = "cancelled";
+          refreshUploadUi();
+        });
+      } else if (item.kind === "poster") {
+        const variants = await posterVariants(item.file);
+        const [desktop, mobile] = await Promise.all([
+          api.uploadImage(variants.desktop, { ...context, width: 1600, height: 900, signal: item.controller.signal }),
+          api.uploadImage(variants.mobile, { ...context, width: 960, height: 540, signal: item.controller.signal }),
+        ]);
+        item.result = { desktop, mobile };
+      } else {
+        validateImage(item.file);
+        const size = await dimensions(item.file);
+        item.result = await api.uploadImage(item.file, { ...context, ...size, signal: item.controller.signal });
+      }
+      item.loaded = item.total;
+      item.state = "complete";
+
+      // 7B-7: After image upload completes for livestream, add to sorter
+      if (item.kind === "image" && item.result && setup.sectionInput.value === "livestream") {
+        const newImage = { id: item.result.key || itemId(), image_key: item.result.key, width: item.result.width, height: item.result.height, sort_order: existingImages.length };
+        existingImages.push(newImage);
+        imageSorter.setItems(existingImages);
+        syncImageOrderUi();
+        saveDraft();
+      }
+    } catch (error) {
+      item.state = /aborted/i.test(error.message) ? "cancelled" : "failed";
+      item.error = error.message || "上传失败，可重试。";
+      throw error;
+    } finally {
+      delete item.controller;
+      updateActiveCount();
+      refreshUploadUi();
+      pendingUploads.delete(item.id);
     }
-    item.loaded = item.total;
-    item.state = "complete";
-  } catch (error) {
-    item.state = /aborted/i.test(error.message) ? "cancelled" : "failed";
-    item.error = error.message || "上传失败，可重试。";
-    throw error;
-  } finally {
-    delete item.controller;
-    updateActiveCount();
-    refreshUploadUi();
-    pendingUploads.delete(item.id);
-  }
+  })();
+
+  pendingUploads.set(item.id, promise);
+  return promise;
 }
 
 async function cancelItem(item) {
@@ -900,10 +912,46 @@ async function cancelItem(item) {
   if (item.kind === "video") await uploads.abort(item.file, selectedContext());
   item.state = "cancelled";
   if (item._blobUrl) { try { URL.revokeObjectURL(item._blobUrl); objectUrls.delete(item._blobUrl); } catch {} }
-  updateActiveCount(); = uploadItems.filter((i) =>
-    ["ready", "processing", "uploading", "waiting-network"].includes(i.state)
-  ).length;
-  renderUploadItems();
+  updateActiveCount();
+  refreshUploadUi();
+}
+
+// ── Batch operations via confirm panel (7B-4) ──
+function batchPauseAll() {
+  const active = uploadItems.filter((item) => item.state === "uploading" || item.state === "processing" || item.state === "ready");
+  if (!active.length) return;
+  confirmPanel.close();
+  confirmPanel.open({
+    title: "暂停全部上传？", message: `将暂停 ${active.length} 个上传任务。`, confirmLabel: "确认暂停", tone: "",
+    onConfirm: async () => { for (const item of active) { await pauseItem(item.id); } feedback(setup.uploadDrawerFeedback, `${active.length} 个任务已暂停。`, "success"); refreshUploadUi(); },
+  });
+}
+function batchResumeAll() {
+  const paused = uploadItems.filter((item) => item.state === "paused");
+  if (!paused.length) return;
+  confirmPanel.close();
+  confirmPanel.open({
+    title: "继续全部上传？", message: `将继续 ${paused.length} 个暂停的任务。`, confirmLabel: "确认继续", tone: "",
+    onConfirm: async () => { for (const item of paused) { await resumeItem(item.id); } feedback(setup.uploadDrawerFeedback, `${paused.length} 个任务已恢复。`, "success"); refreshUploadUi(); },
+  });
+}
+function batchRetryAll() {
+  const retryable = uploadItems.filter((item) => item.state === "failed" || item.state === "cancelled");
+  if (!retryable.length) return;
+  confirmPanel.close();
+  confirmPanel.open({
+    title: "重试全部失败任务？", message: `将重试 ${retryable.length} 个失败或取消的任务。`, confirmLabel: "确认重试", tone: "",
+    onConfirm: async () => { for (const item of retryable) { await retryItem(item.id); } feedback(setup.uploadDrawerFeedback, `${retryable.length} 个任务已重试。`, "success"); refreshUploadUi(); },
+  });
+}
+function batchCancelAll() {
+  const active = uploadItems.filter((item) => ["ready", "processing", "uploading", "waiting-network"].includes(item.state));
+  if (!active.length) return;
+  confirmPanel.close();
+  confirmPanel.open({
+    title: "取消全部上传？", message: `将取消 ${active.length} 个进行中的任务。`, confirmLabel: "确认取消", tone: "danger",
+    onConfirm: async () => { for (const item of active) { await cancelItemById(item.id); } feedback(setup.uploadDrawerFeedback, `${active.length} 个任务已取消。`, "success"); refreshUploadUi(); },
+  });
 }
 
 // ── Load works ──
@@ -974,21 +1022,6 @@ setup.sectionFilters.forEach((button) => button.addEventListener("click", () => 
 setup.statusFilter?.addEventListener("change", () => {
   currentFilters.status = setup.statusFilter.value;
   renderWorkspace();
-});
-
-// ── Page unload cleanup ──
-window.addEventListener("pagehide", () => {
-  revokeObjectUrls();
-});
-
-// Search with debounce
-let searchTimer;
-setup.searchInput?.addEventListener("input", () => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    currentFilters.query = setup.searchInput.value.trim().toLowerCase();
-    renderWorkspace();
-  }, 250);
 });
 
 // ── Page unload cleanup ──
@@ -1079,10 +1112,6 @@ window.addEventListener("offline", () => {
   feedback(setup.uploadDrawerFeedback, "网络离线，上传任务已等待。", "error");
 });
 
-// ── Page unload cleanup ──
-window.addEventListener("pagehide", () => {
-  revokeObjectUrls();
-});
 
 // Before unload guard
 window.addEventListener("beforeunload", (event) => {
@@ -1093,10 +1122,6 @@ window.addEventListener("beforeunload", (event) => {
   }
 });
 
-// ── Page unload cleanup ──
-window.addEventListener("pagehide", () => {
-  revokeObjectUrls();
-});
 
 // Initial network state
 uploads.setOnline(navigator.onLine);
