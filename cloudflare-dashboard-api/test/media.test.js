@@ -14,6 +14,10 @@ function request(value) {
   });
 }
 
+function webpContainer() {
+  return new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x04, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50]);
+}
+
 function mediaDb({ version = 1 } = {}) {
   const work = { id: "work-1", section: "tvc", status: "draft", version, poster_key: null, poster_mobile_key: null };
   const updates = [];
@@ -56,7 +60,7 @@ test("uploads only a WebP poster under a server generated draft key with ownersh
   const response = await uploadPoster(new Request("https://dashboard.example.test", {
     method: "POST",
     headers: { "content-type": "image/webp" },
-    body: new Blob(["poster"], { type: "image/webp" }),
+    body: webpContainer(),
   }), { DB: db, MEDIA: { async put(key, body, options) { puts.push({ key, body, options }); } } }, "work-1", "desktop", identity);
 
   assert.equal(response.status, 201);
@@ -66,6 +70,20 @@ test("uploads only a WebP poster under a server generated draft key with ownersh
   assert.equal(puts.length, 1);
   assert.equal(puts[0].options.httpMetadata.contentType, "image/webp");
   assert.deepEqual(puts[0].options.customMetadata, { section: "tvc", workId: "work-1", variant: "desktop" });
+});
+
+test("rejects an image/webp header whose bytes lack a WebP container without writing R2", async () => {
+  const db = mediaDb();
+  const puts = [];
+  const response = await uploadPoster(new Request("https://dashboard.example.test", {
+    method: "POST",
+    headers: { "content-type": "image/webp" },
+    body: new Uint8Array([0x6e, 0x6f, 0x74, 0x2d, 0x77, 0x65, 0x62, 0x70]),
+  }), { DB: db, MEDIA: { async put(...args) { puts.push(args); } } }, "work-1", "desktop", identity);
+
+  assert.equal(response.status, 422);
+  assert.equal((await response.json()).error.code, "INVALID_POSTER");
+  assert.equal(puts.length, 0);
 });
 
 test("rejects an invalid poster variant or non-WebP upload without writing R2", async () => {

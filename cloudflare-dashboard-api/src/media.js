@@ -27,6 +27,12 @@ function expectedKey(key, workId, variant) {
   return Boolean(match && match[1] === workId && match[2] === variant);
 }
 
+function webpContainer(bytes) {
+  return bytes.byteLength >= 12
+    && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46
+    && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
+}
+
 async function audit(env, workId, identity, action, details) {
   await env.DB.prepare("INSERT INTO audit_log (id, work_id, actor_email, action, details_json) VALUES (?, ?, ?, ?, ?)")
     .bind(crypto.randomUUID(), workId, identity.email, action, JSON.stringify(details)).run();
@@ -40,8 +46,10 @@ export async function uploadPoster(request, env, workId, variant, identity) {
   const work = await activeDraft(env, workId);
   if (!work) return problem(404, "NOT_FOUND", "TVC draft not found");
 
+  const bytes = new Uint8Array(await request.arrayBuffer());
+  if (!webpContainer(bytes)) return problem(422, "INVALID_POSTER", "Poster upload must contain a WebP container");
   const key = `portfolio/tvc/${workId}/poster-${variant}-${crypto.randomUUID()}.webp`;
-  await env.MEDIA.put(key, await request.arrayBuffer(), {
+  await env.MEDIA.put(key, bytes, {
     httpMetadata: { contentType: "image/webp" },
     customMetadata: { section: "tvc", workId, variant },
   });
