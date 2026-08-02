@@ -5,12 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0908" />
     <title>作品管理 / Chen Zhiyu</title>
-    <link rel="stylesheet" href="admin.css?v=0.24" />
+    <link rel="stylesheet" href="admin.css?v=0.25" />
     <script src="config.js" defer></script>
-    <script type="module" src="admin.js?v=0.24"></script>
+    <script>
+      window.__ADMIN_DEBUG__ = { events: [] };
+      window.addEventListener("error", (e) => {
+        const el = document.getElementById("admin-debug");
+        if (el) { el.hidden = false; el.textContent += (el.textContent ? "\n" : "") + "ERROR: " + (e.message || e.error?.message || String(e)); }
+        window.__ADMIN_DEBUG__.events.push({ type: "error", message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno, error: String(e.error) });
+      }, true);
+      window.addEventListener("unhandledrejection", (e) => {
+        const el = document.getElementById("admin-debug");
+        if (el) { el.hidden = false; el.textContent += (el.textContent ? "\n" : "") + "REJECTION: " + (e.reason?.message || String(e.reason)); }
+        window.__ADMIN_DEBUG__.events.push({ type: "rejection", reason: String(e.reason) });
+      }, true);
+      document.addEventListener("DOMContentLoaded", () => {
+        const el = document.getElementById("admin-debug");
+        if (el && !el.textContent) { el.hidden = true; el.textContent = ""; }
+      });
+    </script>
+    <script type="module" src="admin.js?v=0.25"></script>
   </head>
   <body>
     <header class="admin-topbar">
+      <pre id="admin-debug" style="display:none;background:#2d1f1f;color:#fca5a5;padding:8px;margin:0;font-size:11px;white-space:pre-wrap;border-bottom:1px solid #7f1d1d;position:fixed;top:0;left:0;right:0;z-index:9999;max-height:40vh;overflow:auto" hidden></pre>
       <a class="admin-mark" href="../">CHEN ZHIYU <span>/ WORKS ADMIN</span></a>
       <div class="access-state" data-access-state hidden><span data-access-email></span><a class="text-button" data-signout>退出登录</a></div>
     </header>
