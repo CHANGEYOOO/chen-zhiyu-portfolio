@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { DashboardRequestError, PUBLIC_WORKS_URL, createDashboardController, requestPublishedWorks } from "../dashboard.js";
 
 const root = new URL("../", import.meta.url);
 
@@ -25,4 +26,56 @@ test("dashboard styles do not import runtime CDN assets", async () => {
 test("vendored Bootstrap CSS exists", async () => {
   const css = await readFile(new URL("vendor/bootstrap.min.css", root), "utf8");
   assert.match(css, /Bootstrap\s+v5\.3\.3/);
+});
+
+test("requests only the current public works endpoint", async () => {
+  let observed;
+  const payload = { works: [] };
+  const result = await requestPublishedWorks(async (url, options) => {
+    observed = { url, options };
+    return { ok: true, json: async () => payload };
+  });
+  assert.equal(observed.url, "https://api.kjoe.top/api/public/works");
+  assert.equal(PUBLIC_WORKS_URL, observed.url);
+  assert.deepEqual(observed.options, { headers: { Accept: "application/json" } });
+  assert.equal(result, payload);
+});
+
+test("maps unsuccessful responses to DashboardRequestError", async () => {
+  await assert.rejects(
+    () => requestPublishedWorks(async () => ({ ok: false, status: 503 })),
+    (error) => error instanceof DashboardRequestError && error.message.includes("503"),
+  );
+});
+
+test("controller transitions through loading and success", async () => {
+  const calls = [];
+  const model = { groups: { tvc: [], livestream: [] }, counts: { total: 0, tvc: 0, livestream: 0 }, isEmpty: true, warning: "count warning" };
+  const controller = createDashboardController({
+    request: async () => ({ works: [] }),
+    buildModel: () => model,
+    view: {
+      showLoading: () => calls.push("loading"),
+      showModel: (value) => calls.push(["model", value]),
+      showError: (message) => calls.push(["error", message]),
+    },
+  });
+  await controller.load();
+  assert.deepEqual(calls, ["loading", ["model", model]]);
+});
+
+test("controller exposes a safe error message", async () => {
+  const calls = [];
+  const controller = createDashboardController({
+    request: async () => { throw new Error("private diagnostic"); },
+    buildModel: (value) => value,
+    logger: { error() {} },
+    view: {
+      showLoading: () => calls.push("loading"),
+      showModel: () => calls.push("model"),
+      showError: (message) => calls.push(["error", message]),
+    },
+  });
+  await controller.load();
+  assert.deepEqual(calls, ["loading", ["error", "作品数据加载失败，请稍后重试。"]]);
 });
