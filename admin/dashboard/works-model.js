@@ -15,6 +15,10 @@ function requiredString(value, field, index) {
   return value.trim();
 }
 
+function optionalString(value, fallback = "—") {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
 function normalizeWork(value, index) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new WorksDataError(`作品 ${index + 1} 格式无效`);
@@ -27,7 +31,7 @@ function normalizeWork(value, index) {
   return {
     id: requiredString(value.id, "id", index),
     section,
-    brand_name: requiredString(value.brand_name, "brand_name", index),
+    brand_name: optionalString(value.brand_name),
     work_title: requiredString(value.work_title, "work_title", index),
     work_type: requiredString(value.work_type, "work_type", index),
     sort_order: value.sort_order,

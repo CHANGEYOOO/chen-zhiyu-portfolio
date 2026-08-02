@@ -79,3 +79,14 @@ test("controller exposes a safe error message", async () => {
   await controller.load();
   assert.deepEqual(calls, ["loading", ["error", "作品数据加载失败，请稍后重试。"]]);
 });
+
+test("project records the local V0.23 dashboard milestone", async () => {
+  const readme = await readFile(new URL("../../../README.md", import.meta.url), "utf8");
+  const home = await readFile(new URL("../../../index.html", import.meta.url), "utf8");
+  const guide = await readFile(new URL("../../../docs/minimal-admin-dashboard.md", import.meta.url), "utf8");
+  assert.match(readme, /HTML 原型 V0\.23/);
+  assert.match(readme, /\/admin\/dashboard\//);
+  assert.match(home, /HTML PROTOTYPE V0\.23/);
+  assert.match(guide, /Cloudflare 账号授权/);
+  assert.match(guide, /api\.kjoe\.top\/api\/public\/works/);
+});

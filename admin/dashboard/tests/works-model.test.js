@@ -46,11 +46,16 @@ test("rejects an invalid top-level payload", () => {
   assert.throws(() => buildWorksModel(null), WorksDataError);
 });
 
-for (const field of ["id", "brand_name", "work_title", "work_type"]) {
+for (const field of ["id", "work_title", "work_type"]) {
   test(`rejects a work with invalid ${field}`, () => {
     assert.throws(() => buildWorksModel({ works: [work({ [field]: "" })] }), WorksDataError);
   });
 }
+
+test("uses a visible placeholder when a published work has no brand", () => {
+  const model = buildWorksModel({ works: [work({ section: "livestream", brand_name: null })] });
+  assert.equal(model.groups.livestream[0].brand_name, "—");
+});
 
 test("rejects unknown sections and invalid sort orders", () => {
   assert.throws(() => buildWorksModel({ works: [work({ section: "other" })] }), WorksDataError);
