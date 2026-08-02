@@ -24,10 +24,33 @@ let uploadItems = [];
 let existingImages = [];
 let orderSaving = false;
 let currentFilters = { section: "all", status: "all", query: "" };
+let drawerOpen = false;
+
+// ── Object URL tracking (7B-6) ──
+const objectUrls = new Set();
+
+function trackObjectUrl(url) {
+  if (!url || !url.startsWith("blob:")) return url;
+  objectUrls.add(url);
+  return url;
+}
+
+function revokeObjectUrls() {
+  for (const url of objectUrls) {
+    try { URL.revokeObjectURL(url); } catch { /* already revoked */ }
+  }
+  objectUrls.clear();
+}
+
+// ── Active upload promise tracking (7B-4) ──
+const pendingUploads = new Map();
 
 // ── DOM ──
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
+
+// Resolve drawer inner list after setup
+if (false) {} // placeholder
 
 const setup = {
   login: $("[data-login]"),
@@ -44,6 +67,7 @@ const setup = {
   editorFeedback: $("[data-editor-feedback]"),
   sectionInput: $("[data-section-input]"),
   uploadList: $("[data-upload-list]"),
+  uploadSummary: $("[data-upload-summary]"),
   imageList: $("[data-image-list]"),
   imageOrderActions: $("[data-image-order-actions]"),
   saveImageOrder: $("[data-save-image-order]"),
@@ -58,7 +82,21 @@ const setup = {
   editorBack: $("[data-editor-back]"),
   networkState: $("[data-network-state]"),
   uploadDrawer: $("[data-upload-drawer]"),
+  uploadDrawerList: null,
+  uploadDrawerClose: $("[data-drawer-close]"),
+  uploadDrawerToggle: $("[data-upload-drawer-toggle]"),
+  uploadDrawerPauseAll: $("[data-drawer-pause-all]"),
+  uploadDrawerResumeAll: $("[data-drawer-resume-all]"),
+  uploadDrawerRetryAll: $("[data-drawer-retry-all]"),
+  uploadDrawerCancelAll: $("[data-drawer-cancel-all]"),
+  uploadDrawerFeedback: $("[data-drawer-feedback]"),
+  uploadDrawerCount: $("[data-drawer-count]"),
 };
+
+// Resolve drawer inner list
+if (setup.uploadDrawer) {
+  setup.uploadDrawerList = setup.uploadDrawer.querySelector(".upload-list");
+}
 
 // ── Panels ──
 const confirmPanel = createConfirmPanel({ root: $(".confirm-panel") });
@@ -112,6 +150,89 @@ function syncSectionFields() {
   $$(".livestream-only").forEach((el) => { el.hidden = !isLive; });
   if (isLive) setEditorValue("brand_name", "");
   saveDraft();
+}
+
+
+// ── Editor upload summary (7B-3) ──
+function syncEditorUploadSummary() {
+  if (!setup.uploadSummary) return;
+  const counts = uploadCounts();
+  const active = counts.uploading + counts.waiting;
+  const paused = counts.paused;
+  const failed = counts.failed;
+  const complete = counts.complete;
+  const parts = [];
+  if (active > 0) parts.push(`${active} 个上传中`);
+  if (paused > 0) parts.push(`${paused} 个已暂停`);
+  if (failed > 0) parts.push(`${failed} 个失败`);
+  if (complete > 0) parts.push(`${complete} 个已完成`);
+  setup.uploadSummary.textContent = parts.length === 0 ? "暂无上传任务" : parts.join(" · ");
+}
+
+// ── Drawer ──
+function openDrawer() {
+  if (!setup.uploadDrawer) return;
+  drawerOpen = true;
+  setup.uploadDrawer.hidden = false;
+  renderDrawer();
+  setup.uploadDrawerClose?.focus?.();
+}
+
+function closeDrawer() {
+  if (!setup.uploadDrawer) return;
+  drawerOpen = false;
+  setup.uploadDrawer.hidden = true;
+}
+
+function uploadCounts() {
+  const counts = { uploading: 0, waiting: 0, paused: 0, failed: 0, complete: 0, cancelled: 0, ready: 0 };
+  for (const item of uploadItems) {
+    const s = item.state;
+    if (s === "uploading" || s === "processing") counts.uploading += 1;
+    else if (s === "waiting-network") counts.waiting += 1;
+    else if (s === "paused") counts.paused += 1;
+    else if (s === "failed") counts.failed += 1;
+    else if (s === "complete") counts.complete += 1;
+    else if (s === "cancelled") counts.cancelled += 1;
+    else if (s === "ready") counts.ready += 1;
+  }
+  return counts;
+}
+
+function renderDrawer() {
+  if (!setup.uploadDrawerList) return;
+  if (uploadItems.length === 0) {
+    const model = emptyStateModel("uploads");
+    setup.uploadDrawerList.replaceChildren();
+    const el = document.createElement("div");
+    el.className = "empty-state";
+    const h3 = document.createElement("h3");
+    h3.textContent = model.title;
+    const p = document.createElement("p");
+    p.textContent = model.hint;
+    el.append(h3, p);
+    setup.uploadDrawerList.append(el);
+  } else {
+    const models = uploadItems.map((item) => uploadRowModel(item));
+    renderUploadRows(setup.uploadDrawerList, models, {
+      onRetry: (id) => retryItem(id),
+      onPause: (id) => pauseItem(id),
+      onResume: (id) => resumeItem(id),
+      onCancel: (id) => cancelItemById(id),
+    });
+  }
+  if (setup.uploadDrawerCount) setup.uploadDrawerCount.textContent = String(uploadItems.length);
+  const counts = uploadCounts();
+  const hasActive = counts.uploading + counts.ready > 0;
+  if (setup.uploadDrawerPauseAll) setup.uploadDrawerPauseAll.disabled = !hasActive;
+  if (setup.uploadDrawerResumeAll) setup.uploadDrawerResumeAll.disabled = !(counts.paused > 0);
+  if (setup.uploadDrawerRetryAll) setup.uploadDrawerRetryAll.disabled = !(counts.failed + counts.cancelled > 0);
+  if (setup.uploadDrawerCancelAll) setup.uploadDrawerCancelAll.disabled = !(hasActive || counts.waiting > 0);
+}
+
+function refreshUploadUi() {
+  if (drawerOpen || uploadItems.length > 0) renderDrawer();
+  syncEditorUploadSummary();
 }
 
 // ── Draft helpers ──
@@ -388,19 +509,20 @@ async function handlePreview() {
   }
 
   // Build localUrls from completed uploadItems using previewLocalUrlKey scoped keys
+  revokeObjectUrls();
   const localUrls = {};
   for (const item of uploadItems) {
     if (item.state !== "complete" || !item.result || !item.file) continue;
     if (item.kind === "poster") {
-      localUrls[previewLocalUrlKey({ workId: current.id, kind: "poster" })] = URL.createObjectURL(item.file);
+      localUrls[previewLocalUrlKey({ workId: current.id, kind: "poster" })] = trackObjectUrl(URL.createObjectURL(item.file));
     }
     if (item.kind === "video") {
-      localUrls[previewLocalUrlKey({ workId: current.id, kind: "video" })] = URL.createObjectURL(item.file);
+      localUrls[previewLocalUrlKey({ workId: current.id, kind: "video" })] = trackObjectUrl(URL.createObjectURL(item.file));
     }
     if (item.kind === "image" && item.result) {
       const idx = uploadItems.indexOf(item);
       const key = previewLocalUrlKey({ workId: current.id, kind: "image", image: item.result, index: idx });
-      localUrls[key] = URL.createObjectURL(item.file);
+      localUrls[key] = trackObjectUrl(URL.createObjectURL(item.file));
     }
   }
 
@@ -576,15 +698,21 @@ function addFiles(files, kind, replace = false) {
       result: null,
       error: "",
       workId: wbState.editorWorkId,
+      name: file.name,
+      size: file.size,
+      lastModified: file.lastModified || 0,
+      type: file.type,
     });
   }
   wbState.activeUploadCount = uploadItems.filter((item) =>
     ["ready", "processing", "uploading", "waiting-network"].includes(item.state)
   ).length;
-  renderUploadItems();
+  refreshUploadUi();
 }
 
 function renderUploadItems() {
+  refreshUploadUi();
+  return;
   if (!setup.uploadList) return;
   if (!uploadItems.length) {
     const model = emptyStateModel("uploads");
@@ -626,6 +754,53 @@ function renderUploadItems() {
     },
   });
 }
+
+// ── Individual item operations (7B-4: await old promise before resume) ──
+async function retryItem(id) {
+  const item = uploadItems.find((i) => i.id === id);
+  if (!item) return;
+  const pending = pendingUploads.get(id);
+  if (pending) { try { await pending; } catch {} }
+  uploadSelectedItem(item).catch((error) => feedback(setup.editorFeedback, error.message || "上传失败。", "error"));
+}
+
+async function pauseItem(id) {
+  const item = uploadItems.find((i) => i.id === id);
+  if (!item) return;
+  const pending = pendingUploads.get(id);
+  if (pending) { try { await pending; } catch {} }
+  await uploads.pause(item.file, selectedContext());
+  refreshUploadUi();
+}
+
+async function resumeItem(id) {
+  const item = uploadItems.find((i) => i.id === id);
+  if (!item) return;
+  const pending = pendingUploads.get(id);
+  if (pending) { try { await pending; } catch {} }
+  const promise = uploads.resume(item.file, selectedContext(), (progress) => {
+    item.loaded = progress.loaded;
+    item.total = progress.total;
+    if (progress.state) item.state = progress.state;
+    updateActiveCount();
+    refreshUploadUi();
+  }).then((result) => { pendingUploads.delete(id); return result; })
+    .catch((error) => { pendingUploads.delete(id); feedback(setup.editorFeedback, error.message || "上传失败。", "error"); refreshUploadUi(); });
+  pendingUploads.set(id, promise);
+}
+
+async function cancelItemById(id) {
+  const item = uploadItems.find((i) => i.id === id);
+  if (!item) return;
+  const pending = pendingUploads.get(id);
+  if (pending) { try { await pending; } catch {} }
+  await cancelItem(item);
+}
+
+function updateActiveCount() {
+  wbState.activeUploadCount = uploadItems.filter((item) => ["ready", "processing", "uploading", "waiting-network"].includes(item.state)).length;
+}
+
 
 function selectedContext() {
   return { section: setup.form.elements.section.value, workId: wbState.editorWorkId };
@@ -680,7 +855,11 @@ async function uploadSelectedItem(item) {
   item.error = "";
   item.loaded = 0;
   item.controller = new AbortController();
-  renderUploadItems();
+  refreshUploadUi();
+  updateActiveCount();
+
+  const promise = (async () => {
+    try {
   try {
     const context = selectedContext();
     if (item.kind === "video") {
@@ -710,10 +889,9 @@ async function uploadSelectedItem(item) {
     throw error;
   } finally {
     delete item.controller;
-    wbState.activeUploadCount = uploadItems.filter((i) =>
-      ["ready", "processing", "uploading", "waiting-network"].includes(i.state)
-    ).length;
-    renderUploadItems();
+    updateActiveCount();
+    refreshUploadUi();
+    pendingUploads.delete(item.id);
   }
 }
 
@@ -721,7 +899,8 @@ async function cancelItem(item) {
   item.controller?.abort();
   if (item.kind === "video") await uploads.abort(item.file, selectedContext());
   item.state = "cancelled";
-  wbState.activeUploadCount = uploadItems.filter((i) =>
+  if (item._blobUrl) { try { URL.revokeObjectURL(item._blobUrl); objectUrls.delete(item._blobUrl); } catch {} }
+  updateActiveCount(); = uploadItems.filter((i) =>
     ["ready", "processing", "uploading", "waiting-network"].includes(i.state)
   ).length;
   renderUploadItems();
@@ -738,6 +917,30 @@ async function loadWorks() {
   }
 }
 
+// ── Boot recovery (7B-1) ──
+function restoreRecoveryData() {
+  const recoverable = uploads.listRecoverable();
+  for (const record of recoverable) {
+    const exists = uploadItems.some((item) => item.name === record.name && item.size === record.size && item.lastModified === record.lastModified && item.type === record.type && item.workId === record.workId && item.kind === "video");
+    if (exists) continue;
+    uploadItems.push({ id: itemId(), file: null, kind: "video", state: "waiting-network", loaded: 0, total: record.size, result: null, error: "", workId: record.workId, name: record.name, size: record.size, lastModified: record.lastModified, type: record.type, _recoveryRecord: record });
+  }
+  const draftIds = drafts.list();
+  for (const workId of draftIds) {
+    const draftData = drafts.load(workId);
+    if (!draftData) continue;
+    const work = works.find((w) => w.id === workId);
+    if (work) {
+      if (draftData.section) work.section = draftData.section;
+      if (draftData.brand_name !== undefined) work.brand_name = draftData.brand_name;
+      if (draftData.work_title) work.work_title = draftData.work_title;
+      if (draftData.work_type) work.work_type = draftData.work_type;
+      if (draftData.status) work.status = draftData.status;
+      if (draftData.sort_order !== undefined) work.sort_order = draftData.sort_order;
+    }
+  }
+}
+
 // ── Boot ──
 async function boot() {
   setup.loginLink.href = config.accessLoginUrl || window.location.href;
@@ -747,6 +950,7 @@ async function boot() {
     setup.signout.href = session.logoutUrl;
     setup.accessState.hidden = false;
     setup.workspace.hidden = false;
+    restoreRecoveryData();
     await loadWorks();
   } catch (error) {
     if (error instanceof PortfolioApiError && error.status === 401) {
@@ -772,6 +976,11 @@ setup.statusFilter?.addEventListener("change", () => {
   renderWorkspace();
 });
 
+// ── Page unload cleanup ──
+window.addEventListener("pagehide", () => {
+  revokeObjectUrls();
+});
+
 // Search with debounce
 let searchTimer;
 setup.searchInput?.addEventListener("input", () => {
@@ -780,6 +989,11 @@ setup.searchInput?.addEventListener("input", () => {
     currentFilters.query = setup.searchInput.value.trim().toLowerCase();
     renderWorkspace();
   }, 250);
+});
+
+// ── Page unload cleanup ──
+window.addEventListener("pagehide", () => {
+  revokeObjectUrls();
 });
 
 // New TVC / Livestream
@@ -821,6 +1035,15 @@ $("[data-mobile-preview]")?.addEventListener("click", handlePreview);
 // Mobile publish button
 $("[data-mobile-publish]")?.addEventListener("click", () => handlePublish());
 
+// ── Drawer events (7B-3) ──
+setup.uploadDrawerClose?.addEventListener("click", closeDrawer);
+setup.uploadDrawerToggle?.addEventListener("click", () => { if (drawerOpen) closeDrawer(); else openDrawer(); });
+setup.uploadDrawerPauseAll?.addEventListener("click", batchPauseAll);
+setup.uploadDrawerResumeAll?.addEventListener("click", batchResumeAll);
+setup.uploadDrawerRetryAll?.addEventListener("click", batchRetryAll);
+setup.uploadDrawerCancelAll?.addEventListener("click", batchCancelAll);
+document.addEventListener("keydown", (event) => { if (event.key === "Escape" && drawerOpen) closeDrawer(); });
+
 // Image sorter events
 imageSorter.addEventListener("change", (event) => {
   existingImages = event.detail.items;
@@ -834,10 +1057,31 @@ setup.cancelImageOrder?.addEventListener("click", cancelImageOrder);
 window.addEventListener("online", () => {
   uploads.setOnline(true);
   syncNetworkChip();
+  for (const item of uploadItems) {
+    if (item.state === "waiting-network" && item._preOfflineState) {
+      item.state = item._preOfflineState;
+      delete item._preOfflineState;
+    }
+  }
+  refreshUploadUi();
+  feedback(setup.uploadDrawerFeedback, "网络已恢复，可继续上传。", "success");
 });
 window.addEventListener("offline", () => {
   uploads.setOnline(false);
   syncNetworkChip();
+  for (const item of uploadItems) {
+    if (["ready", "processing", "uploading"].includes(item.state)) {
+      item._preOfflineState = item.state;
+      item.state = "waiting-network";
+    }
+  }
+  refreshUploadUi();
+  feedback(setup.uploadDrawerFeedback, "网络离线，上传任务已等待。", "error");
+});
+
+// ── Page unload cleanup ──
+window.addEventListener("pagehide", () => {
+  revokeObjectUrls();
 });
 
 // Before unload guard
@@ -845,7 +1089,13 @@ window.addEventListener("beforeunload", (event) => {
   if (hasUnsafeExit(wbState)) {
     event.preventDefault();
     event.returnValue = "";
+    revokeObjectUrls();
   }
+});
+
+// ── Page unload cleanup ──
+window.addEventListener("pagehide", () => {
+  revokeObjectUrls();
 });
 
 // Initial network state

@@ -88,10 +88,10 @@
             </div>
             <div class="image-list" data-image-list aria-label="项目图片排序"></div>
           </div>
-          <section class="upload-manager" aria-labelledby="upload-title">
-            <div class="field-heading"><span id="upload-title">上传队列</span><small>成功项目会保留，失败项目可重试</small></div>
-            <div class="upload-list" data-upload-list></div>
-          </section>
+          <div class="upload-summary-bar">
+            <p class="upload-summary-text" data-upload-summary>暂无上传任务</p>
+            <button class="text-button" type="button" data-upload-drawer-toggle>打开上传队列</button>
+          </div>
           <div class="editor-actions">
             <button class="text-button" type="button" data-editor-preview>预览</button>
             <button class="text-button" type="button" data-editor-publish>发布</button>
@@ -103,9 +103,17 @@
 
       <aside class="upload-drawer" data-upload-drawer hidden aria-labelledby="drawer-title">
         <div class="drawer-head">
-          <div><p class="eyebrow">UPLOAD QUEUE</p><h2 id="drawer-title">上传队列</h2></div>
-          <button class="drawer-close" type="button" aria-label="关闭上传队列">×</button>
+          <div><p class="eyebrow">UPLOAD QUEUE</p><h2 id="drawer-title">上传队列 <small data-drawer-count>0</small></h2></div>
+          <button class="drawer-close" type="button" aria-label="关闭上传队列" data-drawer-close>×</button>
         </div>
+        <div class="drawer-batch-actions">
+          <button class="text-button" type="button" data-drawer-pause-all disabled>暂停全部</button>
+          <button class="text-button" type="button" data-drawer-resume-all disabled>继续全部</button>
+          <button class="text-button" type="button" data-drawer-retry-all disabled>重试全部</button>
+          <button class="text-button" type="button" data-drawer-cancel-all disabled>取消全部</button>
+        </div>
+        <p class="form-feedback" data-drawer-feedback role="status"></p>
+
         <div class="upload-list"></div>
       </aside>
     </main>
