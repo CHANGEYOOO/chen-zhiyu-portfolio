@@ -993,12 +993,13 @@ function restoreRecoveryData() {
 // ── Boot ──
 async function boot() {
   setup.loginLink.href = config.accessLoginUrl || window.location.href;
+  // Show workspace immediately so errors from api.session are visible
+  setup.workspace.hidden = false;
   try {
     const session = await api.session();
     setup.accessEmail.textContent = session.email;
     setup.signout.href = session.logoutUrl;
     setup.accessState.hidden = false;
-    setup.workspace.hidden = false;
     restoreRecoveryData();
     await loadWorks();
   } catch (error) {
