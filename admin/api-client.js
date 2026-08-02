@@ -12,7 +12,7 @@ export class PortfolioApiError extends Error {
 export class PortfolioApi {
   constructor({ baseUrl = "", fetchImpl = globalThis.fetch } = {}) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
-    this.fetch = fetchImpl;
+    this.fetch = (...args) => fetchImpl(...args);
   }
 
   async request(path, options = {}) {
