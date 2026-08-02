@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>JOEKUNI ADMIN - Dashboard</title>
+    <link rel="stylesheet" href="./vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="./dashboard.css?v=0.23" />
+    <script type="module" src="./dashboard.js?v=0.23"></script>
+  </head>
+  <body class="bg-body-tertiary">
+    <header class="navbar bg-dark" data-bs-theme="dark">
+      <div class="container-fluid dashboard-width">
+        <span class="navbar-brand mb-0 h1">JOEKUNI ADMIN</span>
+        <div class="d-flex align-items-center gap-3">
+          <span class="badge text-bg-secondary">只读</span>
+          <a class="btn btn-outline-light btn-sm" href="/cdn-cgi/access/logout">退出登录</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="container-fluid dashboard-width py-4 py-lg-5">
+      <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-4">
+        <div>
+          <p class="text-secondary text-uppercase small mb-1">Dashboard</p>
+          <h1 class="h2 mb-0">作品列表</h1>
+        </div>
+        <p class="text-secondary mb-0 align-self-md-end">数据与线上前台同步</p>
+      </div>
+
+      <section class="row g-3 mb-4" aria-label="作品概览">
+        <div class="col-12 col-md-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <p class="text-secondary mb-1">全部作品</p>
+              <strong class="display-6" data-count="total">-</strong>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <p class="text-secondary mb-1">TVC</p>
+              <strong class="display-6" data-count="tvc">-</strong>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <p class="text-secondary mb-1">Livestream</p>
+              <strong class="display-6" data-count="livestream">-</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="alert alert-info" role="status" data-dashboard-status>正在读取作品数据…</div>
+      <div class="alert alert-warning" role="alert" data-dashboard-warning hidden></div>
+      <button class="btn btn-dark mb-4" type="button" data-retry hidden>重新加载</button>
+
+      <section class="card mb-4" aria-labelledby="tvc-title">
+        <div class="card-header"><h2 class="h5 mb-0" id="tvc-title">TVC</h2></div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead><tr><th scope="col">#</th><th scope="col">品牌</th><th scope="col">作品</th><th scope="col">类型</th></tr></thead>
+            <tbody data-works-body="tvc"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="livestream-title">
+        <div class="card-header"><h2 class="h5 mb-0" id="livestream-title">Livestream</h2></div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead><tr><th scope="col">#</th><th scope="col">品牌</th><th scope="col">作品</th><th scope="col">类型</th></tr></thead>
+            <tbody data-works-body="livestream"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
