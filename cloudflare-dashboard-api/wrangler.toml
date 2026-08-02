@@ -4,7 +4,8 @@ compatibility_date = "2026-08-02"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "kjoe-portfolio"
+database_name = "kjoe-portfolio-content"
+database_id = "42b6c0fa-8994-4dfc-97eb-c3449e559bb8"
 
 [[r2_buckets]]
 binding = "MEDIA"
