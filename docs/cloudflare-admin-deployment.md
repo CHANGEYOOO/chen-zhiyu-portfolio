@@ -47,6 +47,17 @@ Production checks completed after authorization:
 
 No disposable upload or archive test was created, so no test object needs cleanup. Authenticated admin CRUD, image/multipart upload, media Range, and archive-draft checks remain optional follow-up QA when a disposable test record is explicitly approved.
 
+## Minimal Dashboard V0.23 deployment
+
+Deployment date: 2026-08-02
+
+- GitHub Pages was updated from `main`; release tag `v0.23` was published at implementation commit `b333c72`.
+- A new self-hosted Access application named `Chen Zhiyu Portfolio Dashboard` protects `kjoe.top/admin/dashboard*`.
+- The application accepts only the Cloudflare identity provider, uses instant authentication, and applies the `Dashboard Cloudflare Account` allow policy for the confirmed administrator account.
+- The Cloudflare identity provider is restricted to members of the current Cloudflare account.
+- The existing `kjoe.top/admin*` and `api.kjoe.top/api/admin/*` applications remain on the `Admin Email OTP` policy.
+- Production verification reached `/admin/dashboard/`, loaded 38 published works, and reported TVC 30 plus Livestream 8.
+
 ## Follow-up QA (optional)
 
 1. Sign in to the protected admin page with email OTP.

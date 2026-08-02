@@ -14,6 +14,6 @@ The page reads `https://api.kjoe.top/api/public/works`, the same published data 
 
 Local preview does not simulate authentication. Production access will use a new Cloudflare Access application scoped to `/admin/dashboard*`, with Cloudflare 账号授权 and an allow policy for the confirmed account. Existing `/admin*` email-OTP protection remains unchanged.
 
-## Release boundary
+## Production status
 
-This local milestone does not push GitHub, publish GitHub Pages, or change Cloudflare Access. Perform those steps only after an explicit publish instruction.
+V0.23 is published through GitHub Pages. A dedicated Cloudflare Access application protects `/admin/dashboard*` with the Cloudflare identity provider, instant authentication, and an allow policy restricted to the confirmed account. The existing `/admin*` email-OTP application remains unchanged.
