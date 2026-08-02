@@ -52,3 +52,17 @@ test("normalizes Worker error responses into DashboardApiError", async () => {
     return true;
   });
 });
+
+test("normalizes network failures without leaking the fetch diagnostic", async () => {
+  const api = createDashboardApi(async () => {
+    throw new TypeError("fetch failed: private connection diagnostic");
+  });
+
+  await assert.rejects(() => api.getTvcOrder(), (error) => {
+    assert.ok(error instanceof DashboardApiError);
+    assert.equal(error.status, 0);
+    assert.equal(error.code, "NETWORK_ERROR");
+    assert.doesNotMatch(error.message, /private connection diagnostic/);
+    return true;
+  });
+});

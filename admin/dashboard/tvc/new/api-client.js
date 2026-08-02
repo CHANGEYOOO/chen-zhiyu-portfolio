@@ -27,11 +27,17 @@ export function createDashboardApi(fetchImpl = fetch) {
   }
 
   async function request(path, options = {}) {
-    const response = await fetchImpl(url(path), {
-      ...options,
-      credentials: "same-origin",
-      headers: { accept: "application/json", ...options.headers },
-    });
+    let response;
+    try {
+      response = await fetchImpl(url(path), {
+        ...options,
+        credentials: "same-origin",
+        headers: { accept: "application/json", ...options.headers },
+      });
+    } catch (error) {
+      if (error instanceof DashboardApiError) throw error;
+      throw new DashboardApiError("网络请求失败，请检查网络连接后重试。", 0, "NETWORK_ERROR");
+    }
     const payload = response.status === 204 ? null : await response.json().catch(() => null);
     if (!response.ok) throw new DashboardApiError(payload?.error?.message || "请求失败，请稍后重试。", response.status, payload?.error?.code);
     return payload?.data ?? payload;
