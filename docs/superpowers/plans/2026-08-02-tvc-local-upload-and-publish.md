@@ -52,13 +52,15 @@ test("counts are derived only from returned works", () => {
 });
 ```
 
-在 `dashboard-contract.test.js` 增加：
+在 `dashboard-contract.test.js` 增加实际 DOM 渲染测试，不通过正则读取 HTML 源码：
 
 ```js
-test("dashboard links to the isolated TVC creation route", async () => {
-  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(html, /href="\/admin\/dashboard\/tvc\/new\/"/);
-  assert.match(html, />\s*新增 TVC\s*</);
+test("dashboard renders the isolated TVC creation action", () => {
+  const root = fakeDocument.createElement("nav");
+  renderDashboardActions(fakeDocument, root);
+  const link = root.children[0];
+  assert.equal(link.href, "/admin/dashboard/tvc/new/");
+  assert.equal(link.textContent, "新增 TVC");
 });
 
 test("highlight query accepts only safe work ids", () => {
@@ -560,12 +562,12 @@ export function isDesktopUploadViewport(matchMediaImpl = matchMedia)
 - [ ] **RED — 页面结构、无原生 confirm、移动端不出现文件输入。**
 
 ```js
-test("creation page contains every approved step", async () => {
-  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+test("creation page renders every approved step", () => {
+  const page = createCreationPage(fakeDocument, controller);
   for (const marker of ["data-draft-form", "data-poster-step", "data-video-step", "data-preview", "data-position", "data-publish-panel"]) {
-    assert.match(html, new RegExp(marker));
+    assert.ok(page.querySelector(`[${marker}]`));
   }
-  assert.doesNotMatch(html, /window\.confirm|admin\.js|upload-manager/);
+  assert.equal(controller.nativeConfirmCalls, 0);
 });
 
 test("mobile mode removes media inputs from the interaction tree", () => {
@@ -628,15 +630,9 @@ Worker route=kjoe.top/admin/dashboard/api/*
 Public cache key=https://api.kjoe.top/api/public/works
 ```
 
-- [ ] **RED — 版本文档测试先要求 V0.24 与新模块说明。**
+- [ ] **RED — 先运行全部功能测试，确认代码仍停留在 V0.23 且不存在由文档文本决定成败的自动化测试。**
 
-```js
-test("project records the local V0.24 TVC creation milestone", async () => {
-  assert.match(await readFile(readme, "utf8"), /HTML 原型 V0\.24/);
-  assert.match(await readFile(home, "utf8"), /HTML PROTOTYPE V0\.24/);
-  assert.match(await readFile(guide, "utf8"), /\/admin\/dashboard\/tvc\/new\//);
-});
-```
+版本文字和 README 属于发布清单，由实施者逐项人工核对；自动化测试只验证可观察的程序行为，不用正则读取 HTML/Markdown 文本。
 
 - [ ] 运行完整自动化套件：
 
