@@ -358,6 +358,7 @@ function resetForm(work, isNew = false) {
 
   setEditorValue("id", work.id);
   setEditorValue("section", work.section || "tvc");
+  setup.sectionInput.disabled = !isNew;
   setEditorValue("brand_name", work.brand_name || "");
   setEditorValue("work_title", work.work_title || "");
   setEditorValue("work_type", work.work_type || "");
