@@ -8,6 +8,8 @@ function memoryStorage() {
     getItem(key) { return values.get(key) || null; },
     setItem(key, value) { values.set(key, value); },
     removeItem(key) { values.delete(key); },
+    get length() { return values.size; },
+    key(index) { return [...values.keys()][index] ?? null; },
   };
 }
 
@@ -138,4 +140,164 @@ test("cancels multipart creation before its upload session is returned", async (
   assert.equal(api.calls.parts.length, 0);
   assert.equal(api.calls.complete.length, 0);
   assert.equal(api.calls.abort.length, 1);
+});
+
+test("rejects uploads while offline with waiting-network progress", async () => {
+  const manager = new UploadManager(uploadApi(), { storage: memoryStorage() });
+  const events = [];
+  const file = video([1024]);
+  const context = { section: "tvc", workId: "work-1" };
+
+  manager.setOnline(false);
+  await assert.rejects(manager.uploadVideo(file, context, (progress) => events.push(progress)), /waiting for network/i);
+
+  assert.equal(events.at(-1).state, "waiting-network");
+  assert.equal(manager.listRecoverable().length, 0);
+  assert.equal(manager.api.calls.create, 0);
+});
+
+test("allows uploads again after setOnline(true)", async () => {
+  const manager = new UploadManager(uploadApi(), { storage: memoryStorage() });
+  manager.setOnline(false);
+  await assert.rejects(manager.uploadVideo(video([1024]), { section: "tvc", workId: "work-1" }), /waiting for network/i);
+
+  manager.setOnline(true);
+  await manager.uploadVideo(video([1024]), { section: "tvc", workId: "work-1" });
+
+  assert.equal(manager.api.calls.create, 1);
+  assert.equal(manager.api.calls.complete.length, 1);
+});
+
+test("pauses an active upload, keeps recovery data, and reports paused", async () => {
+  let releasePart;
+  const api = uploadApi({
+    uploadPart(uploadId, key, partNumber, bytes, signal) {
+      api.calls.parts.push({ uploadId, key, partNumber, bytes: bytes.byteLength });
+      return new Promise((resolve, reject) => {
+        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+        if (partNumber === 1) releasePart = () => resolve({ partNumber, etag: "etag-1" });
+      });
+    },
+  });
+  const storage = memoryStorage();
+  const manager = new UploadManager(api, { storage });
+  const file = video([PART_SIZE, 1024]);
+  const context = { section: "tvc", workId: "work-1" };
+  const events = [];
+
+  const paused = manager.uploadVideo(file, context, (progress) => events.push(progress));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  releasePart();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await manager.pause(file, context);
+  await assert.rejects(paused, /paused/i);
+
+  assert.equal(events.at(-1).state, "paused");
+  assert.equal(manager.listRecoverable().length, 1);
+  assert.equal(api.calls.abort.length, 0);
+  assert.notEqual(storage.getItem(manager.resumeKey(file, context)), null);
+  const [record] = manager.listRecoverable();
+  assert.equal(record.file, undefined);
+  assert.equal(record.name, "clip.mp4");
+  assert.equal(record.size, file.size);
+  assert.equal(record.lastModified, 1);
+  assert.equal(record.type, "video/mp4");
+  assert.equal(record.uploadId, "upload-1");
+  assert.equal(record.objectKey, "portfolio/tvc/work-1/clip.mp4");
+  assert.deepEqual(record.parts, [{ partNumber: 1, etag: "etag-1" }]);
+  assert.equal(record.section, "tvc");
+  assert.equal(record.workId, "work-1");
+});
+
+test("pause during session creation persists a recoverable record without aborting", async () => {
+  const api = uploadApi();
+  const storage = memoryStorage();
+  const manager = new UploadManager(api, { storage });
+  const file = video([PART_SIZE]);
+  const context = { section: "tvc", workId: "work-1" };
+  const events = [];
+
+  const pending = manager.uploadVideo(file, context, (progress) => events.push(progress));
+  await manager.pause(file, context);
+  await assert.rejects(pending, /paused/i);
+
+  assert.equal(api.calls.abort.length, 0);
+  assert.equal(events.at(-1).state, "paused");
+  const [record] = manager.listRecoverable();
+  assert.equal(record.uploadId, "upload-1");
+  assert.deepEqual(record.parts, []);
+});
+
+test("resumes a paused upload with matching file metadata", async () => {
+  let releasePart;
+  const api = uploadApi({
+    uploadPart(uploadId, key, partNumber, bytes, signal) {
+      api.calls.parts.push({ uploadId, key, partNumber, bytes: bytes.byteLength });
+      return new Promise((resolve, reject) => {
+        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+        if (partNumber === 1) releasePart = () => resolve({ partNumber, etag: "etag-1" });
+      });
+    },
+  });
+  const storage = memoryStorage();
+  const manager = new UploadManager(api, { storage });
+  const file = video([PART_SIZE, 1024]);
+  const context = { section: "tvc", workId: "work-1" };
+  const pending = manager.uploadVideo(file, context);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  releasePart();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await manager.pause(file, context);
+  await assert.rejects(pending, /paused/i);
+
+  manager.api = uploadApi();
+  const result = await manager.resume(file, context);
+
+  assert.equal(manager.api.calls.create, 0);
+  assert.deepEqual(manager.api.calls.parts.map((part) => part.partNumber), [2]);
+  assert.deepEqual(manager.api.calls.complete[0].parts, [
+    { partNumber: 1, etag: "etag-1" },
+    { partNumber: 2, etag: "etag-2" },
+  ]);
+  assert.equal(result.publicUrl, "https://media.example.test/clip.mp4");
+  assert.equal(manager.listRecoverable().length, 0);
+});
+
+test("resume revalidates name, size, lastModified, and type before reusing a session", async () => {
+  const seedSession = { uploadId: "upload-seed", objectKey: "portfolio/tvc/work-1/clip.mp4", totalBytes: PART_SIZE + 1024, etags: { 1: "etag-1" } };
+  const seedRecovery = {
+    workId: "work-1",
+    section: "tvc",
+    name: "clip.mp4",
+    size: PART_SIZE + 1024,
+    lastModified: 1,
+    type: "video/mp4",
+    uploadId: "upload-seed",
+    objectKey: "portfolio/tvc/work-1/clip.mp4",
+    parts: [{ partNumber: 1, etag: "etag-1" }],
+  };
+  const changed = [
+    { name: "renamed.mp4", size: PART_SIZE + 1024, lastModified: 1, type: "video/mp4" },
+    { name: "clip.mp4", size: PART_SIZE + 1025, lastModified: 1, type: "video/mp4" },
+    { name: "clip.mp4", size: PART_SIZE + 1024, lastModified: 999, type: "video/mp4" },
+    { name: "clip.mp4", size: PART_SIZE + 1024, lastModified: 1, type: "video/webm" },
+  ];
+
+  for (const meta of changed) {
+    const manager = new UploadManager(uploadApi(), { storage: memoryStorage() });
+    const storage = manager.storage;
+    const original = new Blob([new Uint8Array(seedRecovery.size)], { type: seedRecovery.type });
+    Object.defineProperties(original, { name: { value: seedRecovery.name }, lastModified: { value: seedRecovery.lastModified } });
+    const originalKey = manager.resumeKey(original, { section: "tvc", workId: "work-1" });
+    storage.setItem(originalKey, JSON.stringify(seedSession));
+    storage.setItem(manager.recoveryKey({ section: "tvc", workId: "work-1" }), JSON.stringify(seedRecovery));
+
+    const other = new Blob([new Uint8Array(meta.size)], { type: meta.type });
+    Object.defineProperties(other, { name: { value: meta.name }, lastModified: { value: meta.lastModified } });
+    await manager.resume(other, { section: "tvc", workId: "work-1" });
+
+    assert.equal(manager.api.calls.create, 1, `expected a fresh session for ${JSON.stringify(meta)}`);
+    assert.equal(storage.getItem(originalKey), null, `expected stale session removed for ${JSON.stringify(meta)}`);
+    assert.equal(storage.getItem(manager.recoveryKey({ section: "tvc", workId: "work-1" })), null, `expected stale recovery removed for ${JSON.stringify(meta)}`);
+  }
 });

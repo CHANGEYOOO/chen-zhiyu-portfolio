@@ -1,4 +1,5 @@
 const PREFIX = "portfolio-admin:draft:";
+const RECOVERY_PREFIX = "portfolio-admin:recovery:";
 
 function isFileValue(value) {
   return typeof Blob !== "undefined" && value instanceof Blob;
@@ -24,6 +25,19 @@ export class DraftStore {
     return `${PREFIX}${workId}`;
   }
 
+  recoveryKey(workId) {
+    return `${RECOVERY_PREFIX}${workId}`;
+  }
+
+  list() {
+    const workIds = [];
+    for (let index = 0; index < this.storage.length; index += 1) {
+      const key = this.storage.key(index);
+      if (key && key.startsWith(PREFIX)) workIds.push(key.slice(PREFIX.length));
+    }
+    return workIds.sort();
+  }
+
   save(workId, value) {
     this.storage.setItem(this.key(workId), JSON.stringify(serializable(value)));
   }
@@ -41,6 +55,25 @@ export class DraftStore {
 
   remove(workId) {
     this.storage.removeItem(this.key(workId));
+  }
+
+  saveRecovery(workId, value) {
+    this.storage.setItem(this.recoveryKey(workId), JSON.stringify(serializable(value)));
+  }
+
+  loadRecovery(workId) {
+    const value = this.storage.getItem(this.recoveryKey(workId));
+    if (!value) return null;
+    try {
+      return JSON.parse(value);
+    } catch {
+      this.clearRecovery(workId);
+      return null;
+    }
+  }
+
+  clearRecovery(workId) {
+    this.storage.removeItem(this.recoveryKey(workId));
   }
 
   orderImages(images, order) {
