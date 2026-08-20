@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "DingTalk JinBuTi";
+  src: url("assets/fonts/DingTalkJinBuTi-Regular.ttf") format("truetype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 :root {
   --ink: #0a0908;
   --paper: #f2eee6;
@@ -13,8 +21,8 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
-  --display: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif;
-  --nav: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  --display: "DingTalk JinBuTi", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  --nav: "DingTalk JinBuTi", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
   --chapter-gap: clamp(22px, 2.3vw, 34px);
   --chapter-label-size: 10px;
 }
@@ -34,7 +42,13 @@ body {
   position: relative;
   margin: 0;
   overflow-x: hidden;
-  background: var(--ink);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(187, 240, 255, 0.66) 0%,
+    rgba(155, 194, 202, 0.15) 86.3%,
+    rgba(178, 216, 234, 0.10) 100%
+  );
+  background-attachment: fixed;
   color: var(--paper);
   font-family: var(--display);
   text-rendering: optimizeLegibility;
@@ -2550,4 +2564,11 @@ footer p {
     transition: none;
     transition-delay: 0ms;
   }
+}
+
+/* Shared work surface treatment. Keep the frame on the media itself so metadata stays readable. */
+.work-poster,
+.livestream-scroller {
+  border-radius: 20px;
+  box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.3);
 }
