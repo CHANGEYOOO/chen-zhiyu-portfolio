@@ -953,8 +953,8 @@ footer {
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 50%;
-  background: rgba(5, 5, 5, 0.58);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.58);
+  color: #000;
   font-family: var(--nav);
   font-size: 20px;
   line-height: 1;
@@ -976,7 +976,7 @@ footer {
 
 .livestream-arrow:hover:not(:disabled),
 .livestream-arrow:focus-visible:not(:disabled) {
-  background: rgba(5, 5, 5, 0.82);
+  background: rgba(255, 255, 255, 0.82);
   transform: translateY(-50%) scale(1.05);
 }
 
