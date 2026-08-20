@@ -23,6 +23,7 @@
   --about-line: rgba(23, 21, 19, 0.22);
   --page-pad: clamp(20px, 4.5vw, 68px);
   --portfolio-pad: clamp(20px, 1.65vw, 26px);
+  --media-frame-x: clamp(18px, 3vw, 44px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -124,6 +125,7 @@ a {
   display: block;
   width: 100%;
   height: auto;
+  filter: brightness(0) saturate(100%);
 }
 
 nav {
@@ -2259,6 +2261,21 @@ footer p {
   padding-left: clamp(0px, 10vw, 160px);
 }
 
+.cinematic-v2 .livestream {
+  padding-inline: max(var(--media-frame-x), var(--safe-right))
+    max(var(--media-frame-x), var(--safe-left));
+}
+
+.cinematic-v2 .livestream-project:nth-child(odd),
+.cinematic-v2 .livestream-project:nth-child(even) {
+  padding-inline: 0;
+}
+
+.cinematic-v2 .livestream-scroller {
+  width: 100%;
+  margin-inline: auto;
+}
+
 .cinematic-v2 .livestream-project + .livestream-project {
   margin-top: clamp(94px, 11vw, 172px);
 }
@@ -2299,7 +2316,14 @@ footer p {
   grid-column: 8 / -1;
   width: min(100%, 620px);
   margin-top: 0;
+  overflow: visible;
+  border-radius: 20px;
   background: #171716;
+  box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.3);
+}
+
+.cinematic-v2 .about-portrait img {
+  border-radius: inherit;
 }
 
 .cinematic-v2 .about-name,
