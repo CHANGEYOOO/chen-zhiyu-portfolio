@@ -1666,13 +1666,13 @@ footer p {
   .hero .panel-media,
   .hero .panel-poster img {
     object-position: 56% 50%;
-    --media-scale: 1.3;
+    --media-scale: 1.365;
   }
 
   .statement .panel-media,
   .statement .panel-poster img {
     object-position: 53% 50%;
-    --media-scale: 1.3;
+    --media-scale: 1.365;
   }
 
   .autoplay-note {
@@ -1913,13 +1913,13 @@ footer p {
   .hero .panel-media,
   .hero .panel-poster img {
     object-position: 56% 50%;
-    --media-scale: 1.3;
+    --media-scale: 1.365;
   }
 
   .statement .panel-media,
   .statement .panel-poster img {
     object-position: 53% 50%;
-    --media-scale: 1.3;
+    --media-scale: 1.365;
   }
 }
 
@@ -1996,7 +1996,7 @@ footer p {
   .hero .panel-poster img,
   .statement .panel-media,
   .statement .panel-poster img {
-    --media-scale: 1.24;
+    --media-scale: 1.302;
   }
 }
 
