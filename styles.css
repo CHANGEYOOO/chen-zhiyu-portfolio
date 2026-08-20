@@ -530,10 +530,13 @@ footer {
 .work-card {
   position: relative;
   min-width: 0;
+  overflow: visible;
+  isolation: isolate;
 }
 
 .work-card::before {
   position: absolute;
+  z-index: 0;
   inset: 0 0 auto;
   width: 100%;
   aspect-ratio: 2 / 1;
@@ -716,6 +719,8 @@ footer {
 }
 
 .work-meta {
+  position: relative;
+  z-index: 1;
   padding-top: 6px;
   font-family: var(--nav);
   font-size: 11px;
@@ -791,7 +796,6 @@ footer {
 .livestream {
   --livestream-image-height: 404px;
   min-width: 0;
-  overflow: clip;
   padding:
     clamp(92px, 8vw, 122px) max(var(--portfolio-pad), var(--safe-right))
     calc(clamp(108px, 10vw, 148px) + var(--safe-bottom))
@@ -902,7 +906,6 @@ footer {
 
 .contact {
   position: relative;
-  overflow: clip;
 }
 
 .contact-content {
@@ -916,12 +919,19 @@ footer {
   max-width: 100%;
 }
 
+.livestream-project {
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+}
+
 .livestream-project + .livestream-project {
   margin-top: clamp(62px, 6vw, 92px);
 }
 
 .livestream-carousel {
   position: relative;
+  z-index: 1;
 }
 
 .livestream-scroller {
@@ -1035,6 +1045,8 @@ footer {
 }
 
 .livestream-meta {
+  position: relative;
+  z-index: 1;
   padding-top: 15px;
   font-family: var(--nav);
   color: #fff;
@@ -2367,6 +2379,7 @@ footer p {
   width: min(100%, 620px);
   margin-top: 0;
   overflow: visible;
+  isolation: isolate;
   border-radius: 20px;
   background: #171716;
   box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.3);
@@ -2483,11 +2496,9 @@ footer p {
 .cinematic-v2 .livestream-motion-ready .livestream-reveal,
 .cinematic-v2 .about-motion-ready .about-reveal,
 .cinematic-v2 .contact-motion-ready .contact-reveal {
-  clip-path: inset(0 0 10% 0);
   opacity: 0;
   transform: translateY(28px);
   transition:
-    clip-path 900ms cubic-bezier(0.22, 1, 0.36, 1),
     opacity 620ms ease,
     transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -2496,7 +2507,6 @@ footer p {
 .cinematic-v2 .livestream-motion-ready .livestream-reveal.is-visible,
 .cinematic-v2 .about-motion-ready .about-reveal.is-visible,
 .cinematic-v2 .contact-motion-ready .contact-reveal.is-visible {
-  clip-path: inset(0 0 0 0);
   opacity: 1;
   transform: translateY(0);
 }
@@ -2655,7 +2665,6 @@ footer p {
   .cinematic-v2 .livestream-motion-ready .livestream-reveal,
   .cinematic-v2 .about-motion-ready .about-reveal,
   .cinematic-v2 .contact-motion-ready .contact-reveal {
-    clip-path: none;
     opacity: 1;
     transform: none;
     transition: none;
