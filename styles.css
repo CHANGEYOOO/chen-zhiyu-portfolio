@@ -715,8 +715,7 @@ footer {
     calc(clamp(108px, 10vw, 148px) + var(--safe-bottom))
     max(var(--portfolio-pad), var(--safe-left));
   border-top: 1px solid var(--line);
-  background: var(--page-background);
-  background-attachment: fixed;
+  background: var(--ink);
   color: #fff;
 }
 
@@ -2065,7 +2064,8 @@ footer p {
 .cinematic-v2 .about,
 .cinematic-v2 .contact {
   border-color: var(--line);
-  background: var(--ink);
+  background: var(--page-background);
+  background-attachment: fixed;
   color: var(--paper);
 }
 
