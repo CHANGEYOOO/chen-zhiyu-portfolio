@@ -10,9 +10,9 @@
   --ink: #0a0908;
   --page-background: radial-gradient(
     circle at 50% 50%,
-    rgba(187, 240, 255, 0.66) 0%,
-    rgba(155, 194, 202, 0.15) 86.3%,
-    rgba(178, 216, 234, 0.10) 100%
+    #e6faff 0%,
+    #f4f4f4 86.3%,
+    #ffffff 100%
   );
   --paper: #f2eee6;
   --muted: #9e9e9e;
