@@ -2575,3 +2575,13 @@ footer p {
   border-radius: 20px;
   box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.3);
 }
+
+/* Keep the fixed navigation treatment separate from page content. */
+.cinematic-v2 main,
+.cinematic-v2 main *,
+.cinematic-v2 footer,
+.cinematic-v2 footer *,
+.cinematic-v2 .work-player,
+.cinematic-v2 .work-player * {
+  color: #000 !important;
+}
