@@ -38,12 +38,20 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.24-v17" />
+    <link rel="stylesheet" href="styles.css?v=0.24-v18" />
     <script src="assets/data/works-api.js?v=0.4" defer></script>
     <script src="assets/data/livestream-data.js?v=0.21" defer></script>
-    <script src="script.js?v=0.22" defer onerror="document.documentElement.classList.remove('has-js')"></script>
+    <script src="script.js?v=0.24-v18" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
-  <body class="cinematic-v2">
+  <body class="cinematic-v2 loader-active">
+    <div class="site-loader" data-site-loader role="status" aria-live="polite" aria-label="正在加载作品集">
+      <div class="site-loader-inner">
+        <div class="site-loader-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-loader-track>
+          <span class="site-loader-fill" data-loader-fill></span>
+        </div>
+        <span class="site-loader-percent" data-loader-percent>0%</span>
+      </div>
+    </div>
     <a class="skip-link" href="#main">跳到主要内容</a>
     <span class="scroll-sentinel" aria-hidden="true"></span>
 
@@ -723,7 +731,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.23</p>
+      <p>HTML PROTOTYPE V0.24</p>
     </footer>
   </body>
 </html>

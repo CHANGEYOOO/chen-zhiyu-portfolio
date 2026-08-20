@@ -27,6 +27,10 @@ const livestreamProjects = livestream?.querySelector("[data-livestream-projects]
 const livestreamActions = livestream?.querySelector("[data-livestream-actions]");
 const livestreamToggle = livestream?.querySelector("[data-livestream-toggle]");
 const precisePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+const siteLoader = document.querySelector("[data-site-loader]");
+const siteLoaderTrack = siteLoader?.querySelector("[data-loader-track]");
+const siteLoaderFill = siteLoader?.querySelector("[data-loader-fill]");
+const siteLoaderPercent = siteLoader?.querySelector("[data-loader-percent]");
 
 let introMetrics;
 let animationFrameRequested = false;
@@ -35,6 +39,8 @@ let activeSceneIndex = -1;
 let workPlayerOpen = false;
 let workPlayerTrigger = null;
 let workPlayerUrl = "";
+let siteLoaderReady = false;
+let tvcHydrationCancelled = false;
 const userPausedVideos = new WeakSet();
 
 if (works && worksToggle) {
@@ -398,6 +404,7 @@ async function hydrateTvcWorks() {
       card.append(picture, meta);
       fragment.appendChild(card);
     });
+    if (tvcHydrationCancelled) return;
     grid.replaceChildren(fragment);
     grid.querySelectorAll(".work-card[data-work]").forEach(bindWorkPlayButton);
   } catch (error) {
@@ -449,6 +456,127 @@ function dataSaverEnabled() {
 
 function posterOnlyMode() {
   return reducedMotion.matches || dataSaverEnabled();
+}
+
+function setSiteLoaderProgress(value) {
+  const progress = Math.round(clamp(value, 0, 100));
+  if (siteLoaderFill) siteLoaderFill.style.width = `${progress}%`;
+  if (siteLoaderPercent) siteLoaderPercent.textContent = `${progress}%`;
+  siteLoaderTrack?.setAttribute("aria-valuenow", String(progress));
+}
+
+function getPreloadImageUrl(image) {
+  if (image.currentSrc) return image.currentSrc;
+
+  const source = image.closest("picture")?.querySelector("source[srcset]");
+  if (source && (!source.media || window.matchMedia(source.media).matches)) {
+    return source.srcset.split(",")[0].trim().split(/\s+/)[0];
+  }
+
+  return image.src;
+}
+
+function preloadImage(url) {
+  return new Promise((resolve) => {
+    if (!url) {
+      resolve();
+      return;
+    }
+
+    const image = new Image();
+    const finish = () => {
+      image.onload = null;
+      image.onerror = null;
+      resolve();
+    };
+    image.onload = finish;
+    image.onerror = finish;
+    image.src = url;
+    if (image.complete) finish();
+  });
+}
+
+function preloadVideo(video) {
+  return new Promise((resolve) => {
+    if (!video) {
+      resolve();
+      return;
+    }
+
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(timeout);
+      video.removeEventListener("canplaythrough", finish);
+      video.removeEventListener("error", finish);
+      resolve();
+    };
+    const timeout = window.setTimeout(finish, 12000);
+
+    video.addEventListener("canplaythrough", finish, { once: true });
+    video.addEventListener("error", finish, { once: true });
+    video.preload = "auto";
+    const sourceChanged = loadDeferredVideo(video);
+    if (!sourceChanged) video.load();
+    if (video.readyState >= 3) finish();
+  });
+}
+
+async function startSiteLoader(tvcHydrationPromise) {
+  if (!siteLoader) {
+    siteLoaderReady = true;
+    return;
+  }
+
+  setSiteLoaderProgress(0);
+
+  let hydrationTimedOut = false;
+  try {
+    await Promise.race([
+      tvcHydrationPromise,
+      new Promise((resolve) =>
+        window.setTimeout(() => {
+          hydrationTimedOut = true;
+          resolve();
+        }, 8000),
+      ),
+    ]);
+  } catch {
+    // Bundled TVC fallback remains available when the published data request fails.
+  }
+  if (hydrationTimedOut) tvcHydrationCancelled = true;
+
+  const resources = [];
+  if (!posterOnlyMode()) {
+    videos.forEach((video) => resources.push(() => preloadVideo(video)));
+  }
+
+  const imageUrls = [...document.querySelectorAll(".panel-poster img, .work-poster img")]
+    .map(getPreloadImageUrl)
+    .filter(Boolean);
+  [...new Set(imageUrls)].forEach((url) => resources.push(() => preloadImage(url)));
+
+  if (!resources.length) {
+    setSiteLoaderProgress(100);
+  } else {
+    let completeCount = 0;
+    await Promise.all(
+      resources.map((load) =>
+        load().finally(() => {
+          completeCount += 1;
+          setSiteLoaderProgress((completeCount / resources.length) * 100);
+        }),
+      ),
+    );
+  }
+
+  siteLoaderReady = true;
+  document.body.classList.remove("loader-active");
+  setSiteLoaderProgress(100);
+  siteLoader.classList.add("is-complete");
+  window.setTimeout(() => siteLoader.remove(), 420);
+  requestFrameUpdate();
 }
 
 function prepareCharacters(copy) {
@@ -503,6 +631,7 @@ function loadDeferredVideo(video) {
   }
 
   if (sourceChanged) video.load();
+  return sourceChanged;
 }
 
 function unloadVideo(video) {
@@ -526,6 +655,7 @@ function pauseOtherVideos(activeVideo) {
 
 function tryPlay(video) {
   if (
+    !siteLoaderReady ||
     workPlayerOpen ||
     posterOnlyMode() ||
     userPausedVideos.has(video) ||
@@ -792,7 +922,7 @@ function setActiveScene(index) {
   }
 
   const activeVideo = scenes[activeSceneIndex]?.querySelector("video");
-  if (activeVideo && !posterOnlyMode()) {
+  if (activeVideo && siteLoaderReady && !posterOnlyMode()) {
     loadDeferredVideo(activeVideo);
     tryPlay(activeVideo);
   }
@@ -861,6 +991,7 @@ function updateIntroSequence() {
   if (
     secondVideo &&
     distance >= secondLoadStart &&
+    siteLoaderReady &&
     !dataSaverEnabled() &&
     !reducedMotion.matches
   ) {
@@ -919,9 +1050,9 @@ function applyMotionPreference() {
 
 reducedMotion.addEventListener("change", applyMotionPreference);
 connection?.addEventListener?.("change", applyMotionPreference);
+const tvcHydrationPromise = hydrateTvcWorks();
+startSiteLoader(tvcHydrationPromise);
 applyMotionPreference();
-
-hydrateTvcWorks();
 
 if ("IntersectionObserver" in window) {
   if (scrollSentinel) {
