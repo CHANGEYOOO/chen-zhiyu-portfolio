@@ -531,19 +531,7 @@ async function startSiteLoader(tvcHydrationPromise) {
 
   const minimumLoaderDuration = 2000;
   const loaderStartedAt = performance.now();
-  let resourcesLoaded = false;
-  let loaderProgressFrame = 0;
-  const updateLoaderProgress = () => {
-    const elapsed = performance.now() - loaderStartedAt;
-    const timeProgress = clamp(elapsed / minimumLoaderDuration, 0, 1);
-    setSiteLoaderProgress(resourcesLoaded ? timeProgress * 100 : Math.min(timeProgress * 95, 95));
-    if (!resourcesLoaded || elapsed < minimumLoaderDuration) {
-      loaderProgressFrame = window.requestAnimationFrame(updateLoaderProgress);
-    }
-  };
-
   setSiteLoaderProgress(0);
-  loaderProgressFrame = window.requestAnimationFrame(updateLoaderProgress);
 
   let hydrationTimedOut = false;
   try {
@@ -571,15 +559,36 @@ async function startSiteLoader(tvcHydrationPromise) {
     .filter(Boolean);
   [...new Set(imageUrls)].forEach((url) => resources.push(() => preloadImage(url)));
 
-  await Promise.all(resources.map((load) => load()));
-  resourcesLoaded = true;
+  let completedResources = 0;
+  const totalResources = resources.length;
+  const updateResourceProgress = () => {
+    const progress = totalResources ? (completedResources / totalResources) * 95 : 0;
+    setSiteLoaderProgress(progress);
+  };
+
+  await Promise.all(
+    resources.map((load) =>
+      load().finally(() => {
+        completedResources += 1;
+        updateResourceProgress();
+      }),
+    ),
+  );
 
   const remainingDuration = minimumLoaderDuration - (performance.now() - loaderStartedAt);
   if (remainingDuration > 0) {
-    await new Promise((resolve) => window.setTimeout(resolve, remainingDuration));
+    await new Promise((resolve) => {
+      const animationStartedAt = performance.now();
+      const animateFinish = () => {
+        const progress = clamp((performance.now() - animationStartedAt) / remainingDuration, 0, 1);
+        setSiteLoaderProgress(95 + progress * 5);
+        if (progress < 1) window.requestAnimationFrame(animateFinish);
+        else resolve();
+      };
+      window.requestAnimationFrame(animateFinish);
+    });
   }
 
-  window.cancelAnimationFrame(loaderProgressFrame);
   siteLoaderReady = true;
   document.body.classList.remove("loader-active");
   setSiteLoaderProgress(100);

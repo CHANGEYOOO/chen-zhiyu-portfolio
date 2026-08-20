@@ -888,15 +888,6 @@ footer {
   padding-top: clamp(116px, 11vw, 168px);
 }
 
-.livestream::before {
-  position: absolute;
-  inset: 0 0 auto;
-  height: clamp(180px, 22vw, 360px);
-  background: radial-gradient(ellipse at 50% 0%, rgba(232, 226, 216, 0.09), transparent 68%);
-  content: "";
-  pointer-events: none;
-}
-
 .livestream > * {
   position: relative;
 }
@@ -912,16 +903,6 @@ footer {
 .contact {
   position: relative;
   overflow: clip;
-}
-
-.contact::before {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 78% 22%, rgba(232, 226, 216, 0.075), transparent 30%),
-    linear-gradient(115deg, transparent 55%, rgba(255, 255, 255, 0.025));
-  content: "";
-  pointer-events: none;
 }
 
 .contact-content {
@@ -1685,13 +1666,13 @@ footer p {
   .hero .panel-media,
   .hero .panel-poster img {
     object-position: 56% 50%;
-    --media-scale: 1.16;
+    --media-scale: 1.3;
   }
 
   .statement .panel-media,
   .statement .panel-poster img {
     object-position: 53% 50%;
-    --media-scale: 1.16;
+    --media-scale: 1.3;
   }
 
   .autoplay-note {
@@ -1932,13 +1913,13 @@ footer p {
   .hero .panel-media,
   .hero .panel-poster img {
     object-position: 56% 50%;
-    --media-scale: 1.16;
+    --media-scale: 1.3;
   }
 
   .statement .panel-media,
   .statement .panel-poster img {
     object-position: 53% 50%;
-    --media-scale: 1.16;
+    --media-scale: 1.3;
   }
 }
 
@@ -2015,7 +1996,7 @@ footer p {
   .hero .panel-poster img,
   .statement .panel-media,
   .statement .panel-poster img {
-    --media-scale: 1.08;
+    --media-scale: 1.24;
   }
 }
 
@@ -2302,11 +2283,6 @@ footer p {
   color: var(--tungsten);
 }
 
-.cinematic-v2 .livestream::before {
-  height: clamp(260px, 34vw, 540px);
-  background: radial-gradient(ellipse at 68% 0%, rgba(183, 154, 120, 0.13), transparent 64%);
-}
-
 .cinematic-v2 .livestream-header {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -2466,11 +2442,6 @@ footer p {
   min-height: 100dvh;
   padding-top: clamp(128px, 12vw, 184px);
   padding-bottom: clamp(92px, 9vw, 138px);
-}
-
-.cinematic-v2 .contact::before {
-  display: none;
-  background: none;
 }
 
 .cinematic-v2 .contact-ending h2 {
