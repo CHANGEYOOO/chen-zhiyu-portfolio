@@ -2109,29 +2109,20 @@ footer p {
 }
 
 .cinematic-v2 .works-grid {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: clamp(12px, 1.4vw, 24px);
-  row-gap: clamp(64px, 8vw, 126px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(44px, 5vw, 76px) clamp(18px, 2.6vw, 42px);
 }
 
-.cinematic-v2 .work-card {
-  grid-column: span 12;
-}
-
+.cinematic-v2 .work-card,
 .cinematic-v2 .work-card:nth-child(5n + 2),
-.cinematic-v2 .work-card:nth-child(5n + 5) {
-  grid-column: span 7;
-}
-
 .cinematic-v2 .work-card:nth-child(5n + 3),
-.cinematic-v2 .work-card:nth-child(5n + 4) {
-  grid-column: span 5;
+.cinematic-v2 .work-card:nth-child(5n + 4),
+.cinematic-v2 .work-card:nth-child(5n + 5) {
+  grid-column: auto;
 }
 
 .cinematic-v2 .work-poster {
   background: #181817;
-  border: 1px solid rgba(236, 232, 223, 0.22);
-  box-shadow: 0 0 0 4px rgba(236, 232, 223, 0.025);
 }
 
 .cinematic-v2 .work-poster img {
@@ -2141,11 +2132,6 @@ footer p {
 .cinematic-v2 .work-card:hover .work-poster img,
 .cinematic-v2 .work-card:focus-within .work-poster img {
   transform: scale(1.175);
-}
-
-.cinematic-v2 .work-card:hover .work-poster,
-.cinematic-v2 .work-card:focus-within .work-poster {
-  border-color: rgba(183, 154, 120, 0.68);
 }
 
 .cinematic-v2 .work-play {
