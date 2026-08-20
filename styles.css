@@ -484,32 +484,6 @@ footer {
   background: rgba(10, 9, 8, 0.18);
 }
 
-.work-play:active .work-play-icon {
-  transform: scale(0.96);
-}
-
-.work-play-icon {
-  display: grid;
-  width: clamp(42px, 4vw, 58px);
-  height: clamp(42px, 4vw, 58px);
-  place-items: center;
-  padding-left: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.76);
-  border-radius: 50%;
-  background: rgba(10, 9, 8, 0.32);
-  font-family: var(--nav);
-  font-size: clamp(13px, 1.2vw, 17px);
-  line-height: 1;
-  backdrop-filter: blur(5px);
-  transition: transform 180ms ease, background-color 180ms ease;
-}
-
-.work-play:hover .work-play-icon,
-.work-play:focus-visible .work-play-icon {
-  transform: scale(1.06);
-  background: rgba(10, 9, 8, 0.56);
-}
-
 .work-player {
   width: 100vw;
   max-width: none;
@@ -1939,7 +1913,6 @@ footer p {
   }
 
   .work-play,
-  .work-play-icon,
   .work-poster img,
   .livestream-slide img,
   .livestream-arrow,

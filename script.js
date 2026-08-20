@@ -628,7 +628,6 @@ function bindWorkPlayButton(card) {
   playButton.className = "work-play";
   playButton.type = "button";
   playButton.setAttribute("aria-label", `全屏播放：${title}`);
-  playButton.innerHTML = '<span class="work-play-icon" aria-hidden="true">▶</span>';
   playButton.addEventListener("click", () => openWorkPlayer(card, playButton));
   card.appendChild(playButton);
 }
