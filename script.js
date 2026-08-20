@@ -529,7 +529,21 @@ async function startSiteLoader(tvcHydrationPromise) {
     return;
   }
 
+  const minimumLoaderDuration = 3000;
+  const loaderStartedAt = performance.now();
+  let resourcesLoaded = false;
+  let loaderProgressFrame = 0;
+  const updateLoaderProgress = () => {
+    const elapsed = performance.now() - loaderStartedAt;
+    const timeProgress = clamp(elapsed / minimumLoaderDuration, 0, 1);
+    setSiteLoaderProgress(resourcesLoaded ? timeProgress * 100 : Math.min(timeProgress * 95, 95));
+    if (!resourcesLoaded || elapsed < minimumLoaderDuration) {
+      loaderProgressFrame = window.requestAnimationFrame(updateLoaderProgress);
+    }
+  };
+
   setSiteLoaderProgress(0);
+  loaderProgressFrame = window.requestAnimationFrame(updateLoaderProgress);
 
   let hydrationTimedOut = false;
   try {
@@ -557,20 +571,15 @@ async function startSiteLoader(tvcHydrationPromise) {
     .filter(Boolean);
   [...new Set(imageUrls)].forEach((url) => resources.push(() => preloadImage(url)));
 
-  if (!resources.length) {
-    setSiteLoaderProgress(100);
-  } else {
-    let completeCount = 0;
-    await Promise.all(
-      resources.map((load) =>
-        load().finally(() => {
-          completeCount += 1;
-          setSiteLoaderProgress((completeCount / resources.length) * 100);
-        }),
-      ),
-    );
+  await Promise.all(resources.map((load) => load()));
+  resourcesLoaded = true;
+
+  const remainingDuration = minimumLoaderDuration - (performance.now() - loaderStartedAt);
+  if (remainingDuration > 0) {
+    await new Promise((resolve) => window.setTimeout(resolve, remainingDuration));
   }
 
+  window.cancelAnimationFrame(loaderProgressFrame);
   siteLoaderReady = true;
   document.body.classList.remove("loader-active");
   setSiteLoaderProgress(100);
