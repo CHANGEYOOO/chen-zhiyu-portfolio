@@ -529,7 +529,7 @@ async function startSiteLoader(tvcHydrationPromise) {
     return;
   }
 
-  const minimumLoaderDuration = 3000;
+  const minimumLoaderDuration = 2000;
   const loaderStartedAt = performance.now();
   let resourcesLoaded = false;
   let loaderProgressFrame = 0;
