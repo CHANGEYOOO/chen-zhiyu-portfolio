@@ -41,6 +41,7 @@ let workPlayerTrigger = null;
 let workPlayerUrl = "";
 let siteLoaderReady = false;
 let tvcHydrationCancelled = false;
+let livestreamHydrationCancelled = false;
 const userPausedVideos = new WeakSet();
 
 if (works && worksToggle) {
@@ -342,6 +343,7 @@ async function loadLivestreamProjects() {
     projects.forEach((project, projectIndex) => {
       fragment.appendChild(createLivestreamProject(project, projectIndex, imageDimensions));
     });
+    if (livestreamHydrationCancelled) return;
     livestreamProjects.replaceChildren(fragment);
     livestreamProjects.setAttribute("aria-busy", "false");
     if (livestreamActions) livestreamActions.hidden = projects.length <= 3;
@@ -366,7 +368,7 @@ async function loadLivestreamProjects() {
   }
 }
 
-loadLivestreamProjects();
+const livestreamHydrationPromise = loadLivestreamProjects();
 
 async function hydrateTvcWorks() {
   if (!works || !window.PORTFOLIO_CONTENT?.publicApiUrl || typeof window.PORTFOLIO_CONTENT.loadPublished !== "function") return;
@@ -523,7 +525,7 @@ function preloadVideo(video) {
   });
 }
 
-async function startSiteLoader(tvcHydrationPromise) {
+async function startSiteLoader(tvcHydrationPromise, livestreamHydrationPromise) {
   if (!siteLoader) {
     siteLoaderReady = true;
     return;
@@ -536,7 +538,7 @@ async function startSiteLoader(tvcHydrationPromise) {
   let hydrationTimedOut = false;
   try {
     await Promise.race([
-      tvcHydrationPromise,
+      Promise.all([tvcHydrationPromise, livestreamHydrationPromise]),
       new Promise((resolve) =>
         window.setTimeout(() => {
           hydrationTimedOut = true;
@@ -547,14 +549,21 @@ async function startSiteLoader(tvcHydrationPromise) {
   } catch {
     // Bundled TVC fallback remains available when the published data request fails.
   }
-  if (hydrationTimedOut) tvcHydrationCancelled = true;
+  if (hydrationTimedOut) {
+    tvcHydrationCancelled = true;
+    livestreamHydrationCancelled = true;
+  }
 
   const resources = [];
   if (!posterOnlyMode()) {
     videos.forEach((video) => resources.push(() => preloadVideo(video)));
   }
 
-  const imageUrls = [...document.querySelectorAll(".panel-poster img, .work-poster img")]
+  const imageUrls = [
+    ...document.querySelectorAll(
+      ".panel-poster img, .work-poster img, .livestream-project img, .about-portrait img",
+    ),
+  ]
     .map(getPreloadImageUrl)
     .filter(Boolean);
   [...new Set(imageUrls)].forEach((url) => resources.push(() => preloadImage(url)));
@@ -1069,7 +1078,7 @@ function applyMotionPreference() {
 reducedMotion.addEventListener("change", applyMotionPreference);
 connection?.addEventListener?.("change", applyMotionPreference);
 const tvcHydrationPromise = hydrateTvcWorks();
-startSiteLoader(tvcHydrationPromise);
+startSiteLoader(tvcHydrationPromise, livestreamHydrationPromise);
 applyMotionPreference();
 
 if ("IntersectionObserver" in window) {
