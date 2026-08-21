@@ -961,15 +961,30 @@ function measureIntroSequence() {
   const firstTrack = scenes[0];
   const secondTrack = scenes[1];
   const viewportHeight = firstTrack.querySelector(".media-panel")?.offsetHeight || window.innerHeight;
+  const firstHoldEnd = Math.max(firstTrack.offsetHeight - viewportHeight, 1);
 
   introMetrics = {
     viewportHeight,
     sequenceHeight: sequence.offsetHeight,
-    firstHoldEnd: Math.max(firstTrack.offsetHeight - viewportHeight, 1),
+    firstHoldEnd,
+    heroFrameEnd: Math.min(firstHoldEnd, Math.max(viewportHeight * 0.3, 1)),
     firstExitEnd: firstTrack.offsetTop + firstTrack.offsetHeight,
     secondHoldEnd:
       secondTrack.offsetTop + Math.max(secondTrack.offsetHeight - viewportHeight, 1),
   };
+}
+
+function updateHeroSurfaceProgress(distance) {
+  if (!sequence || !introMetrics) return;
+
+  const progress = reducedMotion.matches
+    ? Number(distance > 0)
+    : smoothstep(0, introMetrics.heroFrameEnd, distance);
+  const channel = Math.round(255 * (1 - progress));
+
+  sequence.style.setProperty("--hero-frame-progress", progress.toFixed(4));
+  header?.style.setProperty("--hero-nav-color", `rgb(${channel} ${channel} ${channel})`);
+  header?.style.setProperty("--hero-logo-invert", String(1 - progress));
 }
 
 function updateIntroSequence() {
@@ -977,6 +992,7 @@ function updateIntroSequence() {
 
   const rect = sequence.getBoundingClientRect();
   const distance = clamp(-rect.top, 0, introMetrics.sequenceHeight);
+  updateHeroSurfaceProgress(distance);
   const transitionFadeEnd = Math.min(
     introMetrics.firstExitEnd,
     introMetrics.firstHoldEnd + introMetrics.viewportHeight * 0.42,

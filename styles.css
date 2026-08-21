@@ -234,9 +234,18 @@ button:focus-visible {
   --copy-hold: max(60dvh, 480px);
   --media-frame-x: clamp(18px, 3vw, 44px);
   --media-frame-y: clamp(88px, 13.2vh, 136px);
+  --hero-frame-progress: 1;
+  --hero-frame-top: var(--media-frame-y);
+  --hero-frame-right: max(var(--media-frame-x), var(--safe-right));
+  --hero-frame-bottom: var(--media-frame-y);
+  --hero-frame-left: max(var(--media-frame-x), var(--safe-left));
   position: relative;
   background: var(--page-background);
   background-attachment: fixed;
+}
+
+.has-js .cinematic-v2 .intro-sequence {
+  --hero-frame-progress: 0;
 }
 
 .scene-track[data-scene="0"] {
@@ -1961,6 +1970,10 @@ footer p {
   }
 
   .panel-frame {
+    --hero-frame-top: calc(58px + var(--safe-top));
+    --hero-frame-right: max(14px, var(--safe-right));
+    --hero-frame-bottom: max(14px, var(--safe-bottom));
+    --hero-frame-left: max(14px, var(--safe-left));
     top: calc(58px + var(--safe-top));
     right: max(14px, var(--safe-right));
     bottom: max(14px, var(--safe-bottom));
@@ -2092,6 +2105,16 @@ footer p {
   top: 62%;
   max-width: min(1180px, calc(100vw - (var(--page-pad) * 2)));
   text-align: left;
+}
+
+.cinematic-v2 .hero .panel-frame {
+  inset:
+    calc(var(--hero-frame-top) * var(--hero-frame-progress))
+    calc(var(--hero-frame-right) * var(--hero-frame-progress))
+    calc(var(--hero-frame-bottom) * var(--hero-frame-progress))
+    calc(var(--hero-frame-left) * var(--hero-frame-progress));
+  border-radius: calc(20px * var(--hero-frame-progress));
+  box-shadow: 0 4px 10px 0 rgba(0, 0, 0, calc(0.3 * var(--hero-frame-progress)));
 }
 
 .cinematic-v2 .fixed-copy-stage [data-copy="0"],
@@ -2696,7 +2719,21 @@ footer p {
 .cinematic-v2 .site-header nav a,
 .cinematic-v2 .site-header nav a:hover,
 .cinematic-v2 .site-header nav a:focus-visible {
-  color: #000 !important;
+  color: var(--hero-nav-color, #000) !important;
+}
+
+.cinematic-v2 .site-header {
+  --hero-nav-color: #000;
+  --hero-logo-invert: 0;
+}
+
+.has-js .cinematic-v2 .site-header {
+  --hero-nav-color: #fff;
+  --hero-logo-invert: 1;
+}
+
+.cinematic-v2 .site-header .brand img {
+  filter: brightness(0) saturate(100%) invert(var(--hero-logo-invert));
 }
 
 .cinematic-v2 .intro-sequence .panel-copy,
