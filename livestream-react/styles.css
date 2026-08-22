@@ -1,0 +1,90 @@
+.cinematic-v2 .livestream-projects {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.cinematic-v2 .livestream-react-project {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.react-circular-gallery {
+  --react-card-height: 404px;
+  --react-gallery-height: calc(var(--react-card-height) + 56px);
+  --react-gallery-gap: 28px;
+  --react-gallery-max-blur: 4px;
+  position: relative;
+  height: var(--react-gallery-height);
+  min-height: var(--react-gallery-height);
+  overflow: visible;
+  clip-path: inset(-64px 0 -24px 0);
+  perspective: 1200px;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.react-circular-gallery:active {
+  cursor: grabbing;
+}
+
+.react-circular-gallery canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.react-circular-gallery-track {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  transform-style: preserve-3d;
+}
+
+.react-circular-gallery-card {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  width: calc(var(--react-card-height) * var(--react-card-ratio));
+  height: var(--react-card-height);
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(10, 9, 8, 0.08);
+  box-shadow: 0 16px 28px -16px rgba(0, 0, 0, 0.72), 0 6px 12px -8px rgba(0, 0, 0, 0.48);
+  cursor: grab;
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+  filter: blur(calc(var(--react-card-depth-blur, 0) * var(--react-gallery-max-blur)));
+  will-change: transform, filter, opacity;
+}
+
+.react-circular-gallery-card:active {
+  cursor: grabbing;
+}
+
+.react-circular-gallery-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.react-circular-gallery:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.72);
+  outline-offset: 5px;
+}
+
+@media (max-width: 768px) {
+  .react-circular-gallery {
+    --react-card-height: 240px;
+    --react-gallery-gap: 18px;
+    --react-gallery-max-blur: 2.5px;
+  }
+}

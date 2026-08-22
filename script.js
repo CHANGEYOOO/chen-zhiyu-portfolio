@@ -4,8 +4,8 @@ const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 const videos = [...document.querySelectorAll("[data-autoplay-video]")];
 const sequence = document.querySelector("[data-intro-sequence]");
-const scenes = [...document.querySelectorAll(".scene-track[data-scene]")];
-const copyStage = document.querySelector("[data-copy-stage]");
+const introStage = sequence?.querySelector("[data-intro-stage]");
+const scenes = [...document.querySelectorAll(".media-panel[data-scene]")];
 const copies = [...document.querySelectorAll("[data-copy]")];
 const header = document.querySelector("[data-header]");
 const scrollSentinel = document.querySelector(".scroll-sentinel");
@@ -27,12 +27,21 @@ const livestreamProjects = livestream?.querySelector("[data-livestream-projects]
 const livestreamActions = livestream?.querySelector("[data-livestream-actions]");
 const livestreamToggle = livestream?.querySelector("[data-livestream-toggle]");
 const precisePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+const mobileIntroFlip = window.matchMedia("(max-width: 768px)");
 const siteLoader = document.querySelector("[data-site-loader]");
 const siteLoaderTrack = siteLoader?.querySelector("[data-loader-track]");
 const siteLoaderFill = siteLoader?.querySelector("[data-loader-fill]");
 const siteLoaderPercent = siteLoader?.querySelector("[data-loader-percent]");
 
 let introMetrics;
+let introRawFlipProgress = 0;
+let introDisplayedFlipProgress = 0;
+let introDisplayedHeroTextProgress = 0;
+let introFlipTimeline;
+let introSnapSide = 0;
+let introScrollSettleTimer = 0;
+let introLastScrollY = window.scrollY;
+let introLastFrameTime = 0;
 let animationFrameRequested = false;
 let sequenceInView = true;
 let activeSceneIndex = -1;
@@ -42,6 +51,8 @@ let workPlayerUrl = "";
 let siteLoaderReady = false;
 let tvcHydrationCancelled = false;
 let livestreamHydrationCancelled = false;
+let refreshWorksMotion = () => {};
+let refreshLivestreamMotion = () => {};
 const userPausedVideos = new WeakSet();
 
 if (works && worksToggle) {
@@ -51,6 +62,7 @@ if (works && worksToggle) {
     const expanded = works.classList.toggle("is-expanded");
     worksToggle.setAttribute("aria-expanded", String(expanded));
     if (worksToggleLabel) worksToggleLabel.textContent = expanded ? "收起" : "查看更多";
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => refreshWorksMotion(expanded)));
   });
 }
 
@@ -61,6 +73,7 @@ if (livestream && livestreamToggle) {
     const expanded = livestream.classList.toggle("is-expanded");
     livestreamToggle.setAttribute("aria-expanded", String(expanded));
     if (livestreamToggleLabel) livestreamToggleLabel.textContent = expanded ? "收起" : "查看更多";
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => refreshLivestreamMotion(expanded)));
   });
 }
 
@@ -72,126 +85,176 @@ function livestreamImageType(filename) {
   return "项目图片";
 }
 
-function createLivestreamArrow(direction, title) {
-  const button = document.createElement("button");
-  const visibleLabel = document.createElement("span");
-  button.className = `livestream-arrow livestream-arrow-${direction}`;
-  button.type = "button";
-  button.setAttribute("aria-label", `${direction === "prev" ? "向左" : "向右"}浏览：${title}`);
-  button.dataset.livestreamDirection = direction === "prev" ? "-1" : "1";
-  visibleLabel.setAttribute("aria-hidden", "true");
-  visibleLabel.textContent = direction === "prev" ? "←" : "→";
-  button.appendChild(visibleLabel);
-  return button;
-}
+function setupDepthCarousel(projectElement) {
+  const root = projectElement.querySelector("[data-depth-carousel]");
+  const stage = root?.querySelector("[data-depth-stage]");
+  const cards = [...(root?.querySelectorAll("[data-depth-card]") || [])];
+  const dots = [...(root?.querySelectorAll("[data-depth-dot]") || [])];
+  const arrows = [...(root?.querySelectorAll("[data-depth-direction]") || [])];
+  if (!root || !stage || !cards.length) return;
 
-function setupLivestreamCarousel(projectElement) {
-  const scroller = projectElement.querySelector("[data-livestream-scroller]");
-  const controls = projectElement.querySelector("[data-livestream-controls]");
-  const arrows = [...projectElement.querySelectorAll("[data-livestream-direction]")];
-  if (!scroller || !controls || arrows.length !== 2) return;
+  const config = { depth: 92, spread: 42, tilt: 10, visibleCards: 4 };
+  const count = cards.length;
+  let position = 0;
+  let activeIndex = 0;
+  let drag = null;
+  let wheelTimer = 0;
+  let settleTimer = 0;
+  let suppressClick = false;
 
-  let holdFrame = 0;
-  let holdDirection = 0;
-  let previousTimestamp = 0;
-  let resumeTimer = 0;
-
-  function updateControls() {
-    const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
-    const overflows = maxScroll > 2;
-    controls.hidden = !overflows;
-    arrows[0].disabled = !overflows || scroller.scrollLeft <= 1;
-    arrows[1].disabled = !overflows || scroller.scrollLeft >= maxScroll - 1;
-  }
-
-  function stopHold() {
-    holdDirection = 0;
-    previousTimestamp = 0;
-    window.cancelAnimationFrame(holdFrame);
-    holdFrame = 0;
-  }
-
-  function holdScroll(timestamp) {
-    if (!holdDirection) return;
-    if (!previousTimestamp) previousTimestamp = timestamp;
-    const elapsed = Math.min(timestamp - previousTimestamp, 40);
-    previousTimestamp = timestamp;
-    scroller.scrollLeft += holdDirection * 64 * (elapsed / 1000);
-    updateControls();
-
-    const activeArrow = holdDirection < 0 ? arrows[0] : arrows[1];
-    if (activeArrow.disabled) {
-      stopHold();
-      return;
+  const wrappedDistance = (index, current) => {
+    let distance = index - current;
+    if (count > 1) {
+      distance = ((distance % count) + count) % count;
+      if (distance > count / 2) distance -= count;
     }
+    return distance;
+  };
 
-    holdFrame = window.requestAnimationFrame(holdScroll);
-  }
+  const layout = (current, animate = false) => {
+    cards.forEach((card, index) => {
+      const distance = wrappedDistance(index, current);
+      const back = Math.max(0, distance);
+      const shown = Math.abs(distance) <= config.visibleCards + 0.5;
+      const opacity = distance < 0 ? clamp(1 + distance, 0, 1) : shown ? 1 : 0;
+      const scale = 1 - Math.min(back * 0.035, 0.16);
+      const translateX = back * config.spread;
+      const translateZ = -back * config.depth;
+      const rotateY = back * config.tilt;
 
-  function startHold(direction) {
-    if (reducedMotion.matches || !precisePointer.matches) return;
-    const activeArrow = direction < 0 ? arrows[0] : arrows[1];
-    if (activeArrow.disabled || holdDirection === direction) return;
-    stopHold();
-    holdDirection = direction;
-    holdFrame = window.requestAnimationFrame(holdScroll);
-  }
-
-  function moveByViewport(direction, button) {
-    stopHold();
-    window.clearTimeout(resumeTimer);
-    scroller.scrollBy({
-      left: direction * scroller.clientWidth * 0.7,
-      behavior: reducedMotion.matches ? "auto" : "smooth",
+      card.style.transition = animate
+        ? "transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 420ms ease, filter 700ms ease"
+        : "none";
+      card.style.transform = `translate(-50%, -50%) translate3d(${translateX.toFixed(2)}px, 0, ${translateZ.toFixed(2)}px) rotateY(${rotateY.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+      card.style.opacity = opacity.toFixed(3);
+      card.style.filter = `brightness(${Math.max(0.62, 1 - back * 0.1).toFixed(3)}) blur(${Math.min(3, back * 0.7).toFixed(2)}px)`;
+      card.style.zIndex = String(2000 - Math.round(distance * 20));
+      card.style.pointerEvents = shown && opacity > 0.05 ? "auto" : "none";
+      card.tabIndex = index === activeIndex ? 0 : -1;
+      card.setAttribute("aria-hidden", String(index !== activeIndex));
+      card.setAttribute("aria-current", String(index === activeIndex));
     });
-    resumeTimer = window.setTimeout(() => {
-      if (button.matches(":hover")) startHold(direction);
-    }, reducedMotion.matches ? 0 : 480);
-  }
 
-  arrows.forEach((button) => {
-    const direction = Number(button.dataset.livestreamDirection);
-    button.addEventListener("pointerenter", (event) => {
-      if (event.pointerType === "mouse") startHold(direction);
+    dots.forEach((dot, index) => {
+      dot.classList.toggle("is-active", index === activeIndex);
+      dot.setAttribute("aria-selected", String(index === activeIndex));
     });
-    button.addEventListener("pointerleave", () => {
-      window.clearTimeout(resumeTimer);
-      stopHold();
-    });
-    button.addEventListener("click", () => moveByViewport(direction, button));
+  };
+
+  const focusIndex = (rawIndex, animate = true) => {
+    const nextIndex = ((rawIndex % count) + count) % count;
+    let delta = nextIndex - position;
+    if (count > 1) {
+      delta = ((delta % count) + count) % count;
+      if (delta > count / 2) delta -= count;
+    }
+    activeIndex = nextIndex;
+    position += delta;
+    layout(position, animate && !reducedMotion.matches);
+    window.clearTimeout(settleTimer);
+    settleTimer = window.setTimeout(() => {
+      position = activeIndex;
+      layout(position, false);
+    }, animate && !reducedMotion.matches ? 720 : 0);
+  };
+
+  const stopDrag = (event) => {
+    if (!drag) return;
+    const currentDrag = drag;
+    drag = null;
+    root.classList.remove("is-dragging");
+    if (root.hasPointerCapture?.(currentDrag.pointerId)) {
+      root.releasePointerCapture(currentDrag.pointerId);
+    }
+    if (!currentDrag.moved) return;
+    suppressClick = true;
+    window.setTimeout(() => {
+      suppressClick = false;
+    }, 0);
+    const projected = position - currentDrag.velocity * 180 / Math.max(1, root.clientWidth * 0.34);
+    focusIndex(Math.round(projected));
+    event?.preventDefault();
+  };
+
+  root.addEventListener("pointerdown", (event) => {
+    if (event.target.closest(".depth-carousel-arrow, .depth-carousel-dot") || count < 2) return;
+    drag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      lastX: event.clientX,
+      lastTime: performance.now(),
+      velocity: 0,
+      moved: false,
+    };
+    root.setPointerCapture?.(event.pointerId);
   });
 
-  scroller.addEventListener("scroll", updateControls, { passive: true });
-  scroller.addEventListener("keydown", (event) => {
+  root.addEventListener("pointermove", (event) => {
+    if (!drag) return;
+    const deltaX = event.clientX - drag.startX;
+    if (!drag.moved && Math.abs(deltaX) > 5) {
+      drag.moved = true;
+      root.classList.add("is-dragging");
+    }
+    if (!drag.moved) return;
+    const now = performance.now();
+    drag.velocity = (event.clientX - drag.lastX) / Math.max(1, now - drag.lastTime);
+    drag.lastX = event.clientX;
+    drag.lastTime = now;
+    position = activeIndex + (drag.startX - event.clientX) / Math.max(1, root.clientWidth * 0.34);
+    layout(position, false);
+  });
+
+  root.addEventListener("pointerup", stopDrag);
+  root.addEventListener("pointercancel", stopDrag);
+
+  root.addEventListener("wheel", (event) => {
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+      ? event.deltaX
+      : event.shiftKey
+        ? event.deltaY
+        : 0;
+    if (count < 2 || Math.abs(delta) < 8) return;
+    event.preventDefault();
+    focusIndex(activeIndex + (delta > 0 ? 1 : -1));
+    window.clearTimeout(wheelTimer);
+    wheelTimer = window.setTimeout(() => layout(position, false), 140);
+  }, { passive: false });
+
+  root.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
-    moveByViewport(event.key === "ArrowLeft" ? -1 : 1, arrows[event.key === "ArrowLeft" ? 0 : 1]);
-  });
-  projectElement.querySelectorAll("img").forEach((image) => {
-    image.addEventListener("load", updateControls, { once: true });
-    image.addEventListener("error", () => image.classList.add("is-missing"), { once: true });
-  });
-  window.addEventListener("blur", stopHold);
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stopHold();
+    focusIndex(activeIndex + (event.key === "ArrowRight" ? 1 : -1));
   });
 
-  if ("ResizeObserver" in window) {
-    const resizeObserver = new ResizeObserver(updateControls);
-    resizeObserver.observe(scroller);
-  } else {
-    window.addEventListener("resize", updateControls, { passive: true });
-  }
+  arrows.forEach((button) => {
+    button.addEventListener("click", () => {
+      focusIndex(activeIndex + Number(button.dataset.depthDirection));
+    });
+  });
 
-  window.requestAnimationFrame(updateControls);
+  dots.forEach((dot) => {
+    dot.addEventListener("click", () => focusIndex(Number(dot.dataset.depthDot)));
+  });
+
+  cards.forEach((card) => {
+    card.addEventListener("click", () => {
+      if (suppressClick) return;
+      focusIndex(Number(card.dataset.depthIndex));
+    });
+    card.querySelector("img")?.addEventListener("error", () => card.classList.add("is-missing"), { once: true });
+  });
+
+  root.dataset.depthReady = "true";
+  layout(position, false);
 }
 
 function createLivestreamProject(project, projectIndex, imageDimensions) {
   const article = document.createElement("article");
   const carousel = document.createElement("div");
-  const scroller = document.createElement("div");
-  const imageList = document.createElement("ul");
+  const stage = document.createElement("div");
   const controls = document.createElement("div");
+  const indicators = document.createElement("div");
   const meta = document.createElement("div");
   const title = document.createElement("h3");
   const category = document.createElement("p");
@@ -200,16 +263,17 @@ function createLivestreamProject(project, projectIndex, imageDimensions) {
   article.className = "livestream-project";
   article.setAttribute("aria-labelledby", titleId);
   article.dataset.livestreamProject = project.id;
-  carousel.className = "livestream-carousel";
-  scroller.className = "livestream-scroller";
-  scroller.dataset.livestreamScroller = "";
-  scroller.tabIndex = 0;
-  scroller.setAttribute("role", "region");
-  scroller.setAttribute("aria-label", `${project.title}图片，共 ${project.images.length} 张`);
-  imageList.className = "livestream-list";
+  carousel.className = "livestream-carousel depth-carousel";
+  carousel.dataset.depthCarousel = "";
+  carousel.tabIndex = 0;
+  carousel.setAttribute("role", "group");
+  carousel.setAttribute("aria-roledescription", "carousel");
+  carousel.setAttribute("aria-label", `${project.title}图片，共 ${project.images.length} 张`);
+  stage.className = "depth-carousel-stage";
+  stage.dataset.depthStage = "";
 
   project.images.forEach((filename, imageIndex) => {
-    const item = document.createElement("li");
+    const item = document.createElement("button");
     const image = document.createElement("img");
     const imageNumber = String(imageIndex + 1).padStart(2, "0");
     const imageRef = typeof filename === "string"
@@ -219,7 +283,12 @@ function createLivestreamProject(project, projectIndex, imageDimensions) {
     if (!Array.isArray(dimensions) || dimensions.length !== 2) {
       throw new Error(`Invalid livestream image dimensions: ${project.title}`);
     }
-    item.className = "livestream-slide";
+    item.type = "button";
+    item.className = "depth-carousel-card";
+    item.dataset.depthCard = "";
+    item.dataset.depthIndex = String(imageIndex);
+    item.setAttribute("aria-label", `${project.title}第 ${imageNumber} 张图片`);
+    item.style.setProperty("--depth-image-ratio", String(dimensions[0] / dimensions[1]));
     image.width = dimensions[0];
     image.height = dimensions[1];
     image.src = imageRef.url;
@@ -233,18 +302,28 @@ function createLivestreamProject(project, projectIndex, imageDimensions) {
       image.loading = "lazy";
     }
     item.appendChild(image);
-    imageList.appendChild(item);
+    stage.appendChild(item);
   });
 
-  scroller.appendChild(imageList);
-  controls.className = "livestream-controls";
-  controls.dataset.livestreamControls = "";
-  controls.hidden = true;
+  controls.className = "depth-carousel-controls";
   controls.append(
-    createLivestreamArrow("prev", project.title),
-    createLivestreamArrow("next", project.title),
+    createDepthCarouselArrow("prev", project.title, -1),
+    createDepthCarouselArrow("next", project.title, 1),
   );
-  carousel.append(scroller, controls);
+
+  indicators.className = "depth-carousel-dots";
+  indicators.setAttribute("role", "tablist");
+  indicators.setAttribute("aria-label", `${project.title}图片导航`);
+  project.images.forEach((_, imageIndex) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "depth-carousel-dot";
+    dot.dataset.depthDot = String(imageIndex);
+    dot.setAttribute("role", "tab");
+    dot.setAttribute("aria-label", `查看第 ${imageIndex + 1} 张图片`);
+    indicators.appendChild(dot);
+  });
+  carousel.append(stage, controls, indicators);
 
   meta.className = "livestream-meta";
   title.id = titleId;
@@ -253,6 +332,16 @@ function createLivestreamProject(project, projectIndex, imageDimensions) {
   meta.append(title, category);
   article.append(carousel, meta);
   return article;
+}
+
+function createDepthCarouselArrow(direction, title, step) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `depth-carousel-arrow depth-carousel-arrow-${direction}`;
+  button.dataset.depthDirection = String(step);
+  button.setAttribute("aria-label", `${direction === "prev" ? "向左" : "向右"}浏览：${title}`);
+  button.innerHTML = `<span aria-hidden="true">${direction === "prev" ? "←" : "→"}</span>`;
+  return button;
 }
 
 function restoreRequestedHashPosition() {
@@ -339,21 +428,30 @@ async function loadLivestreamProjects() {
       );
     }
 
-    const fragment = document.createDocumentFragment();
-    projects.forEach((project, projectIndex) => {
-      fragment.appendChild(createLivestreamProject(project, projectIndex, imageDimensions));
-    });
     if (livestreamHydrationCancelled) return;
-    livestreamProjects.replaceChildren(fragment);
+    const reactMount = window.JOEKUNI_LIVESTREAM_REACT?.mount;
+    let mountedWithReact = false;
+    if (typeof reactMount === "function") {
+      try {
+        mountedWithReact = reactMount(livestreamProjects, projects, imageDimensions) === true;
+      } catch (error) {
+        console.warn("React livestream carousel unavailable; using native fallback.", error);
+      }
+    }
+    if (!mountedWithReact) {
+      const fragment = document.createDocumentFragment();
+      projects.forEach((project, projectIndex) => {
+        fragment.appendChild(createLivestreamProject(project, projectIndex, imageDimensions));
+      });
+      livestreamProjects.replaceChildren(fragment);
+    }
     livestreamProjects.setAttribute("aria-busy", "false");
     if (livestreamActions) livestreamActions.hidden = projects.length <= 3;
-    livestreamProjects.querySelectorAll(".livestream-project").forEach(setupLivestreamCarousel);
-    setupSectionMotion(
-      livestream,
-      ".livestream-header, .livestream-project",
-      "livestream-motion-ready",
-      "livestream-reveal",
-    );
+    const setupLivestreamMotion = () => {
+      if (!mountedWithReact) livestreamProjects.querySelectorAll(".livestream-project").forEach(setupDepthCarousel);
+    };
+    if (mountedWithReact) window.requestAnimationFrame(setupLivestreamMotion);
+    else setupLivestreamMotion();
   } catch (error) {
     const message = document.createElement("p");
     message.className = "livestream-error";
@@ -448,9 +546,475 @@ function setupSectionMotion(container, itemSelector, readyClass, itemClass) {
   revealItems.forEach((item) => observer.observe(item));
 }
 
+function setupWorksGsapMotion() {
+  const gsap = window.gsap;
+  const ScrollTrigger = window.ScrollTrigger;
+  if (!works || !gsap || !ScrollTrigger) {
+    setupSectionMotion(works, ".works-header, .work-card", "works-motion-ready", "works-reveal");
+    return;
+  }
+
+  gsap.registerPlugin(ScrollTrigger);
+  works.classList.add("gsap-works-ready");
+  const pointerCleanups = [];
+  const media = gsap.matchMedia();
+
+  media.add(
+    {
+      desktop: "(min-width: 769px) and (hover: hover) and (pointer: fine)",
+      mobile: "(max-width: 768px)",
+      reduceMotion: "(prefers-reduced-motion: reduce)",
+    },
+    (context) => {
+      const { desktop, mobile, reduceMotion } = context.conditions;
+      const heading = works.querySelector(".works-header");
+      const headingTitle = heading?.querySelector("h2");
+      const headingKicker = heading?.querySelector(".works-kicker");
+
+      if (reduceMotion) {
+        gsap.set([headingTitle, headingKicker, ...works.querySelectorAll(".work-card")], {
+          clearProps: "all",
+        });
+        return undefined;
+      }
+
+      if (heading && headingTitle) {
+        gsap.timeline({
+          scrollTrigger: {
+            trigger: heading,
+            start: "top 84%",
+            once: true,
+          },
+        })
+          .fromTo(
+            headingTitle,
+            { autoAlpha: 0, yPercent: 82, skewY: 5 },
+            { autoAlpha: 1, yPercent: 0, skewY: 0, duration: 0.82, ease: "power4.out" },
+          )
+          .fromTo(
+            headingKicker,
+            { autoAlpha: 0, x: 36 },
+            { autoAlpha: 1, x: 0, duration: 0.5, ease: "power3.out" },
+            "-=0.42",
+          );
+      }
+
+      const grid = works.querySelector(".works-grid");
+      const rowSize = mobile ? 1 : 2;
+      const registeredRows = new Map();
+      const pointerBoundCards = new WeakSet();
+      let activeFocusRow = [];
+
+      const setFocusRow = (row, isActive) => {
+        if (!desktop) return;
+        if (isActive) {
+          if (activeFocusRow === row) return;
+          activeFocusRow.forEach((card) => card.classList.remove("is-motion-focus"));
+          if (activeFocusRow.length) {
+            gsap.to(activeFocusRow, { scale: 1, duration: 0.36, ease: "power3.out", overwrite: "auto" });
+          }
+          activeFocusRow = row;
+          row.forEach((card) => card.classList.add("is-motion-focus"));
+          grid?.classList.add("has-motion-focus");
+          gsap.to(row, {
+            scale: isActive ? 1.018 : 1,
+            duration: 0.42,
+            ease: "power3.out",
+            overwrite: "auto",
+          });
+          return;
+        }
+        if (activeFocusRow !== row) return;
+        row.forEach((card) => card.classList.remove("is-motion-focus"));
+        gsap.to(row, { scale: 1, duration: 0.36, ease: "power3.out", overwrite: "auto" });
+        activeFocusRow = [];
+        grid?.classList.remove("has-motion-focus");
+      };
+
+      function resetWorksRow(row) {
+        const posters = row.map((card) => card.querySelector(".work-poster")).filter(Boolean);
+        const metas = row.map((card) => card.querySelector(".work-meta")).filter(Boolean);
+        gsap.killTweensOf([...row, ...posters, ...metas]);
+        gsap.set(row, { autoAlpha: 0 });
+        gsap.set(posters, { scale: 0.97 });
+        gsap.set(metas, { autoAlpha: 0 });
+      }
+
+      function playWorksRow(row, direction) {
+        const entrance = gsap.timeline({ defaults: { overwrite: "auto" } });
+
+        row.forEach((card, rowIndex) => {
+          const side = rowSize === 1 || rowIndex === 0 ? -1 : 1;
+          const poster = card.querySelector(".work-poster");
+          const meta = card.querySelector(".work-meta");
+          gsap.killTweensOf([card, poster, meta].filter(Boolean));
+          gsap.set(card, {
+            autoAlpha: 0,
+            x: side * (mobile ? 24 : 44),
+            y: direction * (mobile ? 34 : 48),
+            rotationZ: side * (mobile ? 1.5 : 2.5),
+          });
+          if (poster) gsap.set(poster, { scale: 0.97 });
+          if (meta) gsap.set(meta, { autoAlpha: 0, y: direction * 26 });
+
+          entrance.to(
+            card,
+            {
+              autoAlpha: 1,
+              x: 0,
+              y: 0,
+              rotationZ: 0,
+              duration: mobile ? 0.68 : 0.78,
+              ease: "power3.out",
+            },
+            0,
+          );
+          if (poster) {
+            entrance.to(
+              poster,
+              { scale: 1, duration: mobile ? 0.68 : 0.78, ease: "power3.out" },
+              0,
+            );
+          }
+          if (meta) {
+            entrance.to(
+              meta,
+              { autoAlpha: 1, y: 0, duration: 0.54, ease: "power3.out" },
+              0.22,
+            );
+          }
+        });
+        return entrance;
+      }
+
+      const bindWorksPointerDepth = (card) => {
+        if (!desktop || pointerBoundCards.has(card)) return;
+        const poster = card.querySelector(".work-poster");
+        if (!poster) return;
+        pointerBoundCards.add(card);
+
+            const rotateXTo = gsap.quickTo(poster, "rotationX", { duration: 0.42, ease: "power3.out" });
+            const rotateYTo = gsap.quickTo(poster, "rotationY", { duration: 0.42, ease: "power3.out" });
+            const xTo = gsap.quickTo(poster, "x", { duration: 0.42, ease: "power3.out" });
+            const yTo = gsap.quickTo(poster, "y", { duration: 0.42, ease: "power3.out" });
+
+            const onPointerMove = (event) => {
+              const rect = card.getBoundingClientRect();
+              const x = clamp((event.clientX - rect.left) / rect.width - 0.5, -0.5, 0.5);
+              const y = clamp((event.clientY - rect.top) / rect.height - 0.5, -0.5, 0.5);
+              rotateXTo(y * -5);
+              rotateYTo(x * 6);
+              xTo(x * 7);
+              yTo(y * 5);
+            };
+            const onPointerLeave = () => {
+              rotateXTo(0);
+              rotateYTo(0);
+              xTo(0);
+              yTo(0);
+            };
+
+            card.addEventListener("pointermove", onPointerMove);
+            card.addEventListener("pointerleave", onPointerLeave);
+            pointerCleanups.push(() => {
+              card.removeEventListener("pointermove", onPointerMove);
+              card.removeEventListener("pointerleave", onPointerLeave);
+            });
+      };
+
+      const unregisterHiddenRows = () => {
+        registeredRows.forEach((record, key) => {
+          if (key.offsetParent !== null) return;
+          record.entranceTrigger.kill();
+          record.focusTrigger?.kill();
+          if (activeFocusRow === record.cards) {
+            activeFocusRow = [];
+            grid?.classList.remove("has-motion-focus");
+          }
+          record.cards.forEach((card) => card.classList.remove("is-motion-focus"));
+          const posters = record.cards.map((card) => card.querySelector(".work-poster")).filter(Boolean);
+          const metas = record.cards.map((card) => card.querySelector(".work-meta")).filter(Boolean);
+          gsap.set([...record.cards, ...posters, ...metas], { clearProps: "all" });
+          registeredRows.delete(key);
+        });
+      };
+
+      const animateVisibleCards = (revealNew = false) => {
+        unregisterHiddenRows();
+        const cards = [...works.querySelectorAll(".work-card")].filter((card) => card.offsetParent !== null);
+        const newRows = [];
+
+        for (let rowStart = 0; rowStart < cards.length; rowStart += rowSize) {
+          const row = cards.slice(rowStart, rowStart + rowSize);
+          if (registeredRows.has(row[0])) continue;
+
+          row.forEach(bindWorksPointerDepth);
+          resetWorksRow(row);
+          const entranceTrigger = ScrollTrigger.create({
+            trigger: row[0],
+            start: "top 90%",
+            endTrigger: row[row.length - 1],
+            end: "bottom 10%",
+            onEnter: () => playWorksRow(row, 1),
+            onEnterBack: () => playWorksRow(row, -1),
+          });
+
+          const focusTrigger = desktop
+            ? ScrollTrigger.create({
+                trigger: row[0],
+                start: "top 60%",
+                endTrigger: row[row.length - 1],
+                end: "bottom 40%",
+                onToggle: ({ isActive }) => setFocusRow(row, isActive),
+              })
+            : null;
+          registeredRows.set(row[0], { cards: row, entranceTrigger, focusTrigger });
+          newRows.push(row);
+        }
+
+        ScrollTrigger.refresh();
+        if (revealNew) {
+          newRows.forEach((row) => {
+            const rect = row[0].getBoundingClientRect();
+            if (rect.bottom < 0) playWorksRow(row, -1).progress(1);
+            else if (rect.top < window.innerHeight) playWorksRow(row, 1);
+          });
+        }
+      };
+
+      refreshWorksMotion = animateVisibleCards;
+      animateVisibleCards();
+      return () => {
+        refreshWorksMotion = () => {};
+        registeredRows.forEach(({ entranceTrigger, focusTrigger }) => {
+          entranceTrigger.kill();
+          focusTrigger?.kill();
+        });
+        registeredRows.clear();
+        pointerCleanups.splice(0).forEach((cleanup) => cleanup());
+      };
+    },
+  );
+}
+
+function setupLivestreamGsapMotion() {
+  const gsap = window.gsap;
+  const ScrollTrigger = window.ScrollTrigger;
+  if (!livestream || !gsap || !ScrollTrigger) {
+    setupSectionMotion(
+      livestream,
+      ".livestream-header, .livestream-project",
+      "livestream-motion-ready",
+      "livestream-reveal",
+    );
+    return;
+  }
+
+  gsap.registerPlugin(ScrollTrigger);
+  livestream.classList.add("gsap-livestream-ready");
+  const media = gsap.matchMedia();
+  media.add(
+    {
+      desktop: "(min-width: 769px)",
+      mobile: "(max-width: 768px)",
+      reduceMotion: "(prefers-reduced-motion: reduce)",
+    },
+    (context) => {
+      const { desktop, mobile, reduceMotion } = context.conditions;
+      const heading = livestream.querySelector(".livestream-header h2");
+      const allProjects = [...livestream.querySelectorAll(".livestream-project")];
+      const registeredProjects = new Map();
+
+      if (reduceMotion) {
+        gsap.set([heading, ...allProjects], { clearProps: "all" });
+        return undefined;
+      }
+
+      gsap.fromTo(
+        heading,
+        { autoAlpha: 0, yPercent: 76, skewY: 4 },
+        {
+          autoAlpha: 1,
+          yPercent: 0,
+          skewY: 0,
+          duration: 0.82,
+          ease: "power4.out",
+          scrollTrigger: { trigger: heading, start: "top 86%", once: true },
+        },
+      );
+
+      function resetLivestreamProject(project) {
+        const gallery = project.querySelector(".react-circular-gallery, .depth-carousel");
+        const meta = project.querySelector(".livestream-meta");
+        gsap.killTweensOf([project, gallery, meta].filter(Boolean));
+        gsap.set([gallery, meta].filter(Boolean), { autoAlpha: 0 });
+      }
+
+      function playLivestreamProject(project, direction, scrollDirection) {
+        const gallery = project.querySelector(".react-circular-gallery, .depth-carousel");
+        const meta = project.querySelector(".livestream-meta");
+        const entrance = gsap.timeline({ defaults: { overwrite: "auto" } });
+        gsap.killTweensOf([gallery, meta].filter(Boolean));
+
+        if (gallery) {
+          gsap.set(
+            gallery,
+            {
+              autoAlpha: 0,
+              x: direction * (mobile ? 34 : 96),
+              y: scrollDirection * (mobile ? 42 : 70),
+              rotationZ: direction * (mobile ? 1.8 : 4.2),
+              scale: mobile ? 0.95 : 0.91,
+            },
+          );
+          entrance.to(
+            gallery,
+            {
+              autoAlpha: 1,
+              x: 0,
+              y: 0,
+              rotationZ: 0,
+              scale: 1,
+              duration: mobile ? 0.78 : 1,
+              ease: "back.out(1.4)",
+            },
+            0,
+          );
+        }
+        if (meta) {
+          gsap.set(meta, { autoAlpha: 0, y: scrollDirection * 26 });
+          entrance.to(
+            meta,
+            { autoAlpha: 1, y: 0, duration: 0.54, ease: "power3.out" },
+            0.42,
+          );
+        }
+        return entrance;
+      }
+
+      const unregisterHiddenProjects = () => {
+        registeredProjects.forEach((record, project) => {
+          if (project.offsetParent !== null) return;
+          record.entranceTrigger.kill();
+          record.focusTrigger?.kill();
+          const gallery = project.querySelector(".react-circular-gallery, .depth-carousel");
+          const meta = project.querySelector(".livestream-meta");
+          gsap.set([project, gallery, meta].filter(Boolean), { clearProps: "all" });
+          registeredProjects.delete(project);
+        });
+      };
+
+      const animateVisibleProjects = (revealNew = false) => {
+        unregisterHiddenProjects();
+        const projects = [...livestream.querySelectorAll(".livestream-project")]
+          .filter((project) => project.offsetParent !== null);
+        const newProjects = [];
+
+        projects.forEach((project) => {
+          if (registeredProjects.has(project)) return;
+          const index = allProjects.indexOf(project);
+          const direction = index % 2 === 0 ? -1 : 1;
+          resetLivestreamProject(project);
+          const entranceTrigger = ScrollTrigger.create({
+            trigger: project,
+            start: "top 88%",
+            end: "bottom 12%",
+            onEnter: () => playLivestreamProject(project, direction, 1),
+            onEnterBack: () => playLivestreamProject(project, direction, -1),
+          });
+
+          const focusTrigger = desktop
+            ? ScrollTrigger.create({
+                trigger: project,
+                start: "top 64%",
+                end: "bottom 36%",
+                onToggle: ({ isActive }) => {
+                  gsap.to(project, {
+                    scale: isActive ? 1.018 : 1,
+                    duration: 0.52,
+                    ease: isActive ? "back.out(1.35)" : "power3.out",
+                    overwrite: "auto",
+                  });
+                },
+              })
+            : null;
+          registeredProjects.set(project, { entranceTrigger, focusTrigger });
+          newProjects.push({ project, direction });
+        });
+
+        ScrollTrigger.refresh();
+        if (revealNew) {
+          newProjects.forEach(({ project, direction }) => {
+            const rect = project.getBoundingClientRect();
+            if (rect.bottom < 0) playLivestreamProject(project, direction, -1).progress(1);
+            else if (rect.top < window.innerHeight) playLivestreamProject(project, direction, 1);
+          });
+        }
+      };
+
+      refreshLivestreamMotion = animateVisibleProjects;
+      animateVisibleProjects();
+      return () => {
+        refreshLivestreamMotion = () => {};
+        registeredProjects.forEach(({ entranceTrigger, focusTrigger }) => {
+          entranceTrigger.kill();
+          focusTrigger?.kill();
+        });
+        registeredProjects.clear();
+      };
+    },
+  );
+}
+
+function setupPortfolioGsapMotion() {
+  setupWorksGsapMotion();
+  setupLivestreamGsapMotion();
+}
+
+function setupExperienceTimeline(timeline) {
+  if (!timeline) return;
+
+  const items = [...timeline.querySelectorAll("[data-timeline-item]")];
+  if (!items.length) return;
+
+  timeline.dataset.timelineReady = "true";
+
+  const updateTimeline = () => {
+    const rect = timeline.getBoundingClientRect();
+    const progress = clamp((window.innerHeight * 0.72 - rect.top) / Math.max(rect.height, 1), 0, 1);
+    timeline.style.setProperty("--timeline-progress", progress.toFixed(3));
+
+    items.forEach((item) => {
+      const itemRect = item.getBoundingClientRect();
+      const revealed = itemRect.top <= window.innerHeight * 0.72;
+      const active = revealed && itemRect.bottom >= window.innerHeight * 0.2;
+      item.classList.toggle("is-visible", revealed || reducedMotion.matches);
+      item.classList.toggle("is-active", active || reducedMotion.matches);
+    });
+  };
+
+  if (reducedMotion.matches) {
+    updateTimeline();
+    return;
+  }
+
+  let frame = 0;
+  const requestUpdate = () => {
+    if (frame) return;
+    frame = window.requestAnimationFrame(() => {
+      frame = 0;
+      updateTimeline();
+    });
+  };
+
+  window.addEventListener("scroll", requestUpdate, { passive: true });
+  window.addEventListener("resize", requestUpdate);
+  updateTimeline();
+}
+
 setupSectionMotion(about, ".about-reveal", "about-motion-ready");
-setupSectionMotion(works, ".works-header, .work-card", "works-motion-ready", "works-reveal");
 setupSectionMotion(contact, ".contact-ending", "contact-motion-ready", "contact-reveal");
+setupExperienceTimeline(about?.querySelector("[data-experience-timeline]"));
 
 function dataSaverEnabled() {
   return Boolean(connection?.saveData);
@@ -605,32 +1169,6 @@ async function startSiteLoader(tvcHydrationPromise, livestreamHydrationPromise) 
   window.setTimeout(() => siteLoader.remove(), 420);
   requestFrameUpdate();
 }
-
-function prepareCharacters(copy) {
-  const characters = [];
-
-  copy.querySelectorAll("[data-reveal-text]").forEach((line) => {
-    const text = line.textContent;
-    const fragment = document.createDocumentFragment();
-
-    [...text].forEach((character) => {
-      const span = document.createElement("span");
-      span.className = "char";
-      span.textContent = character;
-      span.setAttribute("aria-hidden", "true");
-      fragment.appendChild(span);
-      characters.push(span);
-    });
-
-    line.textContent = "";
-    line.setAttribute("aria-label", text);
-    line.appendChild(fragment);
-  });
-
-  return characters;
-}
-
-const copyCharacters = copies.map(prepareCharacters);
 
 function setToggleState(video, button) {
   const playing = !video.paused && !video.ended;
@@ -875,40 +1413,44 @@ if (contactCopyButton && contactCopyLabel && contactFeedback) {
   });
 }
 
-document.querySelectorAll("[data-video-toggle]").forEach((button) => {
-  const panel = button.closest(".media-panel");
-  const video = panel.querySelector("video");
+videos.forEach((video) => {
+  const panel = video.closest(".media-panel");
+  const button = panel.querySelector("[data-video-toggle]");
 
-  button.addEventListener("click", () => {
-    if (posterOnlyMode()) return;
+  if (button) {
+    button.addEventListener("click", () => {
+      if (posterOnlyMode()) return;
 
-    loadDeferredVideo(video);
-    if (video.paused) {
-      userPausedVideos.delete(video);
-      video.muted = true;
-      video.playsInline = true;
-      pauseOtherVideos(video);
-      const result = video.play();
-      if (result) result.catch(() => showAutoplayNote(video, true));
-    } else {
-      userPausedVideos.add(video);
-      video.pause();
-    }
-  });
+      loadDeferredVideo(video);
+      if (video.paused) {
+        userPausedVideos.delete(video);
+        video.muted = true;
+        video.playsInline = true;
+        pauseOtherVideos(video);
+        const result = video.play();
+        if (result) result.catch(() => showAutoplayNote(video, true));
+      } else {
+        userPausedVideos.add(video);
+        video.pause();
+      }
+    });
+  }
 
   video.addEventListener("play", () => {
     pauseOtherVideos(video);
     showAutoplayNote(video, false);
-    setToggleState(video, button);
+    if (button) setToggleState(video, button);
   });
   video.addEventListener("playing", () => panel.classList.add("has-video-frame"));
-  video.addEventListener("pause", () => setToggleState(video, button));
+  video.addEventListener("pause", () => {
+    if (button) setToggleState(video, button);
+  });
   video.addEventListener("emptied", () => panel.classList.remove("has-video-frame"));
   video.addEventListener("error", () => {
     panel.classList.remove("has-video-frame");
     showAutoplayNote(video, true);
   });
-  setToggleState(video, button);
+  if (button) setToggleState(video, button);
 });
 
 function clamp(value, min, max) {
@@ -920,14 +1462,11 @@ function smoothstep(start, end, value) {
   return progress * progress * (3 - 2 * progress);
 }
 
-function revealCharacters(characters, progress) {
-  const total = Math.max(characters.length - 1, 1);
-
-  characters.forEach((character, index) => {
-    const start = (index / total) * 0.86;
-    const opacity = reducedMotion.matches ? 1 : smoothstep(start, start + 0.14, progress);
-    character.style.setProperty("--char-opacity", String(opacity));
-  });
+function revealCopy(copy, progress) {
+  if (!copy) return;
+  const visibleProgress = reducedMotion.matches ? 1 : clamp(progress, 0, 1);
+  copy.style.setProperty("--copy-reveal-bottom", `${((1 - visibleProgress) * 100).toFixed(3)}%`);
+  copy.style.setProperty("--copy-reveal-opacity", smoothstep(0, 0.22, visibleProgress).toFixed(4));
 }
 
 function setActiveScene(index) {
@@ -937,12 +1476,11 @@ function setActiveScene(index) {
     activeSceneIndex = nextIndex;
 
     scenes.forEach((scene, sceneIndex) => {
-      const panel = scene.querySelector(".media-panel");
       const video = scene.querySelector("video");
       const button = scene.querySelector("[data-video-toggle]");
       const isActive = sceneIndex === activeSceneIndex;
 
-      panel?.classList.toggle("is-active", isActive);
+      scene.classList.toggle("is-active", isActive);
       if (button) button.tabIndex = isActive ? 0 : -1;
       if (!isActive && video && !video.paused) video.pause();
     });
@@ -956,21 +1494,36 @@ function setActiveScene(index) {
 }
 
 function measureIntroSequence() {
-  if (!sequence || scenes.length < 2) return;
+  if (!sequence || !introStage || scenes.length < 2) return;
 
-  const firstTrack = scenes[0];
-  const secondTrack = scenes[1];
-  const viewportHeight = firstTrack.querySelector(".media-panel")?.offsetHeight || window.innerHeight;
-  const firstHoldEnd = Math.max(firstTrack.offsetHeight - viewportHeight, 1);
+  const viewportHeight = introStage.offsetHeight || window.innerHeight;
+  const scrollDistance = Math.max(sequence.offsetHeight - viewportHeight, 1);
+  const heroFrameEnd = Math.min(scrollDistance, Math.max(viewportHeight * 0.3, 1));
+  const heroTextStart = heroFrameEnd;
+  const heroTextEnd = Math.max(heroTextStart + 1, scrollDistance * 0.34);
+  const heroTextHoldDistance = Math.min(
+    Math.max(viewportHeight * 0.22, 160),
+    Math.max(scrollDistance - heroTextEnd - 1, 160),
+  );
+  const heroTextHoldEnd = Math.min(scrollDistance, heroTextEnd + heroTextHoldDistance);
+  const flipStart = heroTextHoldEnd;
+  const flipEnd = Math.max(flipStart + 1, scrollDistance * 0.72);
+  const statementTextStart = flipEnd;
+  const statementTextEnd = Math.max(statementTextStart + 1, scrollDistance * 0.9);
 
   introMetrics = {
     viewportHeight,
     sequenceHeight: sequence.offsetHeight,
-    firstHoldEnd,
-    heroFrameEnd: Math.min(firstHoldEnd, Math.max(viewportHeight * 0.3, 1)),
-    firstExitEnd: firstTrack.offsetTop + firstTrack.offsetHeight,
-    secondHoldEnd:
-      secondTrack.offsetTop + Math.max(secondTrack.offsetHeight - viewportHeight, 1),
+    scrollDistance,
+    heroFrameEnd,
+    heroTextStart,
+    heroTextEnd,
+    heroTextHoldEnd,
+    heroTextHoldDistance,
+    flipStart,
+    flipEnd,
+    statementTextStart,
+    statementTextEnd,
   };
 }
 
@@ -987,53 +1540,175 @@ function updateHeroSurfaceProgress(distance) {
   header?.style.setProperty("--hero-logo-invert", String(1 - progress));
 }
 
-function updateIntroSequence() {
+function setupIntroGsapFlip() {
+  const gsap = window.gsap;
+  if (!sequence || !gsap) return;
+  const flipAngleProperty = mobileIntroFlip.matches
+    ? "--intro-flip-angle-y"
+    : "--intro-flip-angle-x";
+
+  introFlipTimeline?.kill();
+  sequence.style.setProperty("--intro-flip-angle-x", "0deg");
+  sequence.style.setProperty("--intro-flip-angle-y", "0deg");
+  introFlipTimeline = gsap.timeline({ paused: true, defaults: { ease: "none" } });
+  introFlipTimeline
+    .to(
+      sequence,
+      {
+        "--intro-card-scale": 0.965,
+        "--intro-card-depth": "-24px",
+        duration: 0.16,
+        ease: "power2.in",
+      },
+      0,
+    )
+    .to(
+      sequence,
+      {
+        [flipAngleProperty]: "90deg",
+        "--intro-card-scale": 0.93,
+        "--intro-card-depth": "-64px",
+        "--intro-edge-highlight-opacity": 0.32,
+        duration: 0.38,
+        ease: "power1.inOut",
+      },
+      0.16,
+    )
+    .to(
+      sequence,
+      {
+        [flipAngleProperty]: "184deg",
+        "--intro-card-scale": 1.006,
+        "--intro-card-depth": "4px",
+        "--intro-edge-highlight-opacity": 0,
+        duration: 0.38,
+        ease: "power1.inOut",
+      },
+      0.54,
+    )
+    .to(
+      sequence,
+      {
+        [flipAngleProperty]: "180deg",
+        "--intro-card-scale": 1,
+        "--intro-card-depth": "0px",
+        duration: 0.08,
+        ease: "power2.out",
+      },
+      0.92,
+    );
+}
+
+function updateDisplayedIntroFlip(timestamp) {
+  const continuousTarget = smoothstep(0, 1, introRawFlipProgress);
+  const target = reducedMotion.matches
+    ? Number(introRawFlipProgress >= 0.5)
+    : introSnapSide ?? continuousTarget;
+
+  if (introRawFlipProgress <= 0) {
+    introDisplayedFlipProgress = 0;
+  } else if (introRawFlipProgress >= 1) {
+    introDisplayedFlipProgress = 1;
+  } else {
+    const elapsed = introLastFrameTime ? Math.min(timestamp - introLastFrameTime, 48) : 16;
+    const response = introSnapSide === null ? 70 : 95;
+    const attraction = 1 - Math.exp(-elapsed / response);
+    introDisplayedFlipProgress += (target - introDisplayedFlipProgress) * attraction;
+    if (Math.abs(target - introDisplayedFlipProgress) < 0.0005) {
+      introDisplayedFlipProgress = target;
+    }
+  }
+
+  introLastFrameTime = timestamp;
+  return introDisplayedFlipProgress;
+}
+
+function getIntroSnapSide(progress) {
+  if (progress <= 0.18) return 0;
+  if (progress >= 0.82) return 1;
+  return null;
+}
+
+function handleIntroScroll() {
+  const direction = Math.sign(window.scrollY - introLastScrollY);
+  introLastScrollY = window.scrollY;
+
+  if (
+    (introSnapSide === 0 && direction > 0) ||
+    (introSnapSide === 1 && direction < 0)
+  ) {
+    introSnapSide = null;
+  }
+
+  window.clearTimeout(introScrollSettleTimer);
+  introScrollSettleTimer = window.setTimeout(() => {
+    introSnapSide = getIntroSnapSide(introRawFlipProgress);
+    requestFrameUpdate();
+  }, 120);
+  requestFrameUpdate();
+}
+
+window.addEventListener("scroll", handleIntroScroll, { passive: true });
+
+function updateIntroSequence(timestamp = performance.now()) {
   if (!sequence || !introMetrics) return;
 
   const rect = sequence.getBoundingClientRect();
-  const distance = clamp(-rect.top, 0, introMetrics.sequenceHeight);
+  const distance = clamp(-rect.top, 0, introMetrics.scrollDistance);
   updateHeroSurfaceProgress(distance);
-  const transitionFadeEnd = Math.min(
-    introMetrics.firstExitEnd,
-    introMetrics.firstHoldEnd + introMetrics.viewportHeight * 0.42,
-  );
-  const firstCopyOpacity = reducedMotion.matches
-    ? Number(distance < introMetrics.firstExitEnd)
-    : 1 - smoothstep(introMetrics.firstHoldEnd, transitionFadeEnd, distance);
-  const secondCopyEntranceOpacity = reducedMotion.matches
-    ? Number(distance >= introMetrics.firstExitEnd)
-    : smoothstep(
-        introMetrics.firstExitEnd,
-        introMetrics.firstExitEnd + introMetrics.viewportHeight * 0.12,
-        distance,
-      );
-  const secondCopyExitOpacity = reducedMotion.matches
-    ? Number(distance < introMetrics.secondHoldEnd)
-    : 1 -
-      smoothstep(
-        introMetrics.secondHoldEnd,
-        introMetrics.secondHoldEnd + introMetrics.viewportHeight * 0.08,
-        distance,
-      );
-  const secondCopyOpacity = secondCopyEntranceOpacity * secondCopyExitOpacity;
   const sequenceVisible = rect.bottom > 0 && rect.top < window.innerHeight;
-  const firstReveal = clamp(distance / introMetrics.firstHoldEnd, 0, 1);
+  const targetFirstReveal = clamp(
+    (distance - introMetrics.heroTextStart) /
+      Math.max(introMetrics.heroTextEnd - introMetrics.heroTextStart, 1),
+    0,
+    1,
+  );
+  const displayedHeroTextProgress = reducedMotion.matches
+    ? targetFirstReveal
+    : smoothstep(0, 1, targetFirstReveal);
+  introDisplayedHeroTextProgress = displayedHeroTextProgress;
+  const heroTextReady = distance >= introMetrics.heroTextHoldEnd;
+
+  introRawFlipProgress = heroTextReady
+    ? clamp(
+        (distance - introMetrics.flipStart) /
+          Math.max(introMetrics.flipEnd - introMetrics.flipStart, 1),
+        0,
+        1,
+      )
+    : 0;
+  const displayedFlipProgress = updateDisplayedIntroFlip(timestamp);
   const secondReveal = clamp(
-    (distance - introMetrics.firstExitEnd) /
-      (introMetrics.secondHoldEnd - introMetrics.firstExitEnd),
+    (distance - introMetrics.statementTextStart) /
+      Math.max(introMetrics.statementTextEnd - introMetrics.statementTextStart, 1),
     0,
     1,
   );
 
+  sequence.style.setProperty("--intro-flip-progress", displayedFlipProgress.toFixed(4));
+  if (reducedMotion.matches || !introFlipTimeline) {
+    const angle = `${(displayedFlipProgress * 180).toFixed(3)}deg`;
+    sequence.style.setProperty("--intro-flip-angle-x", mobileIntroFlip.matches ? "0deg" : angle);
+    sequence.style.setProperty("--intro-flip-angle-y", mobileIntroFlip.matches ? angle : "0deg");
+    sequence.style.setProperty("--intro-card-depth", "0px");
+    sequence.style.setProperty("--intro-card-scale", "1");
+    sequence.style.setProperty("--intro-edge-highlight-opacity", "0");
+  } else {
+    introFlipTimeline.progress(displayedFlipProgress);
+  }
+
+  const faceDirection = Math.cos(Math.PI * displayedFlipProgress);
+  const heroFaceOpacity = smoothstep(0.04, 0.18, faceDirection);
+  const statementFaceOpacity = smoothstep(0.04, 0.18, -faceDirection);
+
+  sequence.style.setProperty("--hero-face-opacity", heroFaceOpacity.toFixed(4));
+  sequence.style.setProperty("--statement-face-opacity", statementFaceOpacity.toFixed(4));
+
   const secondVideo = scenes[1]?.querySelector("video");
-  const secondLoadStart = Math.max(
-    introMetrics.firstExitEnd - introMetrics.viewportHeight * 0.1,
-    0,
-  );
 
   if (
     secondVideo &&
-    distance >= secondLoadStart &&
+    introRawFlipProgress > 0.15 &&
     siteLoaderReady &&
     !dataSaverEnabled() &&
     !reducedMotion.matches
@@ -1041,25 +1716,16 @@ function updateIntroSequence() {
     loadDeferredVideo(secondVideo);
   }
 
-  const nextActiveScene = sequenceVisible
-    ? distance < introMetrics.firstExitEnd
-      ? 0
-      : 1
-    : -1;
+  const nextActiveScene = sequenceVisible ? Number(displayedFlipProgress >= 0.5) : -1;
   setActiveScene(nextActiveScene);
 
-  copyStage.style.setProperty("--copy-one-opacity", String(firstCopyOpacity));
-  copyStage.style.setProperty("--copy-two-opacity", String(secondCopyOpacity));
-  copyStage.style.setProperty("--copy-stage-opacity", sequenceVisible ? "1" : "0");
-  copyStage.style.setProperty("--copy-stage-visibility", sequenceVisible ? "visible" : "hidden");
-
-  revealCharacters(copyCharacters[0], firstReveal);
-  revealCharacters(copyCharacters[1], secondReveal);
+  revealCopy(copies[0], displayedHeroTextProgress);
+  revealCopy(copies[1], secondReveal);
 }
 
-function updateFrame() {
+function updateFrame(timestamp) {
   animationFrameRequested = false;
-  updateIntroSequence();
+  updateIntroSequence(timestamp);
   if (sequenceInView && !document.hidden) requestFrameUpdate();
 }
 
@@ -1095,6 +1761,11 @@ reducedMotion.addEventListener("change", applyMotionPreference);
 connection?.addEventListener?.("change", applyMotionPreference);
 const tvcHydrationPromise = hydrateTvcWorks();
 startSiteLoader(tvcHydrationPromise, livestreamHydrationPromise);
+Promise.allSettled([tvcHydrationPromise, livestreamHydrationPromise]).then(() => {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(setupPortfolioGsapMotion);
+  });
+});
 applyMotionPreference();
 
 if ("IntersectionObserver" in window) {
@@ -1116,11 +1787,13 @@ if ("IntersectionObserver" in window) {
 
 window.addEventListener("resize", () => {
   measureIntroSequence();
+  setupIntroGsapFlip();
   requestFrameUpdate();
 });
 
 window.addEventListener("orientationchange", () => {
   measureIntroSequence();
+  setupIntroGsapFlip();
   requestFrameUpdate();
 });
 
@@ -1133,6 +1806,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 measureIntroSequence();
+setupIntroGsapFlip();
 requestFrameUpdate();
 
 window.addEventListener("load", () => {

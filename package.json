@@ -1,0 +1,18 @@
+{
+  "name": "joekuni-portfolio-livestream-react",
+  "private": true,
+  "version": "0.24.0",
+  "scripts": {
+    "build:livestream": "vite build --config vite.livestream.config.mjs",
+    "test:livestream": "node --test tests/livestream-react-carousel.test.mjs"
+  },
+  "dependencies": {
+    "gsap": "3.13.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "5.0.4",
+    "vite": "8.2.1"
+  }
+}

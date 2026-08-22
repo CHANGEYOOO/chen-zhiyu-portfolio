@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0a0908" />
     <meta
       name="description"
-      content="陈智宇，影视美术指导与视觉创作者。"
+      content="陈智宇，影视美术指导·视觉设计师。"
     />
     <title>JOEKUNI - 陈智宇</title>
     <script>
@@ -38,10 +38,14 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.24-v26" />
+    <link rel="stylesheet" href="styles.css?v=0.24-v52" />
+    <link rel="stylesheet" href="assets/react/joekuni-portfolio-livestream-react.css?v=0.24-v52" />
     <script src="assets/data/works-api.js?v=0.4" defer></script>
     <script src="assets/data/livestream-data.js?v=0.21" defer></script>
-    <script src="script.js?v=0.24-v26" defer onerror="document.documentElement.classList.remove('has-js')"></script>
+    <script src="assets/vendor/gsap.min.js?v=3.13.0" defer></script>
+    <script src="assets/vendor/ScrollTrigger.min.js?v=3.13.0" defer></script>
+    <script src="assets/react/livestream-circular-gallery.js?v=0.24-v52" defer></script>
+    <script src="script.js?v=0.24-v52" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
   <body class="cinematic-v2 loader-active">
     <div class="site-loader" data-site-loader role="status" aria-live="polite" aria-label="正在加载作品集">
@@ -69,7 +73,8 @@
 
     <main id="main">
       <section class="intro-sequence" id="top" aria-label="个人身份与创作方法" data-intro-sequence>
-        <div class="scene-track" data-scene="0">
+        <div class="intro-sticky-stage" data-intro-stage>
+          <div class="intro-flip-card" data-intro-flip-card>
           <article class="media-panel hero" aria-label="首屏代表作" data-scene="0">
             <div class="panel-frame">
             <picture class="panel-poster" aria-hidden="true">
@@ -105,16 +110,13 @@
             </video>
             <div class="media-shade" aria-hidden="true"></div>
 
-            <button class="media-toggle" type="button" data-video-toggle aria-label="播放首屏视频">
-              <span aria-hidden="true">▶</span>
-              <span class="sr-only">播放首屏视频</span>
-            </button>
-            <p class="autoplay-note" data-autoplay-note hidden>动态影像已暂停，可使用右下角按钮播放。</p>
+            <div class="panel-copy hero-copy" data-copy="0">
+              <h1 id="hero-title" data-reveal-text>陈智宇，影视美术指导·视觉设计师。</h1>
+            </div>
+
             </div>
           </article>
-        </div>
 
-        <div class="scene-track" data-scene="1">
           <article class="media-panel statement" aria-label="个人方法影像" data-scene="1">
             <div class="panel-frame">
             <picture class="panel-poster" aria-hidden="true">
@@ -152,29 +154,15 @@
             </video>
             <div class="media-shade" aria-hidden="true"></div>
 
-            <button class="media-toggle" type="button" data-video-toggle aria-label="播放第二段视频">
-              <span aria-hidden="true">▶</span>
-              <span class="sr-only">播放第二段视频</span>
-            </button>
-            <p class="autoplay-note" data-autoplay-note hidden>动态影像已暂停，可使用右下角按钮播放。</p>
+            <div class="panel-copy statement-copy" data-copy="1">
+              <h2 id="statement-title" data-reveal-text>在影视、空间与制作之间，将概念转化为具有叙事感的画面。</h2>
+              <p data-reveal-text>从视觉方向到现场落地，让抽象创意成为可以被拍摄、观看与感受的视觉世界。</p>
+            </div>
+
             </div>
           </article>
-        </div>
-
-          <div class="fixed-copy-stage" data-copy-stage>
-            <div class="panel-copy hero-copy" data-copy="0">
-              <h1 id="hero-title" data-reveal-text>陈智宇，影视美术指导与视觉创作者。</h1>
-              <p class="identity-en">
-                <span data-reveal-text>CHEN ZHIYU</span>
-                <span data-reveal-text>ART DIRECTION &amp; VISUAL WORLDS</span>
-              </p>
-            </div>
-
-            <div class="panel-copy statement-copy" data-copy="1">
-              <h2 id="statement-title" data-reveal-text>在影视、空间与数字视觉之间，将概念转化为具有叙事感的画面。</h2>
-              <p data-reveal-text>Across film, space, and digital imagery, I transform concepts into visuals with a strong sense of narrative.</p>
-            </div>
           </div>
+        </div>
       </section>
 
       <section
@@ -571,15 +559,19 @@
               </h2>
 
               <p class="about-role">
-                <span>影视美术指导与视觉创作者</span>
-                <span lang="en">ART DIRECTION &amp; VISUAL WORLDS</span>
+                <span>影视美术指导·视觉设计师</span>
               </p>
 
               <p class="about-summary">
-                从品牌概念与叙事出发，通过美术指导、场景设计、空间搭建与数字视觉，将抽象创意转化为可以被拍摄、观看与感受的视觉世界。工作横跨
-                TVC、游戏影视、直播空间与 CG
-                产品影像，重视从视觉设定到现场执行及后期衔接的完整落地。
+                从品牌概念与叙事出发，通过美术指导、场景设计与空间搭建，将抽象创意转化为可以被拍摄、观看与感受的视觉世界。工作横跨
+                TVC、游戏影视与直播空间，重视从视觉设定到现场执行及后期衔接的完整落地。
               </p>
+
+              <section class="about-education about-reveal" aria-labelledby="education-title">
+                <p class="about-label" lang="en">Education</p>
+                <h3 id="education-title">北京电影学院现代创意媒体学院</h3>
+                <p>视觉艺术系 · 戏剧影视美术设计专业本科</p>
+              </section>
             </div>
 
             <figure class="about-portrait about-reveal">
@@ -594,34 +586,13 @@
             </figure>
           </div>
 
-          <div class="about-methods" aria-label="创作方法">
-            <article class="about-method about-reveal">
-              <p class="about-label" lang="en">Visual Direction</p>
-              <h3>视觉方向</h3>
-              <p>从品牌概念与叙事目标出发，建立视觉方向、场景设定与画面语言，并协调拍摄及后期环节。</p>
-            </article>
-
-            <article class="about-method about-reveal">
-              <p class="about-label" lang="en">Production &amp; Space</p>
-              <h3>空间与制作</h3>
-              <p>推进影视美术、场景设计、实体搭建与资源统筹，让视觉设定能够在真实制作条件中落地。</p>
-            </article>
-
-            <article class="about-method about-reveal">
-              <p class="about-label" lang="en">Digital Visuals</p>
-              <h3>数字视觉</h3>
-              <p>通过 3D 设定、数字预演与 CG 产品影像连接创意、空间和最终画面。</p>
-            </article>
-          </div>
-
-          <section class="about-experience" aria-labelledby="experience-title">
+          <section class="about-experience" aria-label="工作经历">
             <header class="about-subhead about-reveal">
               <p class="about-label" lang="en">Experience</p>
-              <h3 id="experience-title">工作经历</h3>
             </header>
 
-            <ol class="about-timeline">
-              <li class="about-experience-item about-reveal">
+            <ol class="about-timeline" data-experience-timeline>
+              <li class="about-timeline-item" data-timeline-item>
                 <p class="about-year">2025-2026</p>
                 <div class="about-position">
                   <h4>荒原视觉工作室</h4>
@@ -630,7 +601,7 @@
                 <p class="about-description">参与并主导品牌直播空间及 TVC 项目的设计、搭建与拍摄。</p>
               </li>
 
-              <li class="about-experience-item about-reveal">
+              <li class="about-timeline-item" data-timeline-item>
                 <p class="about-year">2025</p>
                 <div class="about-position">
                   <h4>宁波怡人玩具有限公司</h4>
@@ -639,7 +610,7 @@
                 <p class="about-description">主导大型微缩场景及美术制作流程，推进资源整合与制作标准建立。</p>
               </li>
 
-              <li class="about-experience-item about-reveal">
+              <li class="about-timeline-item" data-timeline-item>
                 <p class="about-year">2024</p>
                 <div class="about-position">
                   <h4>至幻蘑菇</h4>
@@ -648,7 +619,7 @@
                 <p class="about-description">负责三维视觉设定，以及 CG 产品影像从创意到分镜的完整导演流程。</p>
               </li>
 
-              <li class="about-experience-item about-reveal">
+              <li class="about-timeline-item" data-timeline-item>
                 <p class="about-year">2023-2024</p>
                 <div class="about-position">
                   <h4>LOOKwhat</h4>
@@ -659,19 +630,6 @@
             </ol>
           </section>
 
-          <div class="about-secondary">
-            <section class="about-secondary-block about-reveal" aria-labelledby="education-title">
-              <p class="about-label" lang="en">Education</p>
-              <h3 id="education-title">北京电影学院现代创意媒体学院</h3>
-              <p>视觉艺术系 · 戏剧影视美术设计专业本科</p>
-            </section>
-
-            <section class="about-secondary-block about-reveal" aria-labelledby="collaborations-title">
-              <p class="about-label" lang="en">Selected Collaborations</p>
-              <h3 class="sr-only" id="collaborations-title">合作品牌</h3>
-              <p class="about-collaborations">网易 · 腾讯 · 优酷 · 小米 · NARS · 雀巢 · 极米 · 原神</p>
-            </section>
-          </div>
         </div>
       </section>
 
@@ -683,7 +641,7 @@
           <address class="contact-body">
             <div class="contact-profile">
               <p class="contact-name">陈智宇 <span lang="en">CHEN ZHIYU</span></p>
-              <p class="contact-role">影视美术指导与视觉创作者 <span lang="en">ART DIRECTION &amp; VISUAL WORLDS</span></p>
+              <p class="contact-role">影视美术指导·视觉设计师</p>
             </div>
 
             <div class="contact-details" aria-label="联系方式">
@@ -731,7 +689,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.24</p>
+      <p>HTML PROTOTYPE V0.24 · REVISION 52</p>
     </footer>
   </body>
 </html>

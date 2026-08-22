@@ -2,3 +2,4 @@
 design-reference/
 .worktrees/
 .wrangler/
+node_modules/
