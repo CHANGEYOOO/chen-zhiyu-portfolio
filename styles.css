@@ -2110,6 +2110,12 @@ footer p {
   --about-muted: rgba(236, 232, 223, 0.54);
   --about-line: rgba(236, 232, 223, 0.18);
   --tungsten: #b79a78;
+  --type-section-title: clamp(52px, 7.2vw, 104px);
+  --type-section-label: 12px;
+  --type-section-description: clamp(16px, 1.45vw, 21px);
+  --type-card-title: clamp(16px, 1.3vw, 18px);
+  --type-card-detail: clamp(13px, 1vw, 15px);
+  --type-body: clamp(15px, 1.2vw, 18px);
   background: var(--page-background);
   background-attachment: fixed;
   color: var(--paper);
@@ -3101,5 +3107,149 @@ footer p {
   .has-js .about-timeline[data-timeline-ready="true"] .about-timeline-item {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* Revision 53: shared editorial typography hierarchy. */
+.cinematic-v2 .section-heading {
+  display: block;
+  margin-bottom: clamp(64px, 7vw, 96px);
+  color: #000;
+  font-family: var(--nav);
+}
+
+.cinematic-v2 .section-heading-label {
+  margin: 0 0 clamp(18px, 2vw, 24px);
+  color: rgba(0, 0, 0, 0.52);
+  font-size: var(--type-section-label);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.cinematic-v2 .section-heading .section-heading-title {
+  max-width: none;
+  margin: 0;
+  color: #000;
+  font-family: var(--nav);
+  font-size: var(--type-section-title);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+}
+
+.cinematic-v2 .section-heading-description {
+  margin: clamp(14px, 1.5vw, 20px) 0 0;
+  color: rgba(0, 0, 0, 0.58);
+  font-size: var(--type-section-description);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+.cinematic-v2 .hero-name,
+.cinematic-v2 .hero-role {
+  display: block;
+}
+
+.cinematic-v2 .hero-role {
+  margin-top: 0.22em;
+  font-size: 0.58em;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.cinematic-v2 .hero-copy h1,
+.cinematic-v2 .statement-copy h2 {
+  font-weight: 400;
+  letter-spacing: -0.025em;
+}
+
+.cinematic-v2 .work-meta {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 24px;
+  padding-top: 14px;
+  font-size: var(--type-card-detail);
+  line-height: 1.45;
+}
+
+.cinematic-v2 .work-meta-line {
+  font-size: var(--type-card-title);
+  font-weight: 400;
+}
+
+.cinematic-v2 .work-meta-line span:last-child {
+  color: rgba(0, 0, 0, 0.56);
+  font-size: var(--type-card-detail);
+}
+
+.cinematic-v2 .work-card h3 {
+  margin-top: 2px;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: var(--type-card-detail);
+  line-height: 1.55;
+}
+
+.cinematic-v2 .livestream-meta {
+  padding-top: 18px;
+  color: #000;
+}
+
+.cinematic-v2 .livestream-meta h3 {
+  color: #000;
+  font-size: var(--type-card-title);
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.cinematic-v2 .livestream-meta p {
+  margin-top: 8px;
+  color: rgba(0, 0, 0, 0.56);
+  font-size: var(--type-card-detail);
+  line-height: 1.45;
+}
+
+.cinematic-v2 .about-intro {
+  margin-top: 0;
+}
+
+.cinematic-v2 .about-name,
+.cinematic-v2 .about-role,
+.cinematic-v2 .about-position h4,
+.cinematic-v2 .contact-name {
+  font-weight: 400;
+}
+
+.cinematic-v2 .about-summary,
+.cinematic-v2 .about-description {
+  font-size: var(--type-body);
+}
+
+.cinematic-v2 .contact-content h2,
+.cinematic-v2 .contact-body {
+  margin-top: 0;
+}
+
+@media (max-width: 768px) {
+  .cinematic-v2 {
+    --type-section-title: clamp(42px, 14vw, 56px);
+    --type-section-description: clamp(15px, 4.4vw, 18px);
+    --type-card-title: 17px;
+    --type-card-detail: 14px;
+  }
+
+  .cinematic-v2 .section-heading {
+    margin-bottom: 52px;
+  }
+
+  .cinematic-v2 .work-meta {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .cinematic-v2 .work-meta-line {
+    display: flex;
   }
 }

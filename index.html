@@ -38,14 +38,14 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.24-v52" />
-    <link rel="stylesheet" href="assets/react/joekuni-portfolio-livestream-react.css?v=0.24-v52" />
+    <link rel="stylesheet" href="styles.css?v=0.24-v53" />
+    <link rel="stylesheet" href="assets/react/joekuni-portfolio-livestream-react.css?v=0.24-v53" />
     <script src="assets/data/works-api.js?v=0.4" defer></script>
     <script src="assets/data/livestream-data.js?v=0.21" defer></script>
     <script src="assets/vendor/gsap.min.js?v=3.13.0" defer></script>
     <script src="assets/vendor/ScrollTrigger.min.js?v=3.13.0" defer></script>
-    <script src="assets/react/livestream-circular-gallery.js?v=0.24-v52" defer></script>
-    <script src="script.js?v=0.24-v52" defer onerror="document.documentElement.classList.remove('has-js')"></script>
+    <script src="assets/react/livestream-circular-gallery.js?v=0.24-v53" defer></script>
+    <script src="script.js?v=0.24-v53" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
   <body class="cinematic-v2 loader-active">
     <div class="site-loader" data-site-loader role="status" aria-live="polite" aria-label="正在加载作品集">
@@ -111,7 +111,10 @@
             <div class="media-shade" aria-hidden="true"></div>
 
             <div class="panel-copy hero-copy" data-copy="0">
-              <h1 id="hero-title" data-reveal-text>陈智宇，影视美术指导·视觉设计师。</h1>
+              <h1 id="hero-title" data-reveal-text>
+                <span class="hero-name">陈智宇</span>
+                <span class="hero-role">影视美术指导·视觉设计师</span>
+              </h1>
             </div>
 
             </div>
@@ -155,8 +158,7 @@
             <div class="media-shade" aria-hidden="true"></div>
 
             <div class="panel-copy statement-copy" data-copy="1">
-              <h2 id="statement-title" data-reveal-text>在影视、空间与制作之间，将概念转化为具有叙事感的画面。</h2>
-              <p data-reveal-text>从视觉方向到现场落地，让抽象创意成为可以被拍摄、观看与感受的视觉世界。</p>
+              <h2 id="statement-title" data-reveal-text>将抽象概念转化为视觉叙事</h2>
             </div>
 
             </div>
@@ -171,9 +173,10 @@
         aria-labelledby="work-title"
         data-video-base="https://media.kjoe.top/media-v0.21/works/"
       >
-        <header class="works-header film-heading">
-          <p class="works-kicker">PORTFOLIO / FILM</p>
-          <h2 id="work-title">Film Art Direction</h2>
+        <header class="works-header film-heading section-heading">
+          <p class="works-kicker section-heading-label">01 / PORTFOLIO</p>
+          <h2 class="section-heading-title" id="work-title">TVC</h2>
+          <p class="section-heading-description">Film Art Direction</p>
           <p id="works-note" class="sr-only">点击作品封面可进入全屏播放器。视频只会在点击后加载。</p>
         </header>
 
@@ -524,8 +527,10 @@
         data-projects-src="assets/data/livestream-projects.json?v=0.21"
         data-dimensions-src="assets/data/livestream-image-dimensions.json?v=0.21"
       >
-        <header class="livestream-header film-heading">
-          <h2 id="livestream-title">Livestream Set Design</h2>
+        <header class="livestream-header film-heading section-heading">
+          <p class="livestream-kicker section-heading-label">02 / PORTFOLIO</p>
+          <h2 class="section-heading-title" id="livestream-title">LIVESTREAM</h2>
+          <p class="section-heading-description">Set Design</p>
         </header>
 
         <div id="livestream-projects" class="livestream-projects" data-livestream-projects aria-busy="true">
@@ -549,14 +554,19 @@
         </noscript>
       </section>
 
-      <section class="about" id="about" aria-labelledby="about-title" data-about>
+      <section class="about" id="about" aria-labelledby="about-section-title" data-about>
         <div class="about-inner">
+          <header class="about-heading section-heading about-reveal">
+            <p class="section-heading-label">03 / PROFILE</p>
+            <h2 class="section-heading-title" id="about-section-title">ABOUT</h2>
+            <p class="section-heading-description">Art Direction &amp; Visual Design</p>
+          </header>
           <div class="about-intro about-credit-layout">
             <div class="about-identity about-reveal">
-              <h2 class="about-name" id="about-title">
+              <h3 class="about-name" id="about-title">
                 <span class="about-name-zh">陈智宇</span>
                 <span class="about-name-en" lang="en">CHEN ZHIYU</span>
-              </h2>
+              </h3>
 
               <p class="about-role">
                 <span>影视美术指导·视觉设计师</span>
@@ -635,8 +645,11 @@
 
       <section class="content-section contact" id="contact" aria-labelledby="contact-title">
         <div class="contact-content contact-ending">
-          <p class="eyebrow">CONTACT</p>
-          <h2 id="contact-title">LET'S CREATE<br />VISUAL WORLDS.</h2>
+          <header class="contact-heading section-heading">
+            <p class="eyebrow section-heading-label">04 / CONTACT</p>
+            <h2 class="section-heading-title" id="contact-title">CONTACT</h2>
+            <p class="section-heading-description">LET'S CREATE VISUAL WORLDS.</p>
+          </header>
 
           <address class="contact-body">
             <div class="contact-profile">
@@ -689,7 +702,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.24 · REVISION 52</p>
+      <p>HTML PROTOTYPE V0.24 · REVISION 53</p>
     </footer>
   </body>
 </html>

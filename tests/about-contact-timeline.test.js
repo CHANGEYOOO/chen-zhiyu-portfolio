@@ -13,7 +13,8 @@ function aboutSection() {
 }
 
 test("identity copy uses the approved Chinese role while keeping the English name", () => {
-  assert.match(html, /陈智宇，影视美术指导·视觉设计师。/);
+  assert.match(html, /<span class="hero-name">陈智宇<\/span>/);
+  assert.match(html, /<span class="hero-role">影视美术指导·视觉设计师<\/span>/);
   assert.match(html, /<span[^>]*>CHEN ZHIYU<\/span>/);
   assert.doesNotMatch(html, /影视美术指导与视觉创作者/);
   assert.doesNotMatch(html, /ART DIRECTION &amp; VISUAL WORLDS/);
