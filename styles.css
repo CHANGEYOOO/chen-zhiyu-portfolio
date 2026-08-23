@@ -2196,39 +2196,6 @@ footer p {
   padding-bottom: clamp(126px, 12vw, 184px);
 }
 
-.cinematic-v2 .film-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 8fr) minmax(180px, 4fr);
-  align-items: end;
-  gap: clamp(28px, 4vw, 64px);
-  margin-bottom: clamp(54px, 7vw, 104px);
-}
-
-.cinematic-v2 .film-heading .works-kicker {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-}
-
-.cinematic-v2 .film-heading h2 {
-  grid-column: 1;
-  grid-row: 1;
-  margin: 0;
-  color: var(--paper);
-  font-family: var(--nav);
-  max-width: 9em;
-  font-size: clamp(44px, 6.8vw, 104px);
-  font-style: normal;
-  font-weight: 650;
-  letter-spacing: -0.065em;
-  line-height: 0.82;
-}
-
 .cinematic-v2 .works-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(44px, 5vw, 76px) clamp(18px, 2.6vw, 42px);
@@ -2587,21 +2554,6 @@ footer p {
   .cinematic-v2 .contact {
     padding-top: calc(96px + var(--safe-top));
     padding-bottom: calc(112px + var(--safe-bottom));
-  }
-
-  .cinematic-v2 .film-heading {
-    display: block;
-    margin-bottom: 54px;
-  }
-
-  .cinematic-v2 .film-heading .works-kicker {
-    margin-bottom: 24px;
-  }
-
-  .cinematic-v2 .film-heading h2 {
-    max-width: 10em;
-    font-size: clamp(42px, 12.5vw, 58px);
-    line-height: 0.9;
   }
 
   .cinematic-v2 .works-grid {

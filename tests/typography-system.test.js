@@ -21,6 +21,12 @@ test("all long-form sections share label title and descriptor hierarchy", () => 
   assert.match(html, /04 \/ CONTACT[\s\S]*?<h2 class="section-heading-title" id="contact-title">CONTACT<\/h2>[\s\S]*?LET'S CREATE VISUAL WORLDS/);
 });
 
+test("TVC and livestream labels use the same left-aligned heading flow", () => {
+  assert.doesNotMatch(html, /class="works-header\s+film-heading/);
+  assert.doesNotMatch(html, /class="livestream-header\s+film-heading/);
+  assert.doesNotMatch(styles, /\.cinematic-v2 \.film-heading \.works-kicker/);
+});
+
 test("typography tokens unify section headings labels and card metadata", () => {
   assert.match(styles, /--type-section-title:\s*clamp\(/);
   assert.match(styles, /--type-card-title:\s*clamp\(/);
