@@ -9,14 +9,15 @@ async function loadGeometry() {
   return import(pathToFileURL(resolve(root, "livestream-react/lanyard-geometry.mjs"))).catch(() => null);
 }
 
-test("the enlarged card derives its hook joint and collision bounds from one scale", async () => {
+test("the enlarged card preserves the React Bits rope overlap inside the metal hook", async () => {
   const geometry = await loadGeometry();
   assert.ok(geometry, "Lanyard geometry helpers must exist");
 
   const card = geometry.getCardGeometry(geometry.DESKTOP_CARD_SCALE);
   assert.equal(geometry.DESKTOP_CARD_SCALE, 3.06);
-  assert.ok(Math.abs(card.attachmentY - 2.5618725585937503) < 1e-9);
-  assert.ok(Math.abs(card.colliderTop - card.attachmentY) < 1e-9);
+  assert.ok(Math.abs(card.attachmentY - 2.472) < 1e-9);
+  assert.ok(Math.abs(card.hookOverlap - 0.0898725585937501) < 1e-9);
+  assert.ok(card.colliderTop > card.attachmentY);
   assert.ok(card.radius > 2.7 && card.radius < 2.9);
 });
 

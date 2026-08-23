@@ -3256,7 +3256,7 @@ footer p {
   }
 }
 
-/* Revision 64 — About Lanyard returns to the React Bits physics baseline. */
+/* Revision 65 — Lanyard preserves the React Bits rope overlap at the metal hook. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;

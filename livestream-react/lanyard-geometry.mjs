@@ -6,23 +6,29 @@ const CARD_HALF_WIDTH = 0.35820895433425903;
 const CARD_BOTTOM_Y = 0.02290511131286621;
 const CARD_PHOTO_TOP_Y = 1.0229052305221558;
 const CARD_HOOK_TOP_Y = 1.2293701171875;
+const REACT_BITS_CARD_SCALE = 2.25;
+const REACT_BITS_ATTACHMENT_Y = 1.5;
 
 export function getCardGeometry(scale) {
   const halfWidth = CARD_HALF_WIDTH * scale;
   const colliderBottom = CARD_MESH_OFFSET_Y + CARD_BOTTOM_Y * scale;
-  const attachmentY = CARD_MESH_OFFSET_Y + CARD_HOOK_TOP_Y * scale;
-  const colliderHalfHeight = (attachmentY - colliderBottom) / 2;
+  const colliderTop = CARD_MESH_OFFSET_Y + CARD_HOOK_TOP_Y * scale;
+  const attachmentY = CARD_MESH_OFFSET_Y
+    + (REACT_BITS_ATTACHMENT_Y - CARD_MESH_OFFSET_Y) * (scale / REACT_BITS_CARD_SCALE);
+  const colliderHalfHeight = (colliderTop - colliderBottom) / 2;
   const colliderCenterY = colliderBottom + colliderHalfHeight;
   const photoCenterY = CARD_MESH_OFFSET_Y + ((CARD_BOTTOM_Y + CARD_PHOTO_TOP_Y) / 2) * scale;
-  const radius = Math.hypot(halfWidth, Math.max(Math.abs(colliderBottom), Math.abs(attachmentY)));
+  const hookOverlap = colliderTop - attachmentY;
+  const radius = Math.hypot(halfWidth, Math.max(Math.abs(colliderBottom), Math.abs(colliderTop)));
 
   return {
     attachmentY,
     colliderBottom,
     colliderCenterY,
     colliderHalfHeight,
-    colliderTop: attachmentY,
+    colliderTop,
     halfWidth,
+    hookOverlap,
     photoCenterY,
     radius,
   };
