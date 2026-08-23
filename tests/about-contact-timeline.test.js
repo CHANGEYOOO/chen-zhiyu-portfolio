@@ -50,10 +50,6 @@ test("experience is a scroll-progress timeline with stable revealed items", () =
   assert.match(script, /--timeline-progress/);
 });
 
-test("experience ends without a horizontal divider", () => {
-  assert.doesNotMatch(styles, /\.about-experience-item:last-child\s*\{[\s\S]*?border-bottom:/);
-});
-
 test("About remains one independent card before its separate experience timeline", () => {
   const section = aboutSection();
   const stageStart = section.indexOf('data-about-stage');
@@ -79,9 +75,19 @@ test("About no longer pins, scales, or owns the livestream scroll state", () => 
   assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?inset:\s*0/);
 });
 
-test("About owns one continuous opaque surface above the outgoing livestream", () => {
-  assert.match(styles, /\.cinematic-v2 \.about\s*\{[\s\S]*?background:\s*var\(--page-background\)/);
+test("About card remains the only isolated surface above the outgoing livestream", () => {
+  assert.match(styles, /\.cinematic-v2 \.about-stage\s*\{[\s\S]*?background:\s*var\(--page-background\)/);
   assert.match(styles, /\.cinematic-v2 \.about-experience-wrap\s*\{[\s\S]*?position:\s*relative[\s\S]*?z-index:\s*2/);
+});
+
+test("only the About card keeps the page-background surface", () => {
+  const aboutSurface = [...styles.matchAll(/\.cinematic-v2 \.about \{[^}]*\}/g)].at(-1)?.[0] || "";
+  const experienceSurface = [...styles.matchAll(/\.cinematic-v2 \.about-experience-wrap \{[^}]*\}/g)].at(-1)?.[0] || "";
+
+  assert.doesNotMatch(aboutSurface, /background:\s*var\(--page-background\)/);
+  assert.doesNotMatch(experienceSurface, /background:\s*var\(--page-background\)/);
+  assert.match(styles, /\.cinematic-v2 \.about-stage\s*\{[\s\S]*?background:\s*var\(--page-background\)/);
+  assert.doesNotMatch(styles, /\.about-timeline-item:last-child\s*\{[\s\S]*?border-bottom:/);
 });
 
 test("mobile puts the static portrait after About copy instead of mounting the lanyard", () => {

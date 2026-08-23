@@ -1369,6 +1369,10 @@ footer {
   border-top: 1px solid var(--about-line);
 }
 
+.about-experience-item:last-child {
+  border-bottom: 1px solid var(--about-line);
+}
+
 .about-year {
   font-variant-numeric: tabular-nums;
 }
@@ -3010,10 +3014,6 @@ footer p {
   border-top: 1px solid var(--line);
 }
 
-.about-timeline-item:last-child {
-  border-bottom: 1px solid var(--line);
-}
-
 .about-timeline-item::before {
   position: absolute;
   top: 34px;
@@ -3261,7 +3261,7 @@ footer p {
   }
 }
 
-/* Revision 72 — Remove the divider below the experience timeline. */
+/* Revision 73 — Keep the About gradient only on its card stage. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;
@@ -3281,8 +3281,6 @@ footer p {
   z-index: 3;
   padding: 0 0 calc(clamp(110px, 10vw, 164px) + var(--safe-bottom));
   overflow: visible;
-  background: var(--page-background);
-  background-attachment: fixed;
 }
 
 .cinematic-v2 .about-arrival {
@@ -3386,7 +3384,6 @@ footer p {
   padding:
     clamp(92px, 9vw, 144px) max(var(--page-pad), var(--safe-right)) 0
     max(var(--page-pad), var(--safe-left));
-  background: var(--page-background);
 }
 
 .cinematic-v2 .about-experience {
