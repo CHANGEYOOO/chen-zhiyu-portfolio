@@ -38,7 +38,7 @@ window.JOEKUNI_LIVESTREAM_REACT?.mountStrokeHeadings?.(
 );
 
 const aboutLanyard = document.querySelector("[data-about-lanyard]");
-if (aboutLanyard) {
+if (aboutLanyard && !reducedMotion.matches) {
   window.JOEKUNI_LIVESTREAM_REACT?.mountAboutLanyard?.(
     aboutLanyard,
     aboutLanyard.dataset.frontImage,
@@ -983,6 +983,58 @@ function setupPortfolioGsapMotion() {
   setupLivestreamGsapMotion();
 }
 
+function setupAboutStackedEntrance() {
+  const arrival = about?.querySelector("[data-about-arrival]");
+  const stage = about?.querySelector("[data-about-stage]");
+  if (!about || !arrival || !stage) return;
+
+  const setLanyardActive = (active) => {
+    stage.classList.toggle("is-lanyard-dropped", active);
+    window.JOEKUNI_LIVESTREAM_REACT?.setAboutLanyardActive?.(active);
+  };
+
+  const gsap = window.gsap;
+  const ScrollTrigger = window.ScrollTrigger;
+  if (reducedMotion.matches) {
+    stage.classList.add("is-lanyard-static");
+    return;
+  }
+
+  if (!gsap || !ScrollTrigger) {
+    stage.classList.add("is-lanyard-static");
+    setLanyardActive(true);
+    return;
+  }
+
+  gsap.registerPlugin(ScrollTrigger);
+  gsap.fromTo(
+    stage,
+    { y: () => window.innerHeight * 0.16 },
+    {
+      y: 0,
+      ease: "none",
+      scrollTrigger: {
+        trigger: arrival,
+        start: "top bottom",
+        end: "top top",
+        scrub: 0.35,
+        invalidateOnRefresh: true,
+        refreshPriority: 2,
+      },
+    },
+  );
+
+  ScrollTrigger.create({
+    trigger: arrival,
+    start: "top 12%",
+    end: "bottom top",
+    onEnter: () => setLanyardActive(true),
+    onEnterBack: () => setLanyardActive(true),
+    onLeaveBack: () => setLanyardActive(false),
+    refreshPriority: 3,
+  });
+}
+
 function setupExperienceTimeline(timeline) {
   if (!timeline) return;
 
@@ -1024,7 +1076,8 @@ function setupExperienceTimeline(timeline) {
   updateTimeline();
 }
 
-setupSectionMotion(about, ".about-reveal", "about-motion-ready");
+setupAboutStackedEntrance();
+setupSectionMotion(about?.querySelector(".about-experience"), ".about-reveal", "about-motion-ready");
 setupSectionMotion(contact, ".contact-ending", "contact-motion-ready", "contact-reveal");
 setupExperienceTimeline(about?.querySelector("[data-experience-timeline]"));
 

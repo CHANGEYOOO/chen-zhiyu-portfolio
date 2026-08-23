@@ -24,8 +24,8 @@ const BLANK_PIXEL =
 // the metal edge and clip remain intact when a portrait is composited in.
 const FRONT_UV_RECT = { x: 0, y: 0, w: 0.5, h: 0.755 };
 const BACK_UV_RECT = { x: 0.5, y: 0, w: 0.5, h: 0.757 };
-const cardGLB = "assets/react/card.glb?v=0.24-v58";
-const lanyard = "assets/react/lanyard.png?v=0.24-v58";
+const cardGLB = "assets/react/card.glb?v=0.24-v59";
+const lanyard = "assets/react/lanyard.png?v=0.24-v59";
 
 function useCardMap({ materials, frontImage, backImage, imageFit, frontTex, backTex }) {
   return useMemo(() => {
@@ -311,6 +311,7 @@ export default function Lanyard({
   imageFit = "cover",
   lanyardImage = null,
   lanyardWidth = 1,
+  active = false,
   onReady,
 }) {
   const [isMobile, setIsMobile] = useState(
@@ -326,7 +327,7 @@ export default function Lanyard({
   return (
     <div className="lanyard-wrapper">
       <Canvas
-        className={isMobile ? "lanyard-scene lanyard-scene--mobile" : "lanyard-scene"}
+        className={`${isMobile ? "lanyard-scene lanyard-scene--mobile" : "lanyard-scene"}${active ? " is-lanyard-active" : ""}`}
         camera={{ position: cameraDistance ? [position[0], position[1], cameraDistance] : position, fov }}
         dpr={[1, isMobile ? 1.25 : 2]}
         frameloop={isMobile ? "demand" : "always"}
@@ -346,14 +347,14 @@ export default function Lanyard({
               lanyardWidth={lanyardWidth}
             />
           ) : (
-            <Physics gravity={gravity} timeStep={1 / 60}>
+            <Physics key={active ? "lanyard-dropped" : "lanyard-held"} gravity={active ? gravity : [0, 0, 0]} timeStep={1 / 60}>
               <Band
                 frontImage={frontImage}
                 backImage={backImage}
                 imageFit={imageFit}
                 lanyardImage={lanyardImage}
                 lanyardWidth={lanyardWidth}
-                interactive
+                interactive={active}
               />
             </Physics>
           )}

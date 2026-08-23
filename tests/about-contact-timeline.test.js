@@ -22,7 +22,7 @@ test("identity copy uses the approved Chinese role while keeping the English nam
 
 test("About identity absorbs education and removes the retired method and collaboration blocks", () => {
   const section = aboutSection();
-  const identity = section.match(/<div class="about-identity about-reveal">[\s\S]*?<\/div>/)?.[0] || "";
+  const identity = section.match(/<div class="about-identity">[\s\S]*?<\/div>/)?.[0] || "";
 
   assert.match(identity, /Education/);
   assert.match(identity, /北京电影学院现代创意媒体学院/);
@@ -48,6 +48,21 @@ test("experience is a scroll-progress timeline with stable revealed items", () =
   assert.match(styles, /\.about-timeline-item\.is-visible/);
   assert.match(script, /setupExperienceTimeline/);
   assert.match(script, /--timeline-progress/);
+});
+
+test("About arrives as one overlay card before its separate experience timeline", () => {
+  const section = aboutSection();
+  const stageStart = section.indexOf('data-about-stage');
+  const experienceStart = section.indexOf('class="about-experience"');
+
+  assert.match(section, /data-about-arrival/);
+  assert.ok(stageStart >= 0, "About needs a full-card arrival stage");
+  assert.ok(experienceStart > stageStart, "Experience must remain below the full About card");
+  assert.match(section, /class="about-portrait about-lanyard-anchor"/);
+  assert.match(styles, /\.cinematic-v2 \.about-arrival\s*\{/);
+  assert.match(styles, /\.cinematic-v2 \.about-stage\s*\{[\s\S]*?position:\s*sticky/);
+  assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?top:\s*0/);
+  assert.match(script, /setupAboutStackedEntrance/);
 });
 
 test("Contact is a compact closing section instead of a full viewport hero", () => {

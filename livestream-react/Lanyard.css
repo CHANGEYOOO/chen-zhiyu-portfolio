@@ -19,6 +19,10 @@
 
 .lanyard-scene--mobile {
   transform-origin: 50% 8%;
+  opacity: 0;
+}
+
+.lanyard-scene--mobile.is-lanyard-active {
   animation-name: lanyard-mobile-sway;
   animation-duration: 1.6s;
   animation-timing-function: cubic-bezier(0.22, 0.7, 0.25, 1);

@@ -22,7 +22,24 @@ function LivestreamCarousels({ projects, imageDimensions }) {
 
 let livestreamRoot;
 let aboutLanyardRoot;
+let aboutLanyardState;
 const headingRoots = new Map();
+
+function renderAboutLanyard() {
+  if (!aboutLanyardRoot || !aboutLanyardState) return false;
+  const { container, frontImage, portrait, active } = aboutLanyardState;
+  aboutLanyardRoot.render(
+    <Lanyard
+      key={active ? "dropped" : "held"}
+      active={active}
+      frontImage={frontImage}
+      backImage={frontImage}
+      cameraDistance={22}
+      onReady={() => portrait?.classList.add("is-lanyard-ready")}
+    />,
+  );
+  return true;
+}
 
 window.JOEKUNI_LIVESTREAM_REACT = {
   mount(container, projects, imageDimensions) {
@@ -58,14 +75,14 @@ window.JOEKUNI_LIVESTREAM_REACT = {
     const portrait = container.closest(".about-portrait");
     portrait?.classList.remove("is-lanyard-ready");
     aboutLanyardRoot = createRoot(container);
-    aboutLanyardRoot.render(
-      <Lanyard
-        frontImage={frontImage}
-        backImage={frontImage}
-        cameraDistance={22}
-        onReady={() => portrait?.classList.add("is-lanyard-ready")}
-      />,
-    );
-    return true;
+    aboutLanyardState = { container, frontImage, portrait, active: false };
+    return renderAboutLanyard();
+  },
+  setAboutLanyardActive(active) {
+    if (!aboutLanyardState) return false;
+    const nextActive = Boolean(active);
+    if (aboutLanyardState.active === nextActive) return true;
+    aboutLanyardState.active = nextActive;
+    return renderAboutLanyard();
   },
 };
