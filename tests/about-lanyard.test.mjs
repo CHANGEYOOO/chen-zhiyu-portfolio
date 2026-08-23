@@ -17,7 +17,7 @@ test("About exposes an isolated Lanyard mount while retaining the portrait fallb
   assert.match(entry, /getContext\("webgl2"\)/);
 });
 
-test("Lanyard uses one React Bits physics scene on desktop and mobile", () => {
+test("Lanyard uses the React Bits physics scene on desktop", () => {
   const lanyard = readFileSync(resolve(root, "livestream-react/Lanyard.jsx"), "utf8");
   assert.doesNotMatch(lanyard, /function MobileBand/);
   assert.match(lanyard, /<Physics[\s\S]*<Band[\s\S]*isMobile/);
@@ -29,8 +29,20 @@ test("Lanyard uses one React Bits physics scene on desktop and mobile", () => {
   assert.doesNotMatch(lanyard, /shouldSleepLanyard/);
 });
 
-test("Lanyard assets stay relative when the portfolio is opened from a local file", () => {
+test("Lanyard model and rope texture are embedded for external browsers opening a local file", () => {
   const lanyard = readFileSync(resolve(root, "livestream-react/Lanyard.jsx"), "utf8");
-  assert.doesNotMatch(lanyard, /const cardGLB = "\//);
-  assert.doesNotMatch(lanyard, /const lanyard = "\//);
+  const viteConfig = readFileSync(resolve(root, "vite.livestream.config.mjs"), "utf8");
+  assert.match(lanyard, /import cardGLB from "\.\.\/assets\/react\/card\.glb"/);
+  assert.match(lanyard, /import lanyard from "\.\.\/assets\/react\/lanyard\.png"/);
+  assert.match(viteConfig, /assetsInclude:\s*\["\*\*\/\*\.glb"\]/);
+  assert.match(viteConfig, /assetsInlineLimit:\s*4 \* 1024 \* 1024/);
+  assert.doesNotMatch(lanyard, /const cardGLB = "assets\//);
+  assert.doesNotMatch(lanyard, /const lanyard = "assets\//);
+});
+
+test("mobile does not mount WebGL and always exposes the portrait fallback", () => {
+  const styles = readFileSync(resolve(root, "styles.css"), "utf8");
+  assert.match(entry, /matchMedia\("\(max-width: 768px\)"\)\.matches/);
+  assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.about-lanyard\s*\{[\s\S]*?display:\s*none/);
+  assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.about-portrait-fallback\s*\{[\s\S]*?visibility:\s*visible\s*!important/);
 });

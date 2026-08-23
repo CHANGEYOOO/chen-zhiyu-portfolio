@@ -74,10 +74,15 @@ test("About overlays the held portfolio while its desktop lanyard stays unclippe
   assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?inset:\s*0/);
 });
 
-test("mobile puts the compact lanyard after About copy instead of pinning it to the card top", () => {
+test("mobile puts the static portrait after About copy instead of mounting the lanyard", () => {
   assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?position:\s*relative[\s\S]*?top:\s*auto/);
   assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?width:\s*100%/);
   assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?aspect-ratio:\s*3\s*\/\s*5/);
+});
+
+test("only the About card keeps a page surface while the other sections stay transparent", () => {
+  assert.match(styles, /\.cinematic-v2 \.intro-sequence,[\s\S]*?\.cinematic-v2 \.contact\s*\{[\s\S]*?background:\s*transparent/);
+  assert.match(styles, /\.cinematic-v2 \.about-stage\s*\{[\s\S]*?background:\s*var\(--page-background\)/);
 });
 
 test("Contact is a compact closing section instead of a full viewport hero", () => {

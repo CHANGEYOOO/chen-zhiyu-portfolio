@@ -12,6 +12,8 @@ import {
 } from "@react-three/rapier";
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
 import * as THREE from "three";
+import cardGLB from "../assets/react/card.glb";
+import lanyard from "../assets/react/lanyard.png";
 import "./Lanyard.css";
 import {
   DESKTOP_CARD_SCALE,
@@ -32,9 +34,6 @@ const BLANK_PIXEL =
 // the metal edge and clip remain intact when a portrait is composited in.
 const FRONT_UV_RECT = { x: 0, y: 0, w: 0.5, h: 0.755 };
 const BACK_UV_RECT = { x: 0.5, y: 0, w: 0.5, h: 0.757 };
-const cardGLB = "assets/react/card.glb?v=0.24-v65";
-const lanyard = "assets/react/lanyard.png?v=0.24-v65";
-
 function useCardMap({ materials, frontImage, backImage, imageFit, frontTex, backTex }) {
   return useMemo(() => {
     const baseMap = materials.base.map;

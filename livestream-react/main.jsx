@@ -68,6 +68,7 @@ window.JOEKUNI_LIVESTREAM_REACT = {
   },
   mountAboutLanyard(container, frontImage) {
     if (!container) return false;
+    if (window.matchMedia("(max-width: 768px)").matches) return false;
     const probe = document.createElement("canvas");
     const hasWebGL = Boolean(probe.getContext("webgl2") || probe.getContext("webgl"));
     if (!hasWebGL) return false;

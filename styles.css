@@ -2023,6 +2023,15 @@ footer p {
 }
 
 @media (max-width: 768px) {
+  .about-lanyard {
+    display: none;
+  }
+
+  .about-portrait-fallback,
+  .about-portrait.is-lanyard-ready .about-portrait-fallback {
+    visibility: visible !important;
+  }
+
   .about-lanyard .lanyard-wrapper,
   .about-lanyard .lanyard-scene {
     min-height: 100%;
@@ -3256,7 +3265,7 @@ footer p {
   }
 }
 
-/* Revision 65 — Lanyard preserves the React Bits rope overlap at the metal hook. */
+/* Revision 66 — External-browser Lanyard assets, mobile portrait fallback, clean TVC top. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;
@@ -3267,6 +3276,14 @@ footer p {
 .cinematic-v2 .portfolio-exit > .livestream {
   transform-origin: 50% 100%;
   will-change: transform, opacity;
+}
+
+.cinematic-v2 .intro-sequence,
+.cinematic-v2 .portfolio-exit > .works,
+.cinematic-v2 .portfolio-exit > .livestream,
+.cinematic-v2 .contact {
+  background: transparent;
+  background-attachment: initial;
 }
 
 .cinematic-v2 .about {
