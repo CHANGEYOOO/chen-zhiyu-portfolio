@@ -1,0 +1,20 @@
+.stroke-text {
+  display: inline-block;
+  width: auto;
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+}
+
+.stroke-text__svg {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 0.9em;
+  overflow: visible;
+}
+
+.stroke-text__outline,
+.stroke-text__svg text {
+  user-select: none;
+}

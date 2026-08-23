@@ -3128,7 +3128,7 @@ footer p {
 }
 
 .cinematic-v2 .work-meta-line {
-  font-size: var(--type-card-title);
+  font-size: 14px;
   font-weight: 400;
 }
 
@@ -3140,8 +3140,13 @@ footer p {
 .cinematic-v2 .work-card h3 {
   margin-top: 2px;
   color: rgba(0, 0, 0, 0.7);
-  font-size: var(--type-card-detail);
+  font-size: 18px;
   line-height: 1.55;
+}
+
+.cinematic-v2 .section-heading-title--stroke [data-stroke-heading] {
+  display: inline-block;
+  min-width: 1ch;
 }
 
 .cinematic-v2 .livestream-meta {

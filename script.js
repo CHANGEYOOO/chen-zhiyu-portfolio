@@ -33,6 +33,10 @@ const siteLoaderTrack = siteLoader?.querySelector("[data-loader-track]");
 const siteLoaderFill = siteLoader?.querySelector("[data-loader-fill]");
 const siteLoaderPercent = siteLoader?.querySelector("[data-loader-percent]");
 
+window.JOEKUNI_LIVESTREAM_REACT?.mountStrokeHeadings?.(
+  document.querySelectorAll("[data-stroke-heading]"),
+);
+
 let introMetrics;
 let introRawFlipProgress = 0;
 let introDisplayedFlipProgress = 0;

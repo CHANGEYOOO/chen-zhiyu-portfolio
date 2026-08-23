@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import CircularGallery from "./CircularGallery.jsx";
+import StrokeText from "./StrokeText.jsx";
 import { buildCarouselItems } from "./model.mjs";
 import "./styles.css";
 
@@ -18,13 +19,32 @@ function LivestreamCarousels({ projects, imageDimensions }) {
   ));
 }
 
-let root;
+let livestreamRoot;
+const headingRoots = new Map();
 
 window.JOEKUNI_LIVESTREAM_REACT = {
   mount(container, projects, imageDimensions) {
-    root?.unmount();
-    root = createRoot(container);
-    root.render(<LivestreamCarousels projects={projects} imageDimensions={imageDimensions} />);
+    livestreamRoot?.unmount();
+    livestreamRoot = createRoot(container);
+    livestreamRoot.render(<LivestreamCarousels projects={projects} imageDimensions={imageDimensions} />);
+    return true;
+  },
+  mountStrokeHeadings(nodes) {
+    [...nodes].forEach((node) => {
+      if (headingRoots.has(node)) return;
+      const text = node.textContent.trim();
+      const headingRoot = createRoot(node);
+      headingRoots.set(node, headingRoot);
+      headingRoot.render(
+        <StrokeText
+          text={text}
+          trigger="scroll"
+          strokeColor="rgba(0, 0, 0, 0.34)"
+          fillColor="#000"
+          className="section-stroke-text"
+        />,
+      );
+    });
     return true;
   },
 };
