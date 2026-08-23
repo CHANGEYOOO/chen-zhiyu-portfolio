@@ -71,11 +71,12 @@ test("About overlays the held portfolio while its desktop lanyard stays unclippe
   assert.match(script, /pinSpacing:\s*false/);
   assert.match(script, /scale:\s*0\.92/);
   assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?overflow:\s*visible/);
-  assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?height:\s*min\(100svh/);
+  assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?inset:\s*0/);
 });
 
 test("mobile puts the compact lanyard after About copy instead of pinning it to the card top", () => {
   assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?position:\s*relative[\s\S]*?top:\s*auto/);
+  assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?width:\s*100%/);
 });
 
 test("Contact is a compact closing section instead of a full viewport hero", () => {

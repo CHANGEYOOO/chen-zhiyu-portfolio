@@ -3256,7 +3256,7 @@ footer p {
   }
 }
 
-/* Revision 60 — About covers the receding portfolio; its lanyard keeps a free visual stage. */
+/* Revision 61 — About Lanyard shares one full-card canvas and camera-safe drag bounds. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;
@@ -3340,10 +3340,9 @@ footer p {
 .cinematic-v2 .about-lanyard-anchor {
   position: absolute;
   z-index: 2;
-  top: calc(-1 * clamp(26px, 4svh, 54px));
-  right: calc(max(var(--page-pad), var(--safe-right)) - clamp(12px, 2vw, 34px));
-  width: min(45vw, 700px);
-  height: min(100svh, 900px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   margin: 0;
   overflow: visible;
   isolation: auto;
@@ -3362,6 +3361,14 @@ footer p {
 }
 
 .cinematic-v2 .about-lanyard-anchor .about-portrait-fallback {
+  top: clamp(70px, 8svh, 110px);
+  right: max(var(--page-pad), var(--safe-right));
+  bottom: auto;
+  left: auto;
+  width: min(36vw, 560px);
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
   border-radius: 20px;
 }
 
@@ -3405,11 +3412,19 @@ footer p {
 
   .cinematic-v2 .about-lanyard-anchor {
     position: relative;
+    inset: auto;
     top: auto;
     right: auto;
-    width: min(88vw, 380px);
-    height: clamp(320px, 72svh, 480px);
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 4;
     margin: clamp(38px, 8vw, 56px) auto 0;
+  }
+
+  .cinematic-v2 .about-lanyard-anchor .about-portrait-fallback {
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
   .cinematic-v2 .about-experience-wrap {

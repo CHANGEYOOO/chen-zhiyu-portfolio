@@ -13,6 +13,12 @@ import {
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
 import * as THREE from "three";
 import "./Lanyard.css";
+import {
+  DESKTOP_CARD_SCALE,
+  getCardGeometry,
+  getVisibleDragBounds,
+  rubberBandLimit,
+} from "./lanyard-geometry.mjs";
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
@@ -24,8 +30,8 @@ const BLANK_PIXEL =
 // the metal edge and clip remain intact when a portrait is composited in.
 const FRONT_UV_RECT = { x: 0, y: 0, w: 0.5, h: 0.755 };
 const BACK_UV_RECT = { x: 0.5, y: 0, w: 0.5, h: 0.757 };
-const cardGLB = "assets/react/card.glb?v=0.24-v60";
-const lanyard = "assets/react/lanyard.png?v=0.24-v60";
+const cardGLB = "assets/react/card.glb?v=0.24-v61";
+const lanyard = "assets/react/lanyard.png?v=0.24-v61";
 
 function useCardMap({ materials, frontImage, backImage, imageFit, frontTex, backTex }) {
   return useMemo(() => {
@@ -137,8 +143,7 @@ function Band({
   const ang = useMemo(() => new THREE.Vector3(), []);
   const rot = useMemo(() => new THREE.Vector3(), []);
   const dir = useMemo(() => new THREE.Vector3(), []);
-  const maxDragDistance = 6.4;
-  const softLimit = 0.7;
+  const cardGeometry = useMemo(() => getCardGeometry(cardScale), [cardScale]);
   const [dragged, setDragged] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [curve] = useState(
@@ -164,7 +169,7 @@ function Band({
   useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
   useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]);
   useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]);
-  useSphericalJoint(j3, card, [[0, 0, 0], [0, 1.5, 0]]);
+  useSphericalJoint(j3, card, [[0, 0, 0], [0, cardGeometry.attachmentY, 0]]);
 
   useEffect(() => {
     if (!hovered || !interactive) return undefined;
@@ -181,12 +186,16 @@ function Band({
       dir.copy(vec).sub(state.camera.position).normalize();
       vec.add(dir.multiplyScalar(state.camera.position.length()));
       vec.sub(dragged);
-      dir.copy(vec).sub(fixed.current.translation());
-      const distance = dir.length();
-      if (distance > maxDragDistance) {
-        const resistedDistance = maxDragDistance + softLimit * (1 - Math.exp(-(distance - maxDragDistance) / softLimit));
-        vec.copy(fixed.current.translation()).add(dir.setLength(resistedDistance));
-      }
+      const bounds = getVisibleDragBounds({
+        fov: state.camera.fov,
+        distance: Math.abs(state.camera.position.z - vec.z),
+        aspect: state.size.width / state.size.height,
+        radius: cardGeometry.radius,
+        margin: 0.18,
+      });
+      vec.x = rubberBandLimit(vec.x, bounds.minX, bounds.maxX, 0.65);
+      vec.y = rubberBandLimit(vec.y, bounds.minY, bounds.maxY, 0.65);
+      vec.z = THREE.MathUtils.clamp(vec.z, -0.75, 0.75);
       [card, j1, j2, j3, fixed].forEach((ref) => ref.current?.wakeUp());
       card.current.setNextKinematicTranslation({
         x: vec.x,
@@ -216,24 +225,27 @@ function Band({
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   return (
     <>
-      <group position={[0, 4, 0]}>
+      <group position={[1.8, 3.45, 0]}>
         <RigidBody ref={fixed} {...segmentProps} type="fixed" />
-        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps}>
+        <RigidBody position={[0.55, -0.65, 0]} ref={j1} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps}>
+        <RigidBody position={[1, -1.4, 0]} ref={j2} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps}>
+        <RigidBody position={[1.25, -2.25, 0]} ref={j3} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
         <RigidBody
-          position={[2, 0, 0]}
+          position={[1.25, -2.25 - cardGeometry.attachmentY, 0]}
           ref={card}
           {...segmentProps}
           type={interactive && dragged ? "kinematicPosition" : "dynamic"}
         >
-          <CuboidCollider args={[0.8, 1.125, 0.01]} />
+          <CuboidCollider
+            args={[cardGeometry.halfWidth, cardGeometry.colliderHalfHeight, 0.03]}
+            position={[0, cardGeometry.colliderCenterY, 0]}
+          />
           <CardMeshes
             nodes={nodes}
             materials={materials}
@@ -339,7 +351,7 @@ export default function Lanyard({
   imageFit = "cover",
   lanyardImage = null,
   lanyardWidth = 1,
-  desktopCardScale = 2.55,
+  desktopCardScale = DESKTOP_CARD_SCALE,
   mobileCardScale = 2.3,
   active = false,
   onReady,
