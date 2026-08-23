@@ -14,6 +14,8 @@
   --react-gallery-height: calc(var(--react-card-height) + 56px);
   --react-gallery-gap: 28px;
   --react-gallery-max-blur: 4px;
+  --react-card-min-width: 0px;
+  --react-card-max-width: 100%;
   position: relative;
   height: var(--react-gallery-height);
   min-height: var(--react-gallery-height);
@@ -45,8 +47,13 @@
   position: absolute;
   top: 28px;
   left: 0;
-  width: calc(var(--react-card-height) * var(--react-card-ratio));
-  height: var(--react-card-height);
+  width: clamp(
+    var(--react-card-min-width),
+    calc(var(--react-card-height) * var(--react-card-ratio)),
+    var(--react-card-max-width)
+  );
+  height: auto;
+  aspect-ratio: var(--react-card-ratio);
   padding: 0;
   overflow: hidden;
   border: 0;
@@ -84,7 +91,15 @@
 @media (max-width: 768px) {
   .react-circular-gallery {
     --react-card-height: 240px;
+    --react-gallery-height: 390px;
     --react-gallery-gap: 18px;
     --react-gallery-max-blur: 2.5px;
+    --react-card-min-width: min(44%, 160px);
+    --react-card-max-width: 82%;
+  }
+
+  .react-circular-gallery-card {
+    top: auto;
+    bottom: 28px;
   }
 }

@@ -2200,7 +2200,8 @@ footer p {
   text-align: left;
 }
 
-.cinematic-v2 .hero .panel-frame {
+.cinematic-v2 .hero .panel-frame,
+.cinematic-v2 .statement .panel-frame {
   inset:
     calc(var(--hero-frame-top) * var(--hero-frame-progress))
     calc(var(--hero-frame-right) * var(--hero-frame-progress))
@@ -2980,8 +2981,10 @@ footer p {
 
 .about-timeline {
   --timeline-progress: 0;
+  --timeline-rail-x: 6px;
+  --timeline-indent: clamp(30px, 3.4vw, 52px);
   position: relative;
-  padding-left: clamp(30px, 3.4vw, 52px);
+  padding-left: var(--timeline-indent);
 }
 
 .about-timeline::before,
@@ -2989,7 +2992,7 @@ footer p {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 6px;
+  left: var(--timeline-rail-x);
   width: 1px;
   content: "";
 }
@@ -3019,7 +3022,7 @@ footer p {
 .about-timeline-item::before {
   position: absolute;
   top: 34px;
-  left: calc(-1 * clamp(30px, 3.4vw, 52px) + 1px);
+  left: calc(var(--timeline-rail-x) - var(--timeline-indent) - 5px);
   width: 11px;
   height: 11px;
   border: 1px solid var(--line);
@@ -3082,7 +3085,7 @@ footer p {
   }
 
   .about-timeline {
-    padding-left: 30px;
+    --timeline-indent: 30px;
   }
 
   .about-timeline-item {
@@ -3090,10 +3093,6 @@ footer p {
     gap: 10px;
     min-height: 0;
     padding: 28px 0 34px;
-  }
-
-  .about-timeline-item::before {
-    left: -35px;
   }
 
   .cinematic-v2 .contact {

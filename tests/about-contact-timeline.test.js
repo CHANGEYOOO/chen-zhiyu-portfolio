@@ -50,6 +50,13 @@ test("experience is a scroll-progress timeline with stable revealed items", () =
   assert.match(script, /--timeline-progress/);
 });
 
+test("timeline rail and dots use one shared horizontal coordinate on every breakpoint", () => {
+  assert.match(styles, /--timeline-rail-x:\s*6px/);
+  assert.match(styles, /left:\s*var\(--timeline-rail-x\)/);
+  assert.match(styles, /left:\s*calc\(var\(--timeline-rail-x\)\s*-\s*var\(--timeline-indent\)\s*-\s*5px\)/);
+  assert.doesNotMatch(styles, /\.about-timeline-item::before\s*\{\s*left:\s*-35px/);
+});
+
 test("About remains one independent card before its separate experience timeline", () => {
   const section = aboutSection();
   const stageStart = section.indexOf('data-about-stage');

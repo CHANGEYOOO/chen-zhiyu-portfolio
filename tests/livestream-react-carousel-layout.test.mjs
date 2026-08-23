@@ -8,13 +8,26 @@ const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const styles = readFileSync(resolve(root, "livestream-react/styles.css"), "utf8");
 const component = readFileSync(resolve(root, "livestream-react/CircularGallery.jsx"), "utf8");
 
-test("keeps every React carousel image at one fixed height while deriving width from aspect ratio", () => {
+test("keeps source aspect ratios inside a bounded card envelope", () => {
   assert.match(styles, /--react-card-height:\s*404px/);
   assert.match(styles, /height:\s*var\(--react-gallery-height\)/);
   assert.match(styles, /--react-gallery-height:\s*calc\(var\(--react-card-height\)\s*\+\s*56px\)/);
-  assert.match(styles, /width:\s*calc\(var\(--react-card-height\)\s*\*\s*var\(--react-card-ratio\)\)/);
-  assert.match(styles, /height:\s*var\(--react-card-height\)/);
+  assert.match(styles, /--react-card-min-width:\s*0px/);
+  assert.match(styles, /--react-card-max-width:\s*100%/);
+  assert.match(styles, /width:\s*clamp\(/);
+  assert.match(styles, /calc\(var\(--react-card-height\)\s*\*\s*var\(--react-card-ratio\)\)/);
+  assert.match(styles, /aspect-ratio:\s*var\(--react-card-ratio\)/);
+  assert.match(styles, /height:\s*auto/);
   assert.match(component, /style=\{\{\s*"--react-card-ratio":\s*item\.aspectRatio/);
+});
+
+test("keeps wide mobile images inside the carousel while giving portrait images a readable minimum width", () => {
+  const mobileRules = styles.match(/@media \(max-width: 768px\) \{[\s\S]*?\n\}/)?.[0] || "";
+
+  assert.match(mobileRules, /--react-card-min-width:\s*min\(44%,\s*160px\)/);
+  assert.match(mobileRules, /--react-card-max-width:\s*82%/);
+  assert.match(mobileRules, /--react-gallery-height:\s*390px/);
+  assert.match(mobileRules, /\.react-circular-gallery-card\s*\{[\s\S]*?bottom:\s*28px/);
 });
 
 test("keeps one full-width gallery row per project and aligns project blocks", () => {
