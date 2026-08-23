@@ -36,16 +36,16 @@ export function getDragTarget(point, offset) {
   };
 }
 
-export function getDesktopLayout(
+export function getLanyardPlacement(
   cardGeometry,
   { fov = 20, distance = 22, photoTargetRatio = 0.44 } = {},
 ) {
   const viewHalfHeight = Math.tan((fov * Math.PI) / 360) * distance;
-  const anchorY = viewHalfHeight + 0.55;
   const photoTargetY = viewHalfHeight * (1 - photoTargetRatio * 2);
   const cardBodyY = photoTargetY - cardGeometry.photoCenterY;
   const jointY = cardBodyY + cardGeometry.attachmentY;
-  const segmentLength = (anchorY - jointY) / 3;
+  const segmentLength = 1;
+  const anchorY = jointY + segmentLength * 3;
   return {
     anchorY,
     cardBodyY,
@@ -58,8 +58,13 @@ export function getDesktopLayout(
   };
 }
 
-export function shouldSleepLanyard(linearSpeeds, angularSpeed, stableFrames) {
-  return stableFrames >= 24
-    && angularSpeed <= 0.16
-    && linearSpeeds.every((speed) => speed <= 0.16);
+export function getLanyardPhysics(isMobile) {
+  return {
+    angularDamping: 4,
+    curvePoints: isMobile ? 16 : 32,
+    linearDamping: 4,
+    maxSpeed: 50,
+    minSpeed: 0,
+    timeStep: isMobile ? 1 / 30 : 1 / 60,
+  };
 }

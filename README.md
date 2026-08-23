@@ -82,4 +82,4 @@ V0.22 使用重新交付的约 12MB 与 11MB 首屏视频；首屏只预加载 m
 
 ## 下一步
 
-继续在 Safari、Chrome 与移动真机验证全屏播放器、Poster 到起播切换、首屏 GSAP 卡片翻转、直播 React CircularGallery、About Lanyard、GSAP 作品动效和弱网缓冲；当前本地版本为 V0.24 Revision 63，尚未发布。
+继续在 Safari、Chrome 与移动真机验证全屏播放器、Poster 到起播切换、首屏 GSAP 卡片翻转、直播 React CircularGallery、About Lanyard、GSAP 作品动效和弱网缓冲；当前本地版本为 V0.24 Revision 64，尚未发布。

@@ -32,12 +32,12 @@ test("desktop drag keeps the pointer target unrestricted", async () => {
   assert.deepEqual(target, { x: 117, y: -80, z: 10 });
 });
 
-test("desktop photo rests at 44 percent of the About card while excess rope starts above its top edge", async () => {
+test("official one-unit rope segments preserve the desktop photo at 44 percent of About", async () => {
   const geometry = await loadGeometry();
   assert.ok(geometry, "Lanyard geometry helpers must exist");
 
   const card = geometry.getCardGeometry(geometry.DESKTOP_CARD_SCALE);
-  const layout = geometry.getDesktopLayout(card, {
+  const layout = geometry.getLanyardPlacement(card, {
     fov: 20,
     distance: 22,
     photoTargetRatio: 0.44,
@@ -46,19 +46,33 @@ test("desktop photo rests at 44 percent of the About card while excess rope star
   const photoCenterY = layout.cardBodyY + card.photoCenterY;
   const photoRatioFromTop = (viewHalfHeight - photoCenterY) / (viewHalfHeight * 2);
 
+  assert.equal(layout.segmentLength, 1);
   assert.ok(layout.anchorY > viewHalfHeight);
   assert.ok(Math.abs(photoRatioFromTop - 0.44) < 1e-9);
   assert.ok(Math.abs(layout.jointY - (layout.cardBodyY + card.attachmentY)) < 1e-9);
   assert.ok(Math.abs(layout.segmentLength * 3 - (layout.anchorY - layout.jointY)) < 1e-9);
 });
 
-test("lanyard sleeps only after low motion remains stable", async () => {
+test("desktop and mobile use the React Bits baseline physics parameters", async () => {
   const geometry = await loadGeometry();
   assert.ok(geometry, "Lanyard geometry helpers must exist");
 
-  assert.equal(geometry.shouldSleepLanyard([0.03, 0.05, 0.04], 0.04, 23), false);
-  assert.equal(geometry.shouldSleepLanyard([0.03, 0.05, 0.04], 0.04, 24), true);
-  assert.equal(geometry.shouldSleepLanyard([0.03, 0.2, 0.04], 0.04, 24), false);
+  assert.deepEqual(geometry.getLanyardPhysics(false), {
+    angularDamping: 4,
+    curvePoints: 32,
+    linearDamping: 4,
+    maxSpeed: 50,
+    minSpeed: 0,
+    timeStep: 1 / 60,
+  });
+  assert.deepEqual(geometry.getLanyardPhysics(true), {
+    angularDamping: 4,
+    curvePoints: 16,
+    linearDamping: 4,
+    maxSpeed: 50,
+    minSpeed: 0,
+    timeStep: 1 / 30,
+  });
 });
 
 test("mobile card scale fills the same content width as the About copy", async () => {
