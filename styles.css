@@ -1369,10 +1369,6 @@ footer {
   border-top: 1px solid var(--about-line);
 }
 
-.about-experience-item:last-child {
-  border-bottom: 1px solid var(--about-line);
-}
-
 .about-year {
   font-variant-numeric: tabular-nums;
 }
@@ -3265,7 +3261,7 @@ footer p {
   }
 }
 
-/* Revision 71 — Unified reveal and focus lifecycle for expanded works. */
+/* Revision 72 — Remove the divider below the experience timeline. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;

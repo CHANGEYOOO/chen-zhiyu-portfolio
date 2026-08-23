@@ -50,6 +50,10 @@ test("experience is a scroll-progress timeline with stable revealed items", () =
   assert.match(script, /--timeline-progress/);
 });
 
+test("experience ends without a horizontal divider", () => {
+  assert.doesNotMatch(styles, /\.about-experience-item:last-child\s*\{[\s\S]*?border-bottom:/);
+});
+
 test("About remains one independent card before its separate experience timeline", () => {
   const section = aboutSection();
   const stageStart = section.indexOf('data-about-stage');
