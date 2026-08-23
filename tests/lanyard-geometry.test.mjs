@@ -20,20 +20,36 @@ test("the enlarged card derives its hook joint and collision bounds from one sca
   assert.ok(card.radius > 2.7 && card.radius < 2.9);
 });
 
-test("drag resistance approaches but never crosses the camera-safe card bounds", async () => {
+test("desktop drag keeps the pointer target unrestricted", async () => {
+  const geometry = await loadGeometry();
+  assert.ok(geometry, "Lanyard geometry helpers must exist");
+
+  const target = geometry.getDragTarget(
+    { x: 120, y: -85, z: 12 },
+    { x: 3, y: -5, z: 2 },
+  );
+
+  assert.deepEqual(target, { x: 117, y: -80, z: 10 });
+});
+
+test("desktop anchor touches the top edge while the card hangs at page center", async () => {
   const geometry = await loadGeometry();
   assert.ok(geometry, "Lanyard geometry helpers must exist");
 
   const card = geometry.getCardGeometry(geometry.DESKTOP_CARD_SCALE);
-  const bounds = geometry.getVisibleDragBounds({
-    fov: 20,
-    distance: 22,
-    aspect: 1.6,
-    radius: card.radius,
-    margin: 0.18,
-  });
+  const layout = geometry.getDesktopLayout(card);
 
-  assert.ok(bounds.minY < 0 && bounds.maxY > 0);
-  assert.ok(geometry.rubberBandLimit(-100, bounds.minY, bounds.maxY, 0.65) >= bounds.minY);
-  assert.ok(geometry.rubberBandLimit(100, bounds.minY, bounds.maxY, 0.65) <= bounds.maxY);
+  assert.equal(layout.anchorY, 3.82);
+  assert.ok(Math.abs(layout.cardBodyY + card.colliderCenterY) < 1e-9);
+  assert.ok(Math.abs(layout.jointY - (layout.cardBodyY + card.attachmentY)) < 1e-9);
+});
+
+test("mobile card scale fills the same content width as the About copy", async () => {
+  const geometry = await loadGeometry();
+  assert.ok(geometry, "Lanyard geometry helpers must exist");
+
+  assert.equal(geometry.MOBILE_CARD_SCALE, 6.2);
+  const card = geometry.getCardGeometry(geometry.MOBILE_CARD_SCALE);
+  const visibleWidth = 2 * Math.tan((20 * Math.PI) / 360) * 22 * 0.6;
+  assert.ok((card.halfWidth * 2) / visibleWidth > 0.94);
 });

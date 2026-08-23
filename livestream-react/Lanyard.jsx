@@ -15,9 +15,10 @@ import * as THREE from "three";
 import "./Lanyard.css";
 import {
   DESKTOP_CARD_SCALE,
+  MOBILE_CARD_SCALE,
   getCardGeometry,
-  getVisibleDragBounds,
-  rubberBandLimit,
+  getDesktopLayout,
+  getDragTarget,
 } from "./lanyard-geometry.mjs";
 
 extend({ MeshLineGeometry, MeshLineMaterial });
@@ -30,8 +31,8 @@ const BLANK_PIXEL =
 // the metal edge and clip remain intact when a portrait is composited in.
 const FRONT_UV_RECT = { x: 0, y: 0, w: 0.5, h: 0.755 };
 const BACK_UV_RECT = { x: 0.5, y: 0, w: 0.5, h: 0.757 };
-const cardGLB = "assets/react/card.glb?v=0.24-v61";
-const lanyard = "assets/react/lanyard.png?v=0.24-v61";
+const cardGLB = "assets/react/card.glb?v=0.24-v62";
+const lanyard = "assets/react/lanyard.png?v=0.24-v62";
 
 function useCardMap({ materials, frontImage, backImage, imageFit, frontTex, backTex }) {
   return useMemo(() => {
@@ -144,6 +145,7 @@ function Band({
   const rot = useMemo(() => new THREE.Vector3(), []);
   const dir = useMemo(() => new THREE.Vector3(), []);
   const cardGeometry = useMemo(() => getCardGeometry(cardScale), [cardScale]);
+  const layout = useMemo(() => getDesktopLayout(cardGeometry), [cardGeometry]);
   const [dragged, setDragged] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [curve] = useState(
@@ -185,17 +187,8 @@ function Band({
       vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
       dir.copy(vec).sub(state.camera.position).normalize();
       vec.add(dir.multiplyScalar(state.camera.position.length()));
-      vec.sub(dragged);
-      const bounds = getVisibleDragBounds({
-        fov: state.camera.fov,
-        distance: Math.abs(state.camera.position.z - vec.z),
-        aspect: state.size.width / state.size.height,
-        radius: cardGeometry.radius,
-        margin: 0.18,
-      });
-      vec.x = rubberBandLimit(vec.x, bounds.minX, bounds.maxX, 0.65);
-      vec.y = rubberBandLimit(vec.y, bounds.minY, bounds.maxY, 0.65);
-      vec.z = THREE.MathUtils.clamp(vec.z, -0.75, 0.75);
+      const target = getDragTarget(vec, dragged);
+      vec.set(target.x, target.y, target.z);
       [card, j1, j2, j3, fixed].forEach((ref) => ref.current?.wakeUp());
       card.current.setNextKinematicTranslation({
         x: vec.x,
@@ -225,19 +218,19 @@ function Band({
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   return (
     <>
-      <group position={[1.8, 3.45, 0]}>
+      <group position={[1.8, layout.anchorY, 0]}>
         <RigidBody ref={fixed} {...segmentProps} type="fixed" />
-        <RigidBody position={[0.55, -0.65, 0]} ref={j1} {...segmentProps}>
+        <RigidBody position={[0.55, layout.segmentYs[0] - layout.anchorY, 0]} ref={j1} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1, -1.4, 0]} ref={j2} {...segmentProps}>
+        <RigidBody position={[1, layout.segmentYs[1] - layout.anchorY, 0]} ref={j2} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1.25, -2.25, 0]} ref={j3} {...segmentProps}>
+        <RigidBody position={[1.25, layout.jointY - layout.anchorY, 0]} ref={j3} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
         <RigidBody
-          position={[1.25, -2.25 - cardGeometry.attachmentY, 0]}
+          position={[1.25, layout.cardBodyY - layout.anchorY, 0]}
           ref={card}
           {...segmentProps}
           type={interactive && dragged ? "kinematicPosition" : "dynamic"}
@@ -293,12 +286,13 @@ function MobileBand({
   const { nodes, materials } = useGLTF(cardGLB);
   const texture = useTexture(lanyardImage || lanyard);
   const cardMap = useArtwork({ frontImage, backImage, imageFit, materials });
+  const cardGeometry = useMemo(() => getCardGeometry(cardScale), [cardScale]);
   const linePoints = useMemo(
     () =>
       compact
-        ? [[-0.6, 2.75, 0], [-0.2, 2.35, 0], [0.15, 1.95, 0]]
+        ? [[-0.08, 3.82, 0], [0, cardGeometry.attachmentY - cardGeometry.colliderCenterY, 0]]
         : [[-1.15, 4.8, 0], [-0.65, 4.15, 0], [-0.2, 3.55, 0], [0.2, 3.1, 0], [0.45, 2.75, 0]],
-    [compact],
+    [cardGeometry, compact],
   );
 
   useEffect(() => {
@@ -307,7 +301,7 @@ function MobileBand({
 
   return (
     <group
-      position={compact ? [-0.45, -0.15, 0] : [-1.1, 0.3, 0]}
+      position={compact ? [0, 0, 0] : [-1.1, 0.3, 0]}
       rotation={[0, 0, -0.02]}
     >
       <Line
@@ -318,7 +312,7 @@ function MobileBand({
         dashed={false}
       />
       <group
-        position={compact ? [0.15, 1.25, 0] : [0.45, 2.25, 0]}
+        position={compact ? [0, -cardGeometry.colliderCenterY, 0] : [0.45, 2.25, 0]}
         rotation={[0, 0, 0.035]}
       >
         <CardMeshes
@@ -352,7 +346,7 @@ export default function Lanyard({
   lanyardImage = null,
   lanyardWidth = 1,
   desktopCardScale = DESKTOP_CARD_SCALE,
-  mobileCardScale = 2.3,
+  mobileCardScale = MOBILE_CARD_SCALE,
   active = false,
   onReady,
 }) {

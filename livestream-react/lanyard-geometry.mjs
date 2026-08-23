@@ -1,4 +1,6 @@
 export const DESKTOP_CARD_SCALE = 3.06;
+export const MOBILE_CARD_SCALE = 6.2;
+const DESKTOP_ANCHOR_Y = 3.82;
 
 const CARD_MESH_OFFSET_Y = -1.2;
 const CARD_HALF_WIDTH = 0.35820895433425903;
@@ -24,26 +26,25 @@ export function getCardGeometry(scale) {
   };
 }
 
-export function getVisibleDragBounds({ fov, distance, aspect, radius, margin }) {
-  const verticalHalf = Math.tan((fov * Math.PI) / 360) * distance;
-  const horizontalHalf = verticalHalf * aspect;
+export function getDragTarget(point, offset) {
   return {
-    minX: -horizontalHalf + radius + margin,
-    maxX: horizontalHalf - radius - margin,
-    minY: -verticalHalf + radius + margin,
-    maxY: verticalHalf - radius - margin,
+    x: point.x - offset.x,
+    y: point.y - offset.y,
+    z: point.z - offset.z,
   };
 }
 
-export function rubberBandLimit(value, min, max, zone) {
-  if (min >= max) return (min + max) / 2;
-  const innerMin = min + zone;
-  const innerMax = max - zone;
-  if (value < innerMin) {
-    return innerMin - zone * (1 - Math.exp(-(innerMin - value) / zone));
-  }
-  if (value > innerMax) {
-    return innerMax + zone * (1 - Math.exp(-(value - innerMax) / zone));
-  }
-  return value;
+export function getDesktopLayout(cardGeometry) {
+  const cardBodyY = -cardGeometry.colliderCenterY;
+  const jointY = cardBodyY + cardGeometry.attachmentY;
+  const ropeDrop = DESKTOP_ANCHOR_Y - jointY;
+  return {
+    anchorY: DESKTOP_ANCHOR_Y,
+    cardBodyY,
+    jointY,
+    segmentYs: [
+      DESKTOP_ANCHOR_Y - ropeDrop / 3,
+      DESKTOP_ANCHOR_Y - (ropeDrop * 2) / 3,
+    ],
+  };
 }

@@ -77,6 +77,7 @@ test("About overlays the held portfolio while its desktop lanyard stays unclippe
 test("mobile puts the compact lanyard after About copy instead of pinning it to the card top", () => {
   assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?position:\s*relative[\s\S]*?top:\s*auto/);
   assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?width:\s*100%/);
+  assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?aspect-ratio:\s*3\s*\/\s*5/);
 });
 
 test("Contact is a compact closing section instead of a full viewport hero", () => {

@@ -3256,7 +3256,7 @@ footer p {
   }
 }
 
-/* Revision 61 — About Lanyard shares one full-card canvas and camera-safe drag bounds. */
+/* Revision 62 — About Lanyard touches the card edge and centers at every breakpoint. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;
@@ -3417,7 +3417,7 @@ footer p {
     right: auto;
     width: 100%;
     height: auto;
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 3 / 5;
     margin: clamp(38px, 8vw, 56px) auto 0;
   }
 
