@@ -11,6 +11,14 @@ function ruleBody(pattern) {
   return match[1];
 }
 
+test("root scrolling cannot expose horizontal canvas space on mobile", () => {
+  const html = ruleBody(/(?:^|\n)html\s*\{([^}]*)\}/);
+  const body = ruleBody(/(?:^|\n)body\s*\{([^}]*)\}/);
+
+  assert.match(html, /overflow-x\s*:\s*hidden/);
+  assert.match(body, /overflow-x\s*:\s*hidden/);
+});
+
 test("scroll reveal does not clip media shadows", () => {
   const hiddenReveal = ruleBody(
     /\.cinematic-v2 \.works-motion-ready \.works-reveal,[\s\S]*?\.cinematic-v2 \.contact-motion-ready \.contact-reveal\s*\{([^}]*)\}/,

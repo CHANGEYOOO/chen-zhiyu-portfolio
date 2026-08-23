@@ -42,6 +42,8 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
   background: var(--ink);
 }
 
