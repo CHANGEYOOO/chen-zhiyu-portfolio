@@ -7,9 +7,14 @@
     "test:livestream": "node --test tests/livestream-react-carousel.test.mjs"
   },
   "dependencies": {
+    "@react-three/drei": "10.7.4",
+    "@react-three/fiber": "9.3.0",
+    "@react-three/rapier": "2.1.0",
     "gsap": "3.13.0",
+    "meshline": "3.3.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "three": "0.180.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "5.0.4",

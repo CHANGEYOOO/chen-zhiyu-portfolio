@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import CircularGallery from "./CircularGallery.jsx";
+import Lanyard from "./Lanyard.jsx";
 import StrokeText from "./StrokeText.jsx";
 import { buildCarouselItems } from "./model.mjs";
 import "./styles.css";
@@ -20,6 +21,7 @@ function LivestreamCarousels({ projects, imageDimensions }) {
 }
 
 let livestreamRoot;
+let aboutLanyardRoot;
 const headingRoots = new Map();
 
 window.JOEKUNI_LIVESTREAM_REACT = {
@@ -45,6 +47,25 @@ window.JOEKUNI_LIVESTREAM_REACT = {
         />,
       );
     });
+    return true;
+  },
+  mountAboutLanyard(container, frontImage) {
+    if (!container) return false;
+    const probe = document.createElement("canvas");
+    const hasWebGL = Boolean(probe.getContext("webgl2") || probe.getContext("webgl"));
+    if (!hasWebGL) return false;
+    aboutLanyardRoot?.unmount();
+    const portrait = container.closest(".about-portrait");
+    portrait?.classList.remove("is-lanyard-ready");
+    aboutLanyardRoot = createRoot(container);
+    aboutLanyardRoot.render(
+      <Lanyard
+        frontImage={frontImage}
+        backImage={frontImage}
+        cameraDistance={22}
+        onReady={() => portrait?.classList.add("is-lanyard-ready")}
+      />,
+    );
     return true;
   },
 };

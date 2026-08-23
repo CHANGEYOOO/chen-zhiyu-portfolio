@@ -1984,6 +1984,51 @@ footer p {
   }
 }
 
+/* Revision 57 — About portrait Lanyard mount and responsive fallback. */
+.about-portrait {
+  position: relative;
+}
+
+.about-lanyard {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.about-lanyard .lanyard-wrapper,
+.about-lanyard .lanyard-scene {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+.about-portrait-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+.about-portrait.is-lanyard-ready .about-lanyard {
+  visibility: visible;
+}
+
+.about-portrait.is-lanyard-ready .about-portrait-fallback {
+  visibility: hidden;
+}
+
+@media (max-width: 768px) {
+  .about-lanyard .lanyard-wrapper,
+  .about-lanyard .lanyard-scene {
+    min-height: 100%;
+  }
+}
+
 @media (max-width: 380px) {
   .site-header {
     gap: 8px;

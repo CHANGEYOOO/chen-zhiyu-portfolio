@@ -37,6 +37,14 @@ window.JOEKUNI_LIVESTREAM_REACT?.mountStrokeHeadings?.(
   document.querySelectorAll("[data-stroke-heading]"),
 );
 
+const aboutLanyard = document.querySelector("[data-about-lanyard]");
+if (aboutLanyard) {
+  window.JOEKUNI_LIVESTREAM_REACT?.mountAboutLanyard?.(
+    aboutLanyard,
+    aboutLanyard.dataset.frontImage,
+  );
+}
+
 let introMetrics;
 let introRawFlipProgress = 0;
 let introDisplayedFlipProgress = 0;
