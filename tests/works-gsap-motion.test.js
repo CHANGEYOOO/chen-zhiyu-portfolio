@@ -89,10 +89,9 @@ test("initial async hydration registers portfolio motion before the global layou
   );
 });
 
-test("livestream card triggers account for the section pinned behind About", () => {
+test("livestream card triggers remain independent from About", () => {
   const livestreamMotion = script.slice(script.indexOf("function setupLivestreamGsapMotion"), script.indexOf("function setupPortfolioGsapMotion"));
-  const pinnedContainerCount = (livestreamMotion.match(/pinnedContainer:\s*livestream/g) || []).length;
-  assert.ok(pinnedContainerCount >= 3, "heading, entrance, and focus triggers must share the livestream pinned container");
+  assert.doesNotMatch(livestreamMotion, /pinnedContainer:/);
 });
 
 test("motion has a reduced-motion path and only promotes animated surfaces", () => {

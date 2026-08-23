@@ -860,7 +860,6 @@ function setupLivestreamGsapMotion() {
           ease: "power4.out",
           scrollTrigger: {
             trigger: heading,
-            pinnedContainer: livestream,
             start: "top 86%",
             once: true,
           },
@@ -941,7 +940,6 @@ function setupLivestreamGsapMotion() {
           resetLivestreamProject(project);
           const entranceTrigger = ScrollTrigger.create({
             trigger: project,
-            pinnedContainer: livestream,
             start: "top 88%",
             end: "bottom 12%",
             onEnter: () => playLivestreamProject(project, direction, 1),
@@ -951,7 +949,6 @@ function setupLivestreamGsapMotion() {
           const focusTrigger = desktop
             ? ScrollTrigger.create({
                 trigger: project,
-                pinnedContainer: livestream,
                 start: "top 64%",
                 end: "bottom 36%",
                 onToggle: ({ isActive }) => {
@@ -996,84 +993,34 @@ function setupPortfolioGsapMotion() {
   setupLivestreamGsapMotion();
 }
 
-function setupAboutStackedEntrance() {
-  const arrival = about?.querySelector("[data-about-arrival]");
+function setupAboutCardEntrance() {
   const stage = about?.querySelector("[data-about-stage]");
-  const lanyardAnchor = about?.querySelector(".about-lanyard-anchor");
-  if (!about || !arrival || !stage) return;
+  if (!about || !stage) return;
 
   const setLanyardActive = (active) => {
     stage.classList.toggle("is-lanyard-dropped", active);
     window.JOEKUNI_LIVESTREAM_REACT?.setAboutLanyardActive?.(active);
   };
 
-  const gsap = window.gsap;
-  const ScrollTrigger = window.ScrollTrigger;
   if (reducedMotion.matches) {
     stage.classList.add("is-lanyard-static");
     return;
   }
 
-  if (window.matchMedia("(max-width: 768px)").matches) {
-    if (!lanyardAnchor || !("IntersectionObserver" in window)) {
-      setLanyardActive(true);
-      return;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setLanyardActive(true);
-        observer.disconnect();
-      },
-      { threshold: 0.28 },
-    );
-    observer.observe(lanyardAnchor);
-    return;
-  }
-
-  if (!gsap || !ScrollTrigger || !livestream) {
-    stage.classList.add("is-lanyard-static");
+  if (!("IntersectionObserver" in window)) {
     setLanyardActive(true);
     return;
   }
 
-  gsap.registerPlugin(ScrollTrigger);
-  const portfolioSurfaces = [livestream];
-  gsap.set(portfolioSurfaces, { transformOrigin: "50% 100%" });
-  const entrance = gsap.timeline({
-    scrollTrigger: {
-      trigger: arrival,
-      start: "top bottom",
-      end: "top top",
-      pin: livestream,
-      pinSpacing: false,
-      scrub: 0.35,
-      invalidateOnRefresh: true,
-      refreshPriority: 2,
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry.isIntersecting) return;
+      setLanyardActive(true);
+      observer.disconnect();
     },
-  });
-  entrance
-    .fromTo(
-      stage,
-      { y: () => window.innerHeight * 0.12 },
-      { y: 0, duration: 1, ease: "none" },
-      0,
-    )
-    .to(
-      portfolioSurfaces,
-      { scale: 0.92, yPercent: -4, autoAlpha: 0.68, duration: 1, ease: "none" },
-      0,
-    );
-
-  const lanyardTrigger = ScrollTrigger.create({
-    trigger: arrival,
-    start: "top 12%",
-    end: "bottom top",
-    onEnter: () => setLanyardActive(true),
-    onEnterBack: () => setLanyardActive(true),
-    onLeaveBack: () => setLanyardActive(false),
-    refreshPriority: 3,
-  });
+    { threshold: 0.18 },
+  );
+  observer.observe(stage);
 }
 
 function setupExperienceTimeline(timeline) {
@@ -1117,7 +1064,7 @@ function setupExperienceTimeline(timeline) {
   updateTimeline();
 }
 
-setupAboutStackedEntrance();
+setupAboutCardEntrance();
 setupSectionMotion(about?.querySelector(".about-experience"), ".about-reveal", "about-motion-ready");
 setupSectionMotion(contact, ".contact-ending", "contact-motion-ready", "contact-reveal");
 setupExperienceTimeline(about?.querySelector("[data-experience-timeline]"));

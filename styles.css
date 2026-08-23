@@ -3265,17 +3265,11 @@ footer p {
   }
 }
 
-/* Revision 68 — Stable portfolio expansion and isolated About stacking surface. */
+/* Revision 69 — Safe independent About card without portfolio pinning. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;
   overflow: visible;
-}
-
-.cinematic-v2 .portfolio-exit > .works,
-.cinematic-v2 .portfolio-exit > .livestream {
-  transform-origin: 50% 100%;
-  will-change: transform, opacity;
 }
 
 .cinematic-v2 .intro-sequence,
@@ -3298,12 +3292,12 @@ footer p {
 .cinematic-v2 .about-arrival {
   position: relative;
   z-index: 1;
-  min-height: 160svh;
+  min-height: auto;
 }
 
 .cinematic-v2 .about-stage {
-  position: sticky;
-  top: 0;
+  position: relative;
+  top: auto;
   min-height: 100svh;
   padding:
     calc(clamp(88px, 8vw, 122px) + var(--safe-top)) max(var(--page-pad), var(--safe-right))
@@ -3313,7 +3307,7 @@ footer p {
   border-radius: 28px 28px 0 0;
   background: var(--page-background);
   box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.14);
-  will-change: transform;
+  will-change: auto;
 }
 
 .cinematic-v2 .about-stage > .about-inner {
