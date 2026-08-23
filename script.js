@@ -65,16 +65,31 @@ let tvcHydrationCancelled = false;
 let livestreamHydrationCancelled = false;
 let refreshWorksMotion = () => {};
 let refreshLivestreamMotion = () => {};
+let suspendAboutStackedEntrance = () => () => {
+  window.ScrollTrigger?.sort();
+  window.ScrollTrigger?.refresh();
+};
 const userPausedVideos = new WeakSet();
+
+function schedulePortfolioExpansion(refreshMotion, expanded, resumeAboutStack) {
+  window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+    try {
+      refreshMotion(expanded);
+    } finally {
+      resumeAboutStack();
+    }
+  }));
+}
 
 if (works && worksToggle) {
   const worksToggleLabel = worksToggle.querySelector("[data-works-toggle-label]");
 
   worksToggle.addEventListener("click", () => {
+    const resumeAboutStack = suspendAboutStackedEntrance();
     const expanded = works.classList.toggle("is-expanded");
     worksToggle.setAttribute("aria-expanded", String(expanded));
     if (worksToggleLabel) worksToggleLabel.textContent = expanded ? "收起" : "查看更多";
-    window.requestAnimationFrame(() => window.requestAnimationFrame(() => refreshWorksMotion(expanded)));
+    schedulePortfolioExpansion(refreshWorksMotion, expanded, resumeAboutStack);
   });
 }
 
@@ -82,10 +97,11 @@ if (livestream && livestreamToggle) {
   const livestreamToggleLabel = livestreamToggle.querySelector("[data-livestream-toggle-label]");
 
   livestreamToggle.addEventListener("click", () => {
+    const resumeAboutStack = suspendAboutStackedEntrance();
     const expanded = livestream.classList.toggle("is-expanded");
     livestreamToggle.setAttribute("aria-expanded", String(expanded));
     if (livestreamToggleLabel) livestreamToggleLabel.textContent = expanded ? "收起" : "查看更多";
-    window.requestAnimationFrame(() => window.requestAnimationFrame(() => refreshLivestreamMotion(expanded)));
+    schedulePortfolioExpansion(refreshLivestreamMotion, expanded, resumeAboutStack);
   });
 }
 
@@ -784,7 +800,6 @@ function setupWorksGsapMotion() {
           newRows.push(row);
         }
 
-        ScrollTrigger.refresh();
         if (revealNew) {
           newRows.forEach((row) => {
             const rect = row[0].getBoundingClientRect();
@@ -954,7 +969,6 @@ function setupLivestreamGsapMotion() {
           newProjects.push({ project, direction });
         });
 
-        ScrollTrigger.refresh();
         if (revealNew) {
           newProjects.forEach(({ project, direction }) => {
             const rect = project.getBoundingClientRect();
@@ -1053,7 +1067,7 @@ function setupAboutStackedEntrance() {
       0,
     );
 
-  ScrollTrigger.create({
+  const lanyardTrigger = ScrollTrigger.create({
     trigger: arrival,
     start: "top 12%",
     end: "bottom top",
@@ -1062,6 +1076,16 @@ function setupAboutStackedEntrance() {
     onLeaveBack: () => setLanyardActive(false),
     refreshPriority: 3,
   });
+
+  const stackTriggers = [entrance.scrollTrigger, lanyardTrigger];
+  suspendAboutStackedEntrance = () => {
+    stackTriggers.forEach((trigger) => trigger.disable(true, false));
+    return () => {
+      stackTriggers.forEach((trigger) => trigger.enable(false, false));
+      ScrollTrigger.sort();
+      ScrollTrigger.refresh();
+    };
+  };
 }
 
 function setupExperienceTimeline(timeline) {
