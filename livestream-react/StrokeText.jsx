@@ -52,9 +52,14 @@ export default function StrokeText({
     const timeline = gsap.timeline({ paused: trigger === "scroll" });
     timeline
       .to(strokes, { strokeDashoffset: 0, duration: 0.72, ease: "power2.out", stagger: 0.035 })
-      .to(wipe, { attr: { width: box.width }, duration: 0.38, ease: "power2.inOut" }, "+=0.08");
+      .to(wipe, { attr: { width: box.width }, duration: 0.38, ease: "power2.inOut" }, "+=0.1");
     const scrollTrigger = trigger === "scroll"
-      ? ScrollTrigger.create({ trigger: root, start: "top 84%", once: true, onEnter: () => timeline.play(0) })
+      ? ScrollTrigger.create({
+          trigger: root,
+          start: "top 84%",
+          onEnter: () => timeline.play(0),
+          onEnterBack: () => timeline.play(0),
+        })
       : null;
     if (!scrollTrigger) timeline.play(0);
     return () => {

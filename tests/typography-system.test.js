@@ -50,3 +50,10 @@ test("TVC metadata uses 14px for its first line and 18px for the work title", ()
   assert.match(styles, /\.cinematic-v2 \.work-meta-line\s*\{[\s\S]*?font-size:\s*14px;/);
   assert.match(styles, /\.cinematic-v2 \.work-card h3\s*\{[\s\S]*?font-size:\s*18px;/);
 });
+
+test("Stroke Text replays when a section title re-enters during reverse scroll", () => {
+  const strokeText = readFileSync(path.join(root, "livestream-react", "StrokeText.jsx"), "utf8");
+  assert.match(strokeText, /onEnterBack:\s*\(\)\s*=>\s*timeline\.play\(0\)/);
+  assert.doesNotMatch(strokeText, /once:\s*true/);
+  assert.match(strokeText, /\+=0\.1/);
+});
