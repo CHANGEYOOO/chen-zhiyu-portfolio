@@ -24,8 +24,8 @@ const BLANK_PIXEL =
 // the metal edge and clip remain intact when a portrait is composited in.
 const FRONT_UV_RECT = { x: 0, y: 0, w: 0.5, h: 0.755 };
 const BACK_UV_RECT = { x: 0.5, y: 0, w: 0.5, h: 0.757 };
-const cardGLB = "assets/react/card.glb?v=0.24-v59";
-const lanyard = "assets/react/lanyard.png?v=0.24-v59";
+const cardGLB = "assets/react/card.glb?v=0.24-v60";
+const lanyard = "assets/react/lanyard.png?v=0.24-v60";
 
 function useCardMap({ materials, frontImage, backImage, imageFit, frontTex, backTex }) {
   return useMemo(() => {
@@ -125,6 +125,7 @@ function Band({
   lanyardImage,
   lanyardWidth,
   interactive,
+  cardScale,
 }) {
   const band = useRef();
   const fixed = useRef();
@@ -136,6 +137,8 @@ function Band({
   const ang = useMemo(() => new THREE.Vector3(), []);
   const rot = useMemo(() => new THREE.Vector3(), []);
   const dir = useMemo(() => new THREE.Vector3(), []);
+  const maxDragDistance = 6.4;
+  const softLimit = 0.7;
   const [dragged, setDragged] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [curve] = useState(
@@ -177,11 +180,18 @@ function Band({
       vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
       dir.copy(vec).sub(state.camera.position).normalize();
       vec.add(dir.multiplyScalar(state.camera.position.length()));
+      vec.sub(dragged);
+      dir.copy(vec).sub(fixed.current.translation());
+      const distance = dir.length();
+      if (distance > maxDragDistance) {
+        const resistedDistance = maxDragDistance + softLimit * (1 - Math.exp(-(distance - maxDragDistance) / softLimit));
+        vec.copy(fixed.current.translation()).add(dir.setLength(resistedDistance));
+      }
       [card, j1, j2, j3, fixed].forEach((ref) => ref.current?.wakeUp());
       card.current.setNextKinematicTranslation({
-        x: vec.x - dragged.x,
-        y: vec.y - dragged.y,
-        z: vec.z - dragged.z,
+        x: vec.x,
+        y: vec.y,
+        z: vec.z,
       });
     }
 
@@ -229,6 +239,7 @@ function Band({
             materials={materials}
             cardMap={cardMap}
             interactive={interactive}
+            scale={cardScale}
             onPointerOver={() => setHovered(true)}
             onPointerOut={() => setHovered(false)}
             onPointerUp={(event) => {
@@ -258,19 +269,24 @@ function Band({
   );
 }
 
-function MobileBand({ frontImage, backImage, imageFit, lanyardImage, lanyardWidth }) {
+function MobileBand({
+  frontImage,
+  backImage,
+  imageFit,
+  lanyardImage,
+  lanyardWidth,
+  cardScale,
+  compact,
+}) {
   const { nodes, materials } = useGLTF(cardGLB);
   const texture = useTexture(lanyardImage || lanyard);
   const cardMap = useArtwork({ frontImage, backImage, imageFit, materials });
   const linePoints = useMemo(
-    () => [
-      [-1.15, 4.8, 0],
-      [-0.65, 4.15, 0],
-      [-0.2, 3.55, 0],
-      [0.2, 3.1, 0],
-      [0.45, 2.75, 0],
-    ],
-    [],
+    () =>
+      compact
+        ? [[-0.6, 2.75, 0], [-0.2, 2.35, 0], [0.15, 1.95, 0]]
+        : [[-1.15, 4.8, 0], [-0.65, 4.15, 0], [-0.2, 3.55, 0], [0.2, 3.1, 0], [0.45, 2.75, 0]],
+    [compact],
   );
 
   useEffect(() => {
@@ -278,7 +294,10 @@ function MobileBand({ frontImage, backImage, imageFit, lanyardImage, lanyardWidt
   }, [texture]);
 
   return (
-    <group position={[-1.1, 0.3, 0]} rotation={[0, 0, -0.02]}>
+    <group
+      position={compact ? [-0.45, -0.15, 0] : [-1.1, 0.3, 0]}
+      rotation={[0, 0, -0.02]}
+    >
       <Line
         points={linePoints}
         color="white"
@@ -286,8 +305,17 @@ function MobileBand({ frontImage, backImage, imageFit, lanyardImage, lanyardWidt
         depthTest={false}
         dashed={false}
       />
-      <group position={[0.45, 2.25, 0]} rotation={[0, 0, 0.035]}>
-        <CardMeshes nodes={nodes} materials={materials} cardMap={cardMap} interactive={false} scale={2.1} />
+      <group
+        position={compact ? [0.15, 1.25, 0] : [0.45, 2.25, 0]}
+        rotation={[0, 0, 0.035]}
+      >
+        <CardMeshes
+          nodes={nodes}
+          materials={materials}
+          cardMap={cardMap}
+          interactive={false}
+          scale={cardScale}
+        />
       </group>
     </group>
   );
@@ -311,6 +339,8 @@ export default function Lanyard({
   imageFit = "cover",
   lanyardImage = null,
   lanyardWidth = 1,
+  desktopCardScale = 2.55,
+  mobileCardScale = 2.3,
   active = false,
   onReady,
 }) {
@@ -345,9 +375,15 @@ export default function Lanyard({
               imageFit={imageFit}
               lanyardImage={lanyardImage}
               lanyardWidth={lanyardWidth}
+              cardScale={mobileCardScale}
+              compact
             />
           ) : (
-            <Physics key={active ? "lanyard-dropped" : "lanyard-held"} gravity={active ? gravity : [0, 0, 0]} timeStep={1 / 60}>
+            <Physics
+              key={active ? "lanyard-dropped" : "lanyard-held"}
+              gravity={active ? gravity : [0, 0, 0]}
+              timeStep={1 / 60}
+            >
               <Band
                 frontImage={frontImage}
                 backImage={backImage}
@@ -355,6 +391,7 @@ export default function Lanyard({
                 lanyardImage={lanyardImage}
                 lanyardWidth={lanyardWidth}
                 interactive={active}
+                cardScale={desktopCardScale}
               />
             </Physics>
           )}

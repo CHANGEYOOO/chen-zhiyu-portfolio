@@ -24,6 +24,9 @@ test("Lanyard keeps desktop interaction but uses a one-shot mobile sway", () => 
   assert.match(lanyard, /<Physics[\s\S]*<Band[\s\S]*interactive/);
   assert.match(lanyard, /active = false/);
   assert.match(lanyard, /is-lanyard-active/);
+  assert.match(lanyard, /maxDragDistance/);
+  assert.match(lanyard, /softLimit/);
+  assert.match(lanyard, /compact/);
   assert.match(lanyardCss, /mobile-sway/);
   assert.match(lanyardCss, /animation-iteration-count:\s*1/);
   assert.match(lanyardCss, /prefers-reduced-motion/);

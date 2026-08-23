@@ -3256,10 +3256,22 @@ footer p {
   }
 }
 
-/* Revision 59 — About enters as one stacked page card; experience follows below. */
+/* Revision 60 — About covers the receding portfolio; its lanyard keeps a free visual stage. */
+.cinematic-v2 .portfolio-exit {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+.cinematic-v2 .portfolio-exit > .works,
+.cinematic-v2 .portfolio-exit > .livestream {
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
+}
+
 .cinematic-v2 .about {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   padding: 0 0 calc(clamp(110px, 10vw, 164px) + var(--safe-bottom));
   overflow: visible;
   background: transparent;
@@ -3328,10 +3340,10 @@ footer p {
 .cinematic-v2 .about-lanyard-anchor {
   position: absolute;
   z-index: 2;
-  top: 0;
-  right: max(var(--page-pad), var(--safe-right));
-  width: min(36vw, 560px);
-  height: min(82svh, 760px);
+  top: calc(-1 * clamp(26px, 4svh, 54px));
+  right: calc(max(var(--page-pad), var(--safe-right)) - clamp(12px, 2vw, 34px));
+  width: min(45vw, 700px);
+  height: min(100svh, 900px);
   margin: 0;
   overflow: visible;
   isolation: auto;
@@ -3388,14 +3400,16 @@ footer p {
 
   .cinematic-v2 .about-stage .about-identity {
     max-width: 100%;
-    padding-top: min(46svh, 360px);
+    padding-top: 0;
   }
 
   .cinematic-v2 .about-lanyard-anchor {
-    top: 0;
-    right: max(18px, var(--safe-right));
-    width: min(72vw, 320px);
-    height: min(58svh, 470px);
+    position: relative;
+    top: auto;
+    right: auto;
+    width: min(88vw, 380px);
+    height: clamp(320px, 72svh, 480px);
+    margin: clamp(38px, 8vw, 56px) auto 0;
   }
 
   .cinematic-v2 .about-experience-wrap {

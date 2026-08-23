@@ -65,6 +65,19 @@ test("About arrives as one overlay card before its separate experience timeline"
   assert.match(script, /setupAboutStackedEntrance/);
 });
 
+test("About overlays the held portfolio while its desktop lanyard stays unclipped", () => {
+  assert.match(html, /data-about-transition-source/);
+  assert.match(script, /pin:\s*portfolio/);
+  assert.match(script, /pinSpacing:\s*false/);
+  assert.match(script, /scale:\s*0\.92/);
+  assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?overflow:\s*visible/);
+  assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?height:\s*min\(100svh/);
+});
+
+test("mobile puts the compact lanyard after About copy instead of pinning it to the card top", () => {
+  assert.match(styles, /@media \(max-width: 768px\) \{[\s\S]*?\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?position:\s*relative[\s\S]*?top:\s*auto/);
+});
+
 test("Contact is a compact closing section instead of a full viewport hero", () => {
   assert.match(styles, /\.cinematic-v2 \.contact \{\s*min-height:\s*clamp\(/);
   const contactMarkup = html.slice(html.indexOf('<section class="content-section contact"'));

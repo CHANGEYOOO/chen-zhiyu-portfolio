@@ -986,6 +986,8 @@ function setupPortfolioGsapMotion() {
 function setupAboutStackedEntrance() {
   const arrival = about?.querySelector("[data-about-arrival]");
   const stage = about?.querySelector("[data-about-stage]");
+  const lanyardAnchor = about?.querySelector(".about-lanyard-anchor");
+  const portfolio = document.querySelector("[data-about-transition-source]");
   if (!about || !arrival || !stage) return;
 
   const setLanyardActive = (active) => {
@@ -1000,29 +1002,56 @@ function setupAboutStackedEntrance() {
     return;
   }
 
-  if (!gsap || !ScrollTrigger) {
+  if (window.matchMedia("(max-width: 768px)").matches) {
+    if (!lanyardAnchor || !("IntersectionObserver" in window)) {
+      setLanyardActive(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setLanyardActive(true);
+        observer.disconnect();
+      },
+      { threshold: 0.28 },
+    );
+    observer.observe(lanyardAnchor);
+    return;
+  }
+
+  if (!gsap || !ScrollTrigger || !portfolio) {
     stage.classList.add("is-lanyard-static");
     setLanyardActive(true);
     return;
   }
 
   gsap.registerPlugin(ScrollTrigger);
-  gsap.fromTo(
-    stage,
-    { y: () => window.innerHeight * 0.16 },
-    {
-      y: 0,
-      ease: "none",
-      scrollTrigger: {
-        trigger: arrival,
-        start: "top bottom",
-        end: "top top",
-        scrub: 0.35,
-        invalidateOnRefresh: true,
-        refreshPriority: 2,
-      },
+  const portfolioSurfaces = [...portfolio.querySelectorAll(".works, .livestream")];
+  gsap.set(portfolioSurfaces, { transformOrigin: "50% 100%" });
+  const entrance = gsap.timeline({
+    scrollTrigger: {
+      trigger: arrival,
+      start: "top bottom",
+      end: "top top",
+      pin: portfolio,
+      pinSpacing: false,
+      scrub: 0.35,
+      invalidateOnRefresh: true,
+      refreshPriority: 2,
     },
-  );
+  });
+  entrance
+    .fromTo(
+      stage,
+      { y: () => window.innerHeight * 0.12 },
+      { y: 0, duration: 1, ease: "none" },
+      0,
+    )
+    .to(
+      portfolioSurfaces,
+      { scale: 0.92, yPercent: -4, autoAlpha: 0.68, duration: 1, ease: "none" },
+      0,
+    );
 
   ScrollTrigger.create({
     trigger: arrival,
