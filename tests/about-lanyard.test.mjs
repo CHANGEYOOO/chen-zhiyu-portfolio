@@ -25,3 +25,9 @@ test("Lanyard keeps desktop interaction but uses a one-shot mobile sway", () => 
   assert.match(lanyardCss, /animation-iteration-count:\s*1/);
   assert.match(lanyardCss, /prefers-reduced-motion/);
 });
+
+test("Lanyard assets stay relative when the portfolio is opened from a local file", () => {
+  const lanyard = readFileSync(resolve(root, "livestream-react/Lanyard.jsx"), "utf8");
+  assert.doesNotMatch(lanyard, /const cardGLB = "\//);
+  assert.doesNotMatch(lanyard, /const lanyard = "\//);
+});
