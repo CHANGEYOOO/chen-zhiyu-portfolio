@@ -3256,7 +3256,7 @@ footer p {
   }
 }
 
-/* Revision 62 — About Lanyard touches the card edge and centers at every breakpoint. */
+/* Revision 63 — About crops excess rope while the photo rests slightly above center. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;

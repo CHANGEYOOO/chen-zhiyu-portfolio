@@ -1,10 +1,10 @@
 export const DESKTOP_CARD_SCALE = 3.06;
 export const MOBILE_CARD_SCALE = 6.2;
-const DESKTOP_ANCHOR_Y = 3.82;
 
 const CARD_MESH_OFFSET_Y = -1.2;
 const CARD_HALF_WIDTH = 0.35820895433425903;
 const CARD_BOTTOM_Y = 0.02290511131286621;
+const CARD_PHOTO_TOP_Y = 1.0229052305221558;
 const CARD_HOOK_TOP_Y = 1.2293701171875;
 
 export function getCardGeometry(scale) {
@@ -13,6 +13,7 @@ export function getCardGeometry(scale) {
   const attachmentY = CARD_MESH_OFFSET_Y + CARD_HOOK_TOP_Y * scale;
   const colliderHalfHeight = (attachmentY - colliderBottom) / 2;
   const colliderCenterY = colliderBottom + colliderHalfHeight;
+  const photoCenterY = CARD_MESH_OFFSET_Y + ((CARD_BOTTOM_Y + CARD_PHOTO_TOP_Y) / 2) * scale;
   const radius = Math.hypot(halfWidth, Math.max(Math.abs(colliderBottom), Math.abs(attachmentY)));
 
   return {
@@ -22,6 +23,7 @@ export function getCardGeometry(scale) {
     colliderHalfHeight,
     colliderTop: attachmentY,
     halfWidth,
+    photoCenterY,
     radius,
   };
 }
@@ -34,17 +36,30 @@ export function getDragTarget(point, offset) {
   };
 }
 
-export function getDesktopLayout(cardGeometry) {
-  const cardBodyY = -cardGeometry.colliderCenterY;
+export function getDesktopLayout(
+  cardGeometry,
+  { fov = 20, distance = 22, photoTargetRatio = 0.44 } = {},
+) {
+  const viewHalfHeight = Math.tan((fov * Math.PI) / 360) * distance;
+  const anchorY = viewHalfHeight + 0.55;
+  const photoTargetY = viewHalfHeight * (1 - photoTargetRatio * 2);
+  const cardBodyY = photoTargetY - cardGeometry.photoCenterY;
   const jointY = cardBodyY + cardGeometry.attachmentY;
-  const ropeDrop = DESKTOP_ANCHOR_Y - jointY;
+  const segmentLength = (anchorY - jointY) / 3;
   return {
-    anchorY: DESKTOP_ANCHOR_Y,
+    anchorY,
     cardBodyY,
     jointY,
+    segmentLength,
     segmentYs: [
-      DESKTOP_ANCHOR_Y - ropeDrop / 3,
-      DESKTOP_ANCHOR_Y - (ropeDrop * 2) / 3,
+      anchorY - segmentLength,
+      anchorY - segmentLength * 2,
     ],
   };
+}
+
+export function shouldSleepLanyard(linearSpeeds, angularSpeed, stableFrames) {
+  return stableFrames >= 24
+    && angularSpeed <= 0.16
+    && linearSpeeds.every((speed) => speed <= 0.16);
 }

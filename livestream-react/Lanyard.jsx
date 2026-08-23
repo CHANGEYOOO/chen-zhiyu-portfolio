@@ -19,6 +19,7 @@ import {
   getCardGeometry,
   getDesktopLayout,
   getDragTarget,
+  shouldSleepLanyard,
 } from "./lanyard-geometry.mjs";
 
 extend({ MeshLineGeometry, MeshLineMaterial });
@@ -31,8 +32,8 @@ const BLANK_PIXEL =
 // the metal edge and clip remain intact when a portrait is composited in.
 const FRONT_UV_RECT = { x: 0, y: 0, w: 0.5, h: 0.755 };
 const BACK_UV_RECT = { x: 0.5, y: 0, w: 0.5, h: 0.757 };
-const cardGLB = "assets/react/card.glb?v=0.24-v62";
-const lanyard = "assets/react/lanyard.png?v=0.24-v62";
+const cardGLB = "assets/react/card.glb?v=0.24-v63";
+const lanyard = "assets/react/lanyard.png?v=0.24-v63";
 
 function useCardMap({ materials, frontImage, backImage, imageFit, frontTex, backTex }) {
   return useMemo(() => {
@@ -133,6 +134,8 @@ function Band({
   lanyardWidth,
   interactive,
   cardScale,
+  cameraDistance,
+  fov,
 }) {
   const band = useRef();
   const fixed = useRef();
@@ -144,8 +147,12 @@ function Band({
   const ang = useMemo(() => new THREE.Vector3(), []);
   const rot = useMemo(() => new THREE.Vector3(), []);
   const dir = useMemo(() => new THREE.Vector3(), []);
+  const stableFrames = useRef(0);
   const cardGeometry = useMemo(() => getCardGeometry(cardScale), [cardScale]);
-  const layout = useMemo(() => getDesktopLayout(cardGeometry), [cardGeometry]);
+  const layout = useMemo(
+    () => getDesktopLayout(cardGeometry, { fov, distance: cameraDistance, photoTargetRatio: 0.44 }),
+    [cameraDistance, cardGeometry, fov],
+  );
   const [dragged, setDragged] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [curve] = useState(
@@ -168,9 +175,9 @@ function Band({
     linearDamping: 4,
   };
 
-  useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
-  useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]);
-  useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]);
+  useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], layout.segmentLength]);
+  useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], layout.segmentLength]);
+  useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], layout.segmentLength]);
   useSphericalJoint(j3, card, [[0, 0, 0], [0, cardGeometry.attachmentY, 0]]);
 
   useEffect(() => {
@@ -184,6 +191,7 @@ function Band({
   useFrame((state, delta) => {
     if (!fixed.current || !card.current) return;
     if (interactive && dragged) {
+      stableFrames.current = 0;
       vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
       dir.copy(vec).sub(state.camera.position).normalize();
       vec.add(dir.multiplyScalar(state.camera.position.length()));
@@ -213,6 +221,22 @@ function Band({
     ang.copy(card.current.angvel());
     rot.copy(card.current.rotation());
     card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z });
+
+    if (interactive && !dragged) {
+      const bodies = [card, j1, j2, j3];
+      const linearSpeeds = bodies.map(({ current }) => {
+        const velocity = current.linvel();
+        return Math.hypot(velocity.x, velocity.y, velocity.z);
+      });
+      const angularVelocity = card.current.angvel();
+      const angularSpeed = Math.hypot(angularVelocity.x, angularVelocity.y, angularVelocity.z);
+      const isSlow = linearSpeeds.every((speed) => speed <= 0.16) && angularSpeed <= 0.16;
+      stableFrames.current = isSlow ? stableFrames.current + 1 : 0;
+      if (shouldSleepLanyard(linearSpeeds, angularSpeed, stableFrames.current)) {
+        bodies.forEach(({ current }) => current.sleep());
+        stableFrames.current = 0;
+      }
+    }
   });
 
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -220,17 +244,17 @@ function Band({
     <>
       <group position={[1.8, layout.anchorY, 0]}>
         <RigidBody ref={fixed} {...segmentProps} type="fixed" />
-        <RigidBody position={[0.55, layout.segmentYs[0] - layout.anchorY, 0]} ref={j1} {...segmentProps}>
+        <RigidBody position={[0, layout.segmentYs[0] - layout.anchorY, 0]} ref={j1} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1, layout.segmentYs[1] - layout.anchorY, 0]} ref={j2} {...segmentProps}>
+        <RigidBody position={[0, layout.segmentYs[1] - layout.anchorY, 0]} ref={j2} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1.25, layout.jointY - layout.anchorY, 0]} ref={j3} {...segmentProps}>
+        <RigidBody position={[0, layout.jointY - layout.anchorY, 0]} ref={j3} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
         <RigidBody
-          position={[1.25, layout.cardBodyY - layout.anchorY, 0]}
+          position={[0, layout.cardBodyY - layout.anchorY, 0]}
           ref={card}
           {...segmentProps}
           type={interactive && dragged ? "kinematicPosition" : "dynamic"}
@@ -253,6 +277,7 @@ function Band({
             }}
             onPointerDown={(event) => {
               event.target.setPointerCapture(event.pointerId);
+              [card, j1, j2, j3].forEach((ref) => ref.current?.wakeUp());
               setDragged(new THREE.Vector3().copy(event.point).sub(vec.copy(card.current.translation())));
             }}
           />
@@ -398,6 +423,8 @@ export default function Lanyard({
                 lanyardWidth={lanyardWidth}
                 interactive={active}
                 cardScale={desktopCardScale}
+                cameraDistance={cameraDistance || position[2]}
+                fov={fov}
               />
             </Physics>
           )}
