@@ -742,67 +742,61 @@ function setupWorksGsapMotion() {
             });
       };
 
-      const unregisterHiddenRows = () => {
-        registeredRows.forEach((record, key) => {
-          if (key.offsetParent !== null) return;
-          record.entranceTrigger.kill();
-          record.focusTrigger?.kill();
-          if (activeFocusRow === record.cards) {
-            activeFocusRow = [];
-            grid?.classList.remove("has-motion-focus");
-          }
-          record.cards.forEach((card) => card.classList.remove("is-motion-focus"));
-          const posters = record.cards.map((card) => card.querySelector(".work-poster")).filter(Boolean);
-          const metas = record.cards.map((card) => card.querySelector(".work-meta")).filter(Boolean);
-          gsap.set([...record.cards, ...posters, ...metas], { clearProps: "all" });
-          registeredRows.delete(key);
-        });
-      };
+      function setWorksRecordEnabled(record, enabled) {
+        if (record.enabled === enabled) return;
+        record.enabled = enabled;
+        if (enabled) {
+          record.entranceTrigger.enable(false, false);
+          record.focusTrigger?.enable(false, false);
+          return;
+        }
+        setFocusRow(record.cards, false);
+        record.entranceTrigger.disable(false, false);
+        record.focusTrigger?.disable(false, false);
+        resetWorksRow(record.cards);
+      }
 
-      const animateVisibleCards = (revealNew = false) => {
-        unregisterHiddenRows();
-        const cards = [...works.querySelectorAll(".work-card")].filter((card) => card.offsetParent !== null);
-        const newRows = [];
-
-        for (let rowStart = 0; rowStart < cards.length; rowStart += rowSize) {
-          const row = cards.slice(rowStart, rowStart + rowSize);
-          if (registeredRows.has(row[0])) continue;
-
-          row.forEach(bindWorksPointerDepth);
-          resetWorksRow(row);
-          const entranceTrigger = ScrollTrigger.create({
+      const cards = [...works.querySelectorAll(".work-card")];
+      for (let rowStart = 0; rowStart < cards.length; rowStart += rowSize) {
+        const row = cards.slice(rowStart, rowStart + rowSize);
+        row.forEach(bindWorksPointerDepth);
+        resetWorksRow(row);
+        const record = {
+          cards: row,
+          enabled: false,
+          entranceTrigger: null,
+          focusTrigger: null,
+        };
+        record.entranceTrigger = ScrollTrigger.create({
             trigger: row[0],
             start: "top 90%",
             endTrigger: row[row.length - 1],
             end: "bottom 10%",
-            onEnter: () => playWorksRow(row, 1),
-            onEnterBack: () => playWorksRow(row, -1),
+            onEnter: () => record.enabled && playWorksRow(row, 1),
+            onEnterBack: () => record.enabled && playWorksRow(row, -1),
           });
-
-          const focusTrigger = desktop
+        record.focusTrigger = desktop
             ? ScrollTrigger.create({
                 trigger: row[0],
                 start: "top 60%",
                 endTrigger: row[row.length - 1],
                 end: "bottom 40%",
-                onToggle: ({ isActive }) => setFocusRow(row, isActive),
+                onToggle: ({ isActive }) => record.enabled && setFocusRow(row, isActive),
               })
             : null;
-          registeredRows.set(row[0], { cards: row, entranceTrigger, focusTrigger });
-          newRows.push(row);
-        }
+        record.entranceTrigger.disable(false, false);
+        record.focusTrigger?.disable(false, false);
+        registeredRows.set(row[0], record);
+      }
 
-        if (revealNew) {
-          newRows.forEach((row) => {
-            const rect = row[0].getBoundingClientRect();
-            if (rect.bottom < 0) playWorksRow(row, -1).progress(1);
-            else if (rect.top < window.innerHeight) playWorksRow(row, 1);
-          });
-        }
+      const syncWorksTriggerState = () => {
+        registeredRows.forEach((record) => {
+          setWorksRecordEnabled(record, record.cards[0].offsetParent !== null);
+        });
       };
 
-      refreshWorksMotion = animateVisibleCards;
-      animateVisibleCards();
+      refreshWorksMotion = syncWorksTriggerState;
+      syncWorksTriggerState();
       return () => {
         refreshWorksMotion = () => {};
         registeredRows.forEach(({ entranceTrigger, focusTrigger }) => {
@@ -915,43 +909,44 @@ function setupLivestreamGsapMotion() {
         return entrance;
       }
 
-      const unregisterHiddenProjects = () => {
-        registeredProjects.forEach((record, project) => {
-          if (project.offsetParent !== null) return;
-          record.entranceTrigger.kill();
-          record.focusTrigger?.kill();
-          const gallery = project.querySelector(".react-circular-gallery, .depth-carousel");
-          const meta = project.querySelector(".livestream-meta");
-          gsap.set([project, gallery, meta].filter(Boolean), { clearProps: "all" });
-          registeredProjects.delete(project);
-        });
-      };
+      function setLivestreamRecordEnabled(record, enabled) {
+        if (record.enabled === enabled) return;
+        record.enabled = enabled;
+        if (enabled) {
+          record.entranceTrigger.enable(false, false);
+          record.focusTrigger?.enable(false, false);
+          return;
+        }
+        record.entranceTrigger.disable(false, false);
+        record.focusTrigger?.disable(false, false);
+        gsap.set(record.project, { clearProps: "transform" });
+        resetLivestreamProject(record.project);
+      }
 
-      const animateVisibleProjects = (revealNew = false) => {
-        unregisterHiddenProjects();
-        const projects = [...livestream.querySelectorAll(".livestream-project")]
-          .filter((project) => project.offsetParent !== null);
-        const newProjects = [];
-
-        projects.forEach((project) => {
-          if (registeredProjects.has(project)) return;
-          const index = allProjects.indexOf(project);
-          const direction = index % 2 === 0 ? -1 : 1;
-          resetLivestreamProject(project);
-          const entranceTrigger = ScrollTrigger.create({
+      allProjects.forEach((project, index) => {
+        const direction = index % 2 === 0 ? -1 : 1;
+        resetLivestreamProject(project);
+        const record = {
+          project,
+          direction,
+          enabled: false,
+          entranceTrigger: null,
+          focusTrigger: null,
+        };
+        record.entranceTrigger = ScrollTrigger.create({
             trigger: project,
             start: "top 88%",
             end: "bottom 12%",
-            onEnter: () => playLivestreamProject(project, direction, 1),
-            onEnterBack: () => playLivestreamProject(project, direction, -1),
+            onEnter: () => record.enabled && playLivestreamProject(project, direction, 1),
+            onEnterBack: () => record.enabled && playLivestreamProject(project, direction, -1),
           });
-
-          const focusTrigger = desktop
+        record.focusTrigger = desktop
             ? ScrollTrigger.create({
                 trigger: project,
                 start: "top 64%",
                 end: "bottom 36%",
                 onToggle: ({ isActive }) => {
+                  if (!record.enabled) return;
                   gsap.to(project, {
                     scale: isActive ? 1.018 : 1,
                     duration: 0.52,
@@ -961,21 +956,19 @@ function setupLivestreamGsapMotion() {
                 },
               })
             : null;
-          registeredProjects.set(project, { entranceTrigger, focusTrigger });
-          newProjects.push({ project, direction });
-        });
+        record.entranceTrigger.disable(false, false);
+        record.focusTrigger?.disable(false, false);
+        registeredProjects.set(project, record);
+      });
 
-        if (revealNew) {
-          newProjects.forEach(({ project, direction }) => {
-            const rect = project.getBoundingClientRect();
-            if (rect.bottom < 0) playLivestreamProject(project, direction, -1).progress(1);
-            else if (rect.top < window.innerHeight) playLivestreamProject(project, direction, 1);
-          });
-        }
+      const syncLivestreamTriggerState = () => {
+        registeredProjects.forEach((record) => {
+          setLivestreamRecordEnabled(record, record.project.offsetParent !== null);
+        });
       };
 
-      refreshLivestreamMotion = animateVisibleProjects;
-      animateVisibleProjects();
+      refreshLivestreamMotion = syncLivestreamTriggerState;
+      syncLivestreamTriggerState();
       return () => {
         refreshLivestreamMotion = () => {};
         registeredProjects.forEach(({ entranceTrigger, focusTrigger }) => {

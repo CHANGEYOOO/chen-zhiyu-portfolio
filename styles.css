@@ -3265,7 +3265,7 @@ footer p {
   }
 }
 
-/* Revision 69 — Safe independent About card without portfolio pinning. */
+/* Revision 70 — Persistent portfolio motion records across expansion. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;

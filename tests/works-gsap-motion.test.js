@@ -35,15 +35,19 @@ test("TVC motion reveals and focuses one complete row without oversized scaling"
   assert.doesNotMatch(script, /scale:\s*isActive \? 1\.045 : 1/);
 });
 
-test("TVC rows replay in both scroll directions and expanded rows use the same runner", () => {
+test("TVC initializes every row once and only toggles hidden trigger state", () => {
   assert.match(script, /function playWorksRow\(row, direction\)/);
-  assert.match(script, /onEnter:\s*\(\) => playWorksRow\(row, 1\)/);
-  assert.match(script, /onEnterBack:\s*\(\) => playWorksRow\(row, -1\)/);
+  assert.match(script, /onEnter:\s*\(\) => record\.enabled && playWorksRow\(row, 1\)/);
+  assert.match(script, /onEnterBack:\s*\(\) => record\.enabled && playWorksRow\(row, -1\)/);
   assert.doesNotMatch(script, /onLeave:\s*\(\) => resetWorksRow\(row\)/);
   assert.doesNotMatch(script, /onLeaveBack:\s*\(\) => resetWorksRow\(row\)/);
   assert.match(script, /schedulePortfolioExpansion\(refreshWorksMotion, expanded\)/);
-  assert.match(script, /if \(rect\.bottom < 0\) playWorksRow\(row, -1\)\.progress\(1\)/);
-  assert.match(script, /else if \(rect\.top < window\.innerHeight\) playWorksRow\(row, 1\)/);
+  assert.match(script, /const cards = \[\.\.\.works\.querySelectorAll\("\.work-card"\)\]/);
+  assert.match(script, /function setWorksRecordEnabled\(record, enabled\)/);
+  assert.match(script, /record\.entranceTrigger\.disable\(false, false\)/);
+  assert.match(script, /record\.entranceTrigger\.enable\(false, false\)/);
+  assert.doesNotMatch(script, /unregisterHiddenRows/);
+  assert.doesNotMatch(script, /newRows/);
 });
 
 test("TVC metadata uses the same entrance distance and duration as livestream metadata", () => {
@@ -58,23 +62,25 @@ test("livestream motion enhances projects without taking over gallery scrolling"
   assert.doesNotMatch(script, /containerAnimation/);
 });
 
-test("livestream motion only registers visible projects and refreshes expanded projects", () => {
+test("livestream initializes every project once and only toggles hidden trigger state", () => {
   assert.match(script, /let refreshLivestreamMotion = \(\) => \{\}/);
-  assert.match(script, /\.filter\(\(project\) => project\.offsetParent !== null\)/);
-  assert.match(script, /onEnter:\s*\(\) => playLivestreamProject\(project, direction, 1\)/);
-  assert.match(script, /onEnterBack:\s*\(\) => playLivestreamProject\(project, direction, -1\)/);
+  assert.match(script, /function setLivestreamRecordEnabled\(record, enabled\)/);
+  assert.match(script, /onEnter:\s*\(\) => record\.enabled && playLivestreamProject\(project, direction, 1\)/);
+  assert.match(script, /onEnterBack:\s*\(\) => record\.enabled && playLivestreamProject\(project, direction, -1\)/);
   assert.doesNotMatch(script, /onLeave:\s*\(\) => resetLivestreamProject\(project\)/);
   assert.doesNotMatch(script, /onLeaveBack:\s*\(\) => resetLivestreamProject\(project\)/);
   assert.match(script, /schedulePortfolioExpansion\(refreshLivestreamMotion, expanded\)/);
-  assert.match(script, /if \(rect\.bottom < 0\) playLivestreamProject\(project, direction, -1\)\.progress\(1\)/);
-  assert.match(script, /else if \(rect\.top < window\.innerHeight\) playLivestreamProject\(project, direction, 1\)/);
+  assert.match(script, /record\.entranceTrigger\.disable\(false, false\)/);
+  assert.match(script, /record\.entranceTrigger\.enable\(false, false\)/);
+  assert.doesNotMatch(script, /unregisterHiddenProjects/);
+  assert.doesNotMatch(script, /newProjects/);
 });
 
-test("portfolio expansion registers visible motion before one ordered layout refresh", () => {
+test("portfolio expansion preserves registered motion and performs one ordered layout refresh", () => {
   assert.match(script, /function schedulePortfolioExpansion\(refreshMotion, expanded\)[\s\S]*?refreshMotion\(expanded\)[\s\S]*?ScrollTrigger\?\.sort\(\)[\s\S]*?ScrollTrigger\?\.refresh\(\)/);
   assert.doesNotMatch(script, /suspendAboutStackedEntrance/);
-  assert.doesNotMatch(script, /trigger\.disable\(/);
-  assert.doesNotMatch(script, /trigger\.enable\(/);
+  assert.doesNotMatch(script, /registeredRows\.delete/);
+  assert.doesNotMatch(script, /registeredProjects\.delete/);
 
   const worksMotion = script.slice(script.indexOf("function setupWorksGsapMotion"), script.indexOf("function setupLivestreamGsapMotion"));
   const livestreamMotion = script.slice(script.indexOf("function setupLivestreamGsapMotion"), script.indexOf("function setupPortfolioGsapMotion"));
