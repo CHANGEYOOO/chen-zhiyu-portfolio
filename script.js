@@ -65,19 +65,13 @@ let tvcHydrationCancelled = false;
 let livestreamHydrationCancelled = false;
 let refreshWorksMotion = () => {};
 let refreshLivestreamMotion = () => {};
-let suspendAboutStackedEntrance = () => () => {
-  window.ScrollTrigger?.sort();
-  window.ScrollTrigger?.refresh();
-};
 const userPausedVideos = new WeakSet();
 
-function schedulePortfolioExpansion(refreshMotion, expanded, resumeAboutStack) {
+function schedulePortfolioExpansion(refreshMotion, expanded) {
   window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-    try {
-      refreshMotion(expanded);
-    } finally {
-      resumeAboutStack();
-    }
+    refreshMotion(expanded);
+    window.ScrollTrigger?.sort();
+    window.ScrollTrigger?.refresh();
   }));
 }
 
@@ -85,11 +79,10 @@ if (works && worksToggle) {
   const worksToggleLabel = worksToggle.querySelector("[data-works-toggle-label]");
 
   worksToggle.addEventListener("click", () => {
-    const resumeAboutStack = suspendAboutStackedEntrance();
     const expanded = works.classList.toggle("is-expanded");
     worksToggle.setAttribute("aria-expanded", String(expanded));
     if (worksToggleLabel) worksToggleLabel.textContent = expanded ? "收起" : "查看更多";
-    schedulePortfolioExpansion(refreshWorksMotion, expanded, resumeAboutStack);
+    schedulePortfolioExpansion(refreshWorksMotion, expanded);
   });
 }
 
@@ -97,11 +90,10 @@ if (livestream && livestreamToggle) {
   const livestreamToggleLabel = livestreamToggle.querySelector("[data-livestream-toggle-label]");
 
   livestreamToggle.addEventListener("click", () => {
-    const resumeAboutStack = suspendAboutStackedEntrance();
     const expanded = livestream.classList.toggle("is-expanded");
     livestreamToggle.setAttribute("aria-expanded", String(expanded));
     if (livestreamToggleLabel) livestreamToggleLabel.textContent = expanded ? "收起" : "查看更多";
-    schedulePortfolioExpansion(refreshLivestreamMotion, expanded, resumeAboutStack);
+    schedulePortfolioExpansion(refreshLivestreamMotion, expanded);
   });
 }
 
@@ -866,7 +858,12 @@ function setupLivestreamGsapMotion() {
           skewY: 0,
           duration: 0.82,
           ease: "power4.out",
-          scrollTrigger: { trigger: heading, start: "top 86%", once: true },
+          scrollTrigger: {
+            trigger: heading,
+            pinnedContainer: livestream,
+            start: "top 86%",
+            once: true,
+          },
         },
       );
 
@@ -944,6 +941,7 @@ function setupLivestreamGsapMotion() {
           resetLivestreamProject(project);
           const entranceTrigger = ScrollTrigger.create({
             trigger: project,
+            pinnedContainer: livestream,
             start: "top 88%",
             end: "bottom 12%",
             onEnter: () => playLivestreamProject(project, direction, 1),
@@ -953,6 +951,7 @@ function setupLivestreamGsapMotion() {
           const focusTrigger = desktop
             ? ScrollTrigger.create({
                 trigger: project,
+                pinnedContainer: livestream,
                 start: "top 64%",
                 end: "bottom 36%",
                 onToggle: ({ isActive }) => {
@@ -1001,7 +1000,6 @@ function setupAboutStackedEntrance() {
   const arrival = about?.querySelector("[data-about-arrival]");
   const stage = about?.querySelector("[data-about-stage]");
   const lanyardAnchor = about?.querySelector(".about-lanyard-anchor");
-  const portfolio = document.querySelector("[data-about-transition-source]");
   if (!about || !arrival || !stage) return;
 
   const setLanyardActive = (active) => {
@@ -1033,21 +1031,21 @@ function setupAboutStackedEntrance() {
     return;
   }
 
-  if (!gsap || !ScrollTrigger || !portfolio) {
+  if (!gsap || !ScrollTrigger || !livestream) {
     stage.classList.add("is-lanyard-static");
     setLanyardActive(true);
     return;
   }
 
   gsap.registerPlugin(ScrollTrigger);
-  const portfolioSurfaces = [...portfolio.querySelectorAll(".works, .livestream")];
+  const portfolioSurfaces = [livestream];
   gsap.set(portfolioSurfaces, { transformOrigin: "50% 100%" });
   const entrance = gsap.timeline({
     scrollTrigger: {
       trigger: arrival,
       start: "top bottom",
       end: "top top",
-      pin: portfolio,
+      pin: livestream,
       pinSpacing: false,
       scrub: 0.35,
       invalidateOnRefresh: true,
@@ -1076,16 +1074,6 @@ function setupAboutStackedEntrance() {
     onLeaveBack: () => setLanyardActive(false),
     refreshPriority: 3,
   });
-
-  const stackTriggers = [entrance.scrollTrigger, lanyardTrigger];
-  suspendAboutStackedEntrance = () => {
-    stackTriggers.forEach((trigger) => trigger.disable(true, false));
-    return () => {
-      stackTriggers.forEach((trigger) => trigger.enable(false, false));
-      ScrollTrigger.sort();
-      ScrollTrigger.refresh();
-    };
-  };
 }
 
 function setupExperienceTimeline(timeline) {
@@ -1881,7 +1869,11 @@ const tvcHydrationPromise = hydrateTvcWorks();
 startSiteLoader(tvcHydrationPromise, livestreamHydrationPromise);
 Promise.allSettled([tvcHydrationPromise, livestreamHydrationPromise]).then(() => {
   window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(setupPortfolioGsapMotion);
+    window.requestAnimationFrame(() => {
+      setupPortfolioGsapMotion();
+      window.ScrollTrigger?.sort();
+      window.ScrollTrigger?.refresh();
+    });
   });
 });
 applyMotionPreference();

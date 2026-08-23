@@ -41,7 +41,7 @@ test("TVC rows replay in both scroll directions and expanded rows use the same r
   assert.match(script, /onEnterBack:\s*\(\) => playWorksRow\(row, -1\)/);
   assert.doesNotMatch(script, /onLeave:\s*\(\) => resetWorksRow\(row\)/);
   assert.doesNotMatch(script, /onLeaveBack:\s*\(\) => resetWorksRow\(row\)/);
-  assert.match(script, /schedulePortfolioExpansion\(refreshWorksMotion, expanded, resumeAboutStack\)/);
+  assert.match(script, /schedulePortfolioExpansion\(refreshWorksMotion, expanded\)/);
   assert.match(script, /if \(rect\.bottom < 0\) playWorksRow\(row, -1\)\.progress\(1\)/);
   assert.match(script, /else if \(rect\.top < window\.innerHeight\) playWorksRow\(row, 1\)/);
 });
@@ -65,22 +65,34 @@ test("livestream motion only registers visible projects and refreshes expanded p
   assert.match(script, /onEnterBack:\s*\(\) => playLivestreamProject\(project, direction, -1\)/);
   assert.doesNotMatch(script, /onLeave:\s*\(\) => resetLivestreamProject\(project\)/);
   assert.doesNotMatch(script, /onLeaveBack:\s*\(\) => resetLivestreamProject\(project\)/);
-  assert.match(script, /schedulePortfolioExpansion\(refreshLivestreamMotion, expanded, resumeAboutStack\)/);
+  assert.match(script, /schedulePortfolioExpansion\(refreshLivestreamMotion, expanded\)/);
   assert.match(script, /if \(rect\.bottom < 0\) playLivestreamProject\(project, direction, -1\)\.progress\(1\)/);
   assert.match(script, /else if \(rect\.top < window\.innerHeight\) playLivestreamProject\(project, direction, 1\)/);
 });
 
-test("portfolio expansion suspends the About pin and performs one ordered layout refresh", () => {
-  assert.match(script, /const resumeAboutStack = suspendAboutStackedEntrance\(\)/);
-  assert.match(script, /function schedulePortfolioExpansion[\s\S]*?refreshMotion\(expanded\)[\s\S]*?resumeAboutStack\(\)/);
-  assert.match(script, /stackTriggers\.forEach\(\(trigger\) => trigger\.disable\(true, false\)\)/);
-  assert.match(script, /stackTriggers\.forEach\(\(trigger\) => trigger\.enable\(false, false\)\)/);
-  assert.match(script, /ScrollTrigger\.sort\(\)[\s\S]*?ScrollTrigger\.refresh\(\)/);
+test("portfolio expansion registers visible motion before one ordered layout refresh", () => {
+  assert.match(script, /function schedulePortfolioExpansion\(refreshMotion, expanded\)[\s\S]*?refreshMotion\(expanded\)[\s\S]*?ScrollTrigger\?\.sort\(\)[\s\S]*?ScrollTrigger\?\.refresh\(\)/);
+  assert.doesNotMatch(script, /suspendAboutStackedEntrance/);
+  assert.doesNotMatch(script, /trigger\.disable\(/);
+  assert.doesNotMatch(script, /trigger\.enable\(/);
 
   const worksMotion = script.slice(script.indexOf("function setupWorksGsapMotion"), script.indexOf("function setupLivestreamGsapMotion"));
   const livestreamMotion = script.slice(script.indexOf("function setupLivestreamGsapMotion"), script.indexOf("function setupPortfolioGsapMotion"));
   assert.doesNotMatch(worksMotion, /ScrollTrigger\.refresh\(\)/);
   assert.doesNotMatch(livestreamMotion, /ScrollTrigger\.refresh\(\)/);
+});
+
+test("initial async hydration registers portfolio motion before the global layout refresh", () => {
+  assert.match(
+    script,
+    /Promise\.allSettled\(\[tvcHydrationPromise, livestreamHydrationPromise\]\)[\s\S]*?setupPortfolioGsapMotion\(\)[\s\S]*?ScrollTrigger\?\.sort\(\)[\s\S]*?ScrollTrigger\?\.refresh\(\)/,
+  );
+});
+
+test("livestream card triggers account for the section pinned behind About", () => {
+  const livestreamMotion = script.slice(script.indexOf("function setupLivestreamGsapMotion"), script.indexOf("function setupPortfolioGsapMotion"));
+  const pinnedContainerCount = (livestreamMotion.match(/pinnedContainer:\s*livestream/g) || []).length;
+  assert.ok(pinnedContainerCount >= 3, "heading, entrance, and focus triggers must share the livestream pinned container");
 });
 
 test("motion has a reduced-motion path and only promotes animated surfaces", () => {

@@ -67,11 +67,17 @@ test("About arrives as one overlay card before its separate experience timeline"
 
 test("About overlays the held portfolio while its desktop lanyard stays unclipped", () => {
   assert.match(html, /data-about-transition-source/);
-  assert.match(script, /pin:\s*portfolio/);
+  assert.match(script, /pin:\s*livestream/);
+  assert.doesNotMatch(script, /pin:\s*portfolio/);
   assert.match(script, /pinSpacing:\s*false/);
   assert.match(script, /scale:\s*0\.92/);
   assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?overflow:\s*visible/);
   assert.match(styles, /\.cinematic-v2 \.about-lanyard-anchor\s*\{[\s\S]*?inset:\s*0/);
+});
+
+test("About owns one continuous opaque surface above the outgoing livestream", () => {
+  assert.match(styles, /\.cinematic-v2 \.about\s*\{[\s\S]*?background:\s*var\(--page-background\)/);
+  assert.match(styles, /\.cinematic-v2 \.about-experience-wrap\s*\{[\s\S]*?position:\s*relative[\s\S]*?z-index:\s*2/);
 });
 
 test("mobile puts the static portrait after About copy instead of mounting the lanyard", () => {
