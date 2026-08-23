@@ -67,8 +67,13 @@ let refreshWorksMotion = () => {};
 let refreshLivestreamMotion = () => {};
 const userPausedVideos = new WeakSet();
 
+function hasLayoutBox(element) {
+  return Boolean(element && element.getClientRects().length > 0);
+}
+
 function schedulePortfolioExpansion(refreshMotion, expanded) {
   window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+    window.ScrollTrigger?.refresh();
     refreshMotion(expanded);
     window.ScrollTrigger?.sort();
     window.ScrollTrigger?.refresh();
@@ -742,17 +747,44 @@ function setupWorksGsapMotion() {
             });
       };
 
+      function createWorksRecordTriggers(record) {
+        const { cards: row } = record;
+        record.entranceTrigger = ScrollTrigger.create({
+          trigger: row[0],
+          start: "top 90%",
+          endTrigger: row[row.length - 1],
+          end: "bottom 10%",
+          onEnter: () => record.enabled && playWorksRow(row, 1),
+          onEnterBack: () => record.enabled && playWorksRow(row, -1),
+        });
+        record.focusTrigger = desktop
+          ? ScrollTrigger.create({
+              trigger: row[0],
+              start: "top 60%",
+              endTrigger: row[row.length - 1],
+              end: "bottom 40%",
+              onToggle: ({ isActive }) => record.enabled && setFocusRow(row, isActive),
+              onUpdate: (self) => record.enabled && setFocusRow(row, self.isActive),
+            })
+          : null;
+      }
+
       function setWorksRecordEnabled(record, enabled) {
-        if (record.enabled === enabled) return;
-        record.enabled = enabled;
         if (enabled) {
-          record.entranceTrigger.enable(false, false);
-          record.focusTrigger?.enable(false, false);
+          if (record.enabled) return;
+          record.enabled = true;
+          if (!record.entranceTrigger) createWorksRecordTriggers(record);
+          else {
+            record.entranceTrigger.enable(true, false);
+            record.focusTrigger?.enable(true, false);
+          }
           return;
         }
+        if (!record.enabled) return;
+        record.enabled = false;
         setFocusRow(record.cards, false);
-        record.entranceTrigger.disable(false, false);
-        record.focusTrigger?.disable(false, false);
+        record.entranceTrigger?.disable(true, false);
+        record.focusTrigger?.disable(true, false);
         resetWorksRow(record.cards);
       }
 
@@ -767,31 +799,12 @@ function setupWorksGsapMotion() {
           entranceTrigger: null,
           focusTrigger: null,
         };
-        record.entranceTrigger = ScrollTrigger.create({
-            trigger: row[0],
-            start: "top 90%",
-            endTrigger: row[row.length - 1],
-            end: "bottom 10%",
-            onEnter: () => record.enabled && playWorksRow(row, 1),
-            onEnterBack: () => record.enabled && playWorksRow(row, -1),
-          });
-        record.focusTrigger = desktop
-            ? ScrollTrigger.create({
-                trigger: row[0],
-                start: "top 60%",
-                endTrigger: row[row.length - 1],
-                end: "bottom 40%",
-                onToggle: ({ isActive }) => record.enabled && setFocusRow(row, isActive),
-              })
-            : null;
-        record.entranceTrigger.disable(false, false);
-        record.focusTrigger?.disable(false, false);
         registeredRows.set(row[0], record);
       }
 
       const syncWorksTriggerState = () => {
         registeredRows.forEach((record) => {
-          setWorksRecordEnabled(record, record.cards[0].offsetParent !== null);
+          setWorksRecordEnabled(record, hasLayoutBox(record.cards[0]));
         });
       };
 
@@ -800,7 +813,7 @@ function setupWorksGsapMotion() {
       return () => {
         refreshWorksMotion = () => {};
         registeredRows.forEach(({ entranceTrigger, focusTrigger }) => {
-          entranceTrigger.kill();
+          entranceTrigger?.kill();
           focusTrigger?.kill();
         });
         registeredRows.clear();
@@ -909,16 +922,53 @@ function setupLivestreamGsapMotion() {
         return entrance;
       }
 
+      function createLivestreamRecordTriggers(record) {
+        const { project, direction } = record;
+        record.entranceTrigger = ScrollTrigger.create({
+          trigger: project,
+          start: "top 88%",
+          end: "bottom 12%",
+          onEnter: () => record.enabled && playLivestreamProject(project, direction, 1),
+          onEnterBack: () => record.enabled && playLivestreamProject(project, direction, -1),
+        });
+        record.focusTrigger = desktop
+          ? ScrollTrigger.create({
+              trigger: project,
+              start: "top 64%",
+              end: "bottom 36%",
+              onToggle: ({ isActive }) => setLivestreamFocus(record, isActive),
+              onUpdate: (self) => setLivestreamFocus(record, self.isActive),
+            })
+          : null;
+      }
+
+      function setLivestreamFocus(record, isActive) {
+        if (!record.enabled || record.focusActive === isActive) return;
+        record.focusActive = isActive;
+        gsap.to(record.project, {
+          scale: isActive ? 1.018 : 1,
+          duration: 0.52,
+          ease: isActive ? "back.out(1.35)" : "power3.out",
+          overwrite: "auto",
+        });
+      }
+
       function setLivestreamRecordEnabled(record, enabled) {
-        if (record.enabled === enabled) return;
-        record.enabled = enabled;
         if (enabled) {
-          record.entranceTrigger.enable(false, false);
-          record.focusTrigger?.enable(false, false);
+          if (record.enabled) return;
+          record.enabled = true;
+          if (!record.entranceTrigger) createLivestreamRecordTriggers(record);
+          else {
+            record.entranceTrigger.enable(true, false);
+            record.focusTrigger?.enable(true, false);
+          }
           return;
         }
-        record.entranceTrigger.disable(false, false);
-        record.focusTrigger?.disable(false, false);
+        if (!record.enabled) return;
+        record.enabled = false;
+        record.focusActive = false;
+        record.entranceTrigger?.disable(true, false);
+        record.focusTrigger?.disable(true, false);
         gsap.set(record.project, { clearProps: "transform" });
         resetLivestreamProject(record.project);
       }
@@ -930,40 +980,16 @@ function setupLivestreamGsapMotion() {
           project,
           direction,
           enabled: false,
+          focusActive: false,
           entranceTrigger: null,
           focusTrigger: null,
         };
-        record.entranceTrigger = ScrollTrigger.create({
-            trigger: project,
-            start: "top 88%",
-            end: "bottom 12%",
-            onEnter: () => record.enabled && playLivestreamProject(project, direction, 1),
-            onEnterBack: () => record.enabled && playLivestreamProject(project, direction, -1),
-          });
-        record.focusTrigger = desktop
-            ? ScrollTrigger.create({
-                trigger: project,
-                start: "top 64%",
-                end: "bottom 36%",
-                onToggle: ({ isActive }) => {
-                  if (!record.enabled) return;
-                  gsap.to(project, {
-                    scale: isActive ? 1.018 : 1,
-                    duration: 0.52,
-                    ease: isActive ? "back.out(1.35)" : "power3.out",
-                    overwrite: "auto",
-                  });
-                },
-              })
-            : null;
-        record.entranceTrigger.disable(false, false);
-        record.focusTrigger?.disable(false, false);
         registeredProjects.set(project, record);
       });
 
       const syncLivestreamTriggerState = () => {
         registeredProjects.forEach((record) => {
-          setLivestreamRecordEnabled(record, record.project.offsetParent !== null);
+          setLivestreamRecordEnabled(record, hasLayoutBox(record.project));
         });
       };
 
@@ -972,7 +998,7 @@ function setupLivestreamGsapMotion() {
       return () => {
         refreshLivestreamMotion = () => {};
         registeredProjects.forEach(({ entranceTrigger, focusTrigger }) => {
-          entranceTrigger.kill();
+          entranceTrigger?.kill();
           focusTrigger?.kill();
         });
         registeredProjects.clear();

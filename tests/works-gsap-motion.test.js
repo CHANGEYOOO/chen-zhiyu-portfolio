@@ -39,13 +39,19 @@ test("TVC initializes every row once and only toggles hidden trigger state", () 
   assert.match(script, /function playWorksRow\(row, direction\)/);
   assert.match(script, /onEnter:\s*\(\) => record\.enabled && playWorksRow\(row, 1\)/);
   assert.match(script, /onEnterBack:\s*\(\) => record\.enabled && playWorksRow\(row, -1\)/);
+  assert.match(script, /onUpdate:\s*\(self\) => record\.enabled && setFocusRow\(row, self\.isActive\)/);
   assert.doesNotMatch(script, /onLeave:\s*\(\) => resetWorksRow\(row\)/);
   assert.doesNotMatch(script, /onLeaveBack:\s*\(\) => resetWorksRow\(row\)/);
   assert.match(script, /schedulePortfolioExpansion\(refreshWorksMotion, expanded\)/);
   assert.match(script, /const cards = \[\.\.\.works\.querySelectorAll\("\.work-card"\)\]/);
+  assert.match(script, /function createWorksRecordTriggers\(record\)/);
+  assert.match(script, /if \(!record\.entranceTrigger\) createWorksRecordTriggers\(record\)/);
   assert.match(script, /function setWorksRecordEnabled\(record, enabled\)/);
-  assert.match(script, /record\.entranceTrigger\.disable\(false, false\)/);
-  assert.match(script, /record\.entranceTrigger\.enable\(false, false\)/);
+  assert.match(script, /record\.entranceTrigger\?\.disable\(true, false\)/);
+  assert.match(script, /record\.entranceTrigger\.enable\(true, false\)/);
+  assert.match(script, /function hasLayoutBox\(element\)/);
+  assert.match(script, /element\.getClientRects\(\)\.length > 0/);
+  assert.doesNotMatch(script, /offsetParent !== null/);
   assert.doesNotMatch(script, /unregisterHiddenRows/);
   assert.doesNotMatch(script, /newRows/);
 });
@@ -64,20 +70,24 @@ test("livestream motion enhances projects without taking over gallery scrolling"
 
 test("livestream initializes every project once and only toggles hidden trigger state", () => {
   assert.match(script, /let refreshLivestreamMotion = \(\) => \{\}/);
+  assert.match(script, /function createLivestreamRecordTriggers\(record\)/);
+  assert.match(script, /if \(!record\.entranceTrigger\) createLivestreamRecordTriggers\(record\)/);
   assert.match(script, /function setLivestreamRecordEnabled\(record, enabled\)/);
   assert.match(script, /onEnter:\s*\(\) => record\.enabled && playLivestreamProject\(project, direction, 1\)/);
   assert.match(script, /onEnterBack:\s*\(\) => record\.enabled && playLivestreamProject\(project, direction, -1\)/);
+  assert.match(script, /onUpdate:\s*\(self\) => setLivestreamFocus\(record, self\.isActive\)/);
   assert.doesNotMatch(script, /onLeave:\s*\(\) => resetLivestreamProject\(project\)/);
   assert.doesNotMatch(script, /onLeaveBack:\s*\(\) => resetLivestreamProject\(project\)/);
   assert.match(script, /schedulePortfolioExpansion\(refreshLivestreamMotion, expanded\)/);
-  assert.match(script, /record\.entranceTrigger\.disable\(false, false\)/);
-  assert.match(script, /record\.entranceTrigger\.enable\(false, false\)/);
+  assert.match(script, /record\.entranceTrigger\?\.disable\(true, false\)/);
+  assert.match(script, /record\.entranceTrigger\.enable\(true, false\)/);
+  assert.match(script, /setLivestreamRecordEnabled\(record, hasLayoutBox\(record\.project\)\)/);
   assert.doesNotMatch(script, /unregisterHiddenProjects/);
   assert.doesNotMatch(script, /newProjects/);
 });
 
 test("portfolio expansion preserves registered motion and performs one ordered layout refresh", () => {
-  assert.match(script, /function schedulePortfolioExpansion\(refreshMotion, expanded\)[\s\S]*?refreshMotion\(expanded\)[\s\S]*?ScrollTrigger\?\.sort\(\)[\s\S]*?ScrollTrigger\?\.refresh\(\)/);
+  assert.match(script, /function schedulePortfolioExpansion\(refreshMotion, expanded\)[\s\S]*?ScrollTrigger\?\.refresh\(\)[\s\S]*?refreshMotion\(expanded\)[\s\S]*?ScrollTrigger\?\.sort\(\)[\s\S]*?ScrollTrigger\?\.refresh\(\)/);
   assert.doesNotMatch(script, /suspendAboutStackedEntrance/);
   assert.doesNotMatch(script, /registeredRows\.delete/);
   assert.doesNotMatch(script, /registeredProjects\.delete/);

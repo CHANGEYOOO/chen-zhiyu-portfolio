@@ -3265,7 +3265,7 @@ footer p {
   }
 }
 
-/* Revision 70 — Persistent portfolio motion records across expansion. */
+/* Revision 71 — Unified reveal and focus lifecycle for expanded works. */
 .cinematic-v2 .portfolio-exit {
   position: relative;
   z-index: 1;
