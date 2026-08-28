@@ -3,9 +3,25 @@
   white-space: pre-wrap;
 }
 
+.text-type,
+.text-type__content {
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+}
+
+.text-type__content {
+  display: inline;
+}
+
 .text-type__cursor {
   display: inline-block;
   margin-left: 0.18em;
+  vertical-align: baseline;
   animation: text-type-cursor-blink 0.72s steps(1, end) infinite;
 }
 
