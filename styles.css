@@ -2200,8 +2200,7 @@ footer p {
   text-align: left;
 }
 
-.cinematic-v2 .hero .panel-frame,
-.cinematic-v2 .statement .panel-frame {
+.cinematic-v2 .hero .panel-frame {
   inset:
     calc(var(--hero-frame-top) * var(--hero-frame-progress))
     calc(var(--hero-frame-right) * var(--hero-frame-progress))
@@ -2209,6 +2208,16 @@ footer p {
     calc(var(--hero-frame-left) * var(--hero-frame-progress));
   border-radius: calc(20px * var(--hero-frame-progress));
   box-shadow: 0 4px 10px 0 rgba(0, 0, 0, calc(0.3 * var(--hero-frame-progress)));
+}
+
+.cinematic-v2 .statement .panel-frame {
+  inset:
+    var(--hero-frame-top)
+    var(--hero-frame-right)
+    var(--hero-frame-bottom)
+    var(--hero-frame-left);
+  border-radius: 20px;
+  box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.3);
 }
 
 .cinematic-v2 .hero-copy,

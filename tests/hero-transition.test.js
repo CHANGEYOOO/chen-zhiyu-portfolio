@@ -8,7 +8,7 @@ const script = readFileSync(path.join(__dirname, "..", "script.js"), "utf8");
 const html = readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
 test("hero frame uses a scroll progress for the full-bleed to rounded transition", () => {
-  assert.match(styles, /\.cinematic-v2 \.hero \.panel-frame,\s*\.cinematic-v2 \.statement \.panel-frame\s*\{[\s\S]*?--hero-frame-progress/);
+  assert.match(styles, /\.cinematic-v2 \.hero \.panel-frame\s*\{[\s\S]*?--hero-frame-progress/);
   assert.match(styles, /inset:\s*calc\(var\(--hero-frame-top\)\s*\*\s*var\(--hero-frame-progress\)\)/);
   assert.match(styles, /border-radius:\s*calc\(20px\s*\*\s*var\(--hero-frame-progress\)\)/);
   assert.match(styles, /box-shadow:[\s\S]*?calc\(0\.3\s*\*\s*var\(--hero-frame-progress\)\)/);
