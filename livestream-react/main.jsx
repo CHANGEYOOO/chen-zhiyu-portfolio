@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import CircularGallery from "./CircularGallery.jsx";
 import Lanyard from "./Lanyard.jsx";
 import StrokeText from "./StrokeText.jsx";
+import TextType from "./TextType.jsx";
 import { buildCarouselItems } from "./model.mjs";
 import "./styles.css";
 
@@ -24,6 +25,7 @@ let livestreamRoot;
 let aboutLanyardRoot;
 let aboutLanyardState;
 const headingRoots = new Map();
+const aboutTextRoots = new Map();
 
 function renderAboutLanyard() {
   if (!aboutLanyardRoot || !aboutLanyardState) return false;
@@ -61,6 +63,24 @@ window.JOEKUNI_LIVESTREAM_REACT = {
           strokeColor="rgba(0, 0, 0, 0.34)"
           fillColor="#000"
           className="section-stroke-text"
+        />,
+      );
+    });
+    return true;
+  },
+  mountAboutTextType(nodes) {
+    [...nodes].forEach((node, index) => {
+      if (aboutTextRoots.has(node)) return;
+      const text = node.textContent.replace(/\s+/g, " ").trim();
+      if (!text) return;
+      const root = createRoot(node);
+      aboutTextRoots.set(node, root);
+      root.render(
+        <TextType
+          text={text}
+          startOnVisible
+          typingSpeed={26}
+          initialDelay={node.closest("[data-timeline-item]") ? 0 : Math.min(index * 70, 420)}
         />,
       );
     });

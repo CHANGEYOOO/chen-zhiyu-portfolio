@@ -37,13 +37,15 @@ test("typography tokens unify section headings labels and card metadata", () => 
   assert.match(styles, /\.cinematic-v2 \.livestream-meta h3/);
 });
 
-test("section titles mount the Stroke Text treatment without replacing their heading semantics", () => {
+test("section titles retain their heading semantics while About uses TextType", () => {
   assert.match(html, /id="work-title">\s*<span data-stroke-heading>TVC<\/span>/);
   assert.match(html, /id="livestream-title">\s*<span data-stroke-heading>LIVESTREAM<\/span>/);
-  assert.match(html, /id="about-section-title">\s*<span data-stroke-heading>ABOUT<\/span>/);
+  assert.match(html, /id="about-section-title">\s*<span data-about-text-type>ABOUT<\/span>/);
   assert.match(html, /id="contact-title">\s*<span data-stroke-heading>CONTACT<\/span>/);
   assert.match(reactEntry, /import StrokeText from "\.\/StrokeText\.jsx"/);
   assert.match(reactEntry, /mountStrokeHeadings/);
+  assert.match(reactEntry, /import TextType from "\.\/TextType\.jsx"/);
+  assert.match(reactEntry, /mountAboutTextType/);
 });
 
 test("TVC metadata uses 14px for its first line and 18px for the work title", () => {

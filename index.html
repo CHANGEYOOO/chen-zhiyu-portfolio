@@ -38,14 +38,14 @@
         }
       });
     </script>
-    <link rel="stylesheet" href="styles.css?v=0.24-v79" />
-    <link rel="stylesheet" href="assets/react/joekuni-portfolio-livestream-react.css?v=0.24-v79" />
+    <link rel="stylesheet" href="styles.css?v=0.24-v80" />
+    <link rel="stylesheet" href="assets/react/joekuni-portfolio-livestream-react.css?v=0.24-v80" />
     <script src="assets/data/works-api.js?v=0.4" defer></script>
     <script src="assets/data/livestream-data.js?v=0.21" defer></script>
     <script src="assets/vendor/gsap.min.js?v=3.13.0" defer></script>
     <script src="assets/vendor/ScrollTrigger.min.js?v=3.13.0" defer></script>
-    <script src="assets/react/livestream-circular-gallery.js?v=0.24-v79" defer></script>
-    <script src="script.js?v=0.24-v79" defer onerror="document.documentElement.classList.remove('has-js')"></script>
+    <script src="assets/react/livestream-circular-gallery.js?v=0.24-v80" defer></script>
+    <script src="script.js?v=0.24-v80" defer onerror="document.documentElement.classList.remove('has-js')"></script>
   </head>
   <body class="cinematic-v2 loader-active">
     <div class="site-loader" data-site-loader role="status" aria-live="polite" aria-label="正在加载作品集">
@@ -562,9 +562,9 @@
           <div class="about-stage" data-about-stage>
             <div class="about-inner">
               <header class="about-heading section-heading">
-                <p class="section-heading-label">03 / PROFILE</p>
-                <h2 class="section-heading-title section-heading-title--stroke" id="about-section-title"><span data-stroke-heading>ABOUT</span></h2>
-                <p class="section-heading-description">Art Direction &amp; Visual Design</p>
+                <p class="section-heading-label" data-about-text-type>03 / PROFILE</p>
+                <h2 class="section-heading-title section-heading-title--stroke" id="about-section-title"><span data-about-text-type>ABOUT</span></h2>
+                <p class="section-heading-description" data-about-text-type>Art Direction &amp; Visual Design</p>
               </header>
               <div class="about-intro about-credit-layout">
                 <div class="about-identity">
@@ -573,19 +573,19 @@
                     <span class="about-name-en" lang="en">CHEN ZHIYU</span>
                   </h3>
 
-                  <p class="about-role">
+                  <p class="about-role" data-about-text-type>
                     <span>影视美术指导·视觉设计师</span>
                   </p>
 
-                  <p class="about-summary">
+                  <p class="about-summary" data-about-text-type>
                     从品牌概念与叙事出发，通过美术指导、场景设计与空间搭建，将抽象创意转化为可以被拍摄、观看与感受的视觉世界。工作横跨
                     TVC、游戏影视与直播空间，重视从视觉设定到现场执行及后期衔接的完整落地。
                   </p>
 
                   <section class="about-education" aria-labelledby="education-title">
-                    <p class="about-label" lang="en">Education</p>
-                    <h3 id="education-title">北京电影学院现代创意媒体学院</h3>
-                    <p>视觉艺术系 · 戏剧影视美术设计专业本科</p>
+                    <p class="about-label" lang="en" data-about-text-type>Education</p>
+                    <h3 id="education-title" data-about-text-type>北京电影学院现代创意媒体学院</h3>
+                    <p data-about-text-type>视觉艺术系 · 戏剧影视美术设计专业本科</p>
                   </section>
                 </div>
               </div>
@@ -595,13 +595,13 @@
               <div
                 class="about-lanyard"
                 data-about-lanyard
-                data-front-image="assets/images/about/chen-zhiyu-working-portrait.webp?v=0.24-v79"
+                data-front-image="assets/images/about/chen-zhiyu-working-portrait.webp?v=0.24-v80"
                 aria-label="陈智宇在工作中使用相机记录画面"
               ></div>
               <img
                 class="about-portrait-fallback"
                 data-lanyard-fallback
-                src="assets/images/about/chen-zhiyu-working-portrait.webp?v=0.24-v79"
+                src="assets/images/about/chen-zhiyu-working-portrait.webp?v=0.24-v80"
                 alt="陈智宇在工作中使用相机记录画面"
                 width="960"
                 height="1280"
@@ -615,44 +615,44 @@
         <div class="about-inner about-experience-wrap">
           <section class="about-experience" aria-label="工作经历">
             <header class="about-subhead about-reveal">
-              <p class="about-label" lang="en">Experience</p>
+              <p class="about-label" lang="en" data-about-text-type>Experience</p>
             </header>
 
             <ol class="about-timeline" data-experience-timeline>
               <li class="about-timeline-item" data-timeline-item>
-                <p class="about-year">2025-2026</p>
+                <p class="about-year" data-about-text-type>2025-2026</p>
                 <div class="about-position">
-                  <h4>荒原视觉工作室</h4>
-                  <p>美术指导</p>
+                  <h4 data-about-text-type>荒原视觉工作室</h4>
+                  <p data-about-text-type>美术指导</p>
                 </div>
-                <p class="about-description">参与并主导品牌直播空间及 TVC 项目的设计、搭建与拍摄。</p>
+                <p class="about-description" data-about-text-type>参与并主导品牌直播空间及 TVC 项目的设计、搭建与拍摄。</p>
               </li>
 
               <li class="about-timeline-item" data-timeline-item>
-                <p class="about-year">2025</p>
+                <p class="about-year" data-about-text-type>2025</p>
                 <div class="about-position">
-                  <h4>宁波怡人玩具有限公司</h4>
-                  <p>美术总监</p>
+                  <h4 data-about-text-type>宁波怡人玩具有限公司</h4>
+                  <p data-about-text-type>美术总监</p>
                 </div>
-                <p class="about-description">主导大型微缩场景及美术制作流程，推进资源整合与制作标准建立。</p>
+                <p class="about-description" data-about-text-type>主导大型微缩场景及美术制作流程，推进资源整合与制作标准建立。</p>
               </li>
 
               <li class="about-timeline-item" data-timeline-item>
-                <p class="about-year">2024</p>
+                <p class="about-year" data-about-text-type>2024</p>
                 <div class="about-position">
-                  <h4>至幻蘑菇</h4>
-                  <p>三维美术师兼 CG 导演</p>
+                  <h4 data-about-text-type>至幻蘑菇</h4>
+                  <p data-about-text-type>三维美术师兼 CG 导演</p>
                 </div>
-                <p class="about-description">负责三维视觉设定，以及 CG 产品影像从创意到分镜的完整导演流程。</p>
+                <p class="about-description" data-about-text-type>负责三维视觉设定，以及 CG 产品影像从创意到分镜的完整导演流程。</p>
               </li>
 
               <li class="about-timeline-item" data-timeline-item>
-                <p class="about-year">2023-2024</p>
+                <p class="about-year" data-about-text-type>2023-2024</p>
                 <div class="about-position">
-                  <h4>LOOKwhat</h4>
-                  <p>美术指导</p>
+                  <h4 data-about-text-type>LOOKwhat</h4>
+                  <p data-about-text-type>美术指导</p>
                 </div>
-                <p class="about-description">参与 TVC、MV 等项目从创意落地、拍摄配合到后期衔接的完整流程。</p>
+                <p class="about-description" data-about-text-type>参与 TVC、MV 等项目从创意落地、拍摄配合到后期衔接的完整流程。</p>
               </li>
             </ol>
           </section>
@@ -719,7 +719,7 @@
 
     <footer>
       <p>JOEKUNI</p>
-      <p>HTML PROTOTYPE V0.24 · REVISION 79</p>
+      <p>HTML PROTOTYPE V0.24 · REVISION 80</p>
     </footer>
   </body>
 </html>

@@ -34,9 +34,9 @@ test("About identity absorbs education and removes the retired method and collab
   assert.doesNotMatch(section, /about-secondary/);
 });
 
-test("About keeps the experience timeline label without the visible Chinese heading", () => {
+test("About keeps the typed experience timeline label without the visible Chinese heading", () => {
   const section = aboutSection();
-  assert.match(section, /<p class="about-label" lang="en">Experience<\/p>/);
+  assert.match(section, /<p class="about-label" lang="en" data-about-text-type>Experience<\/p>/);
   assert.doesNotMatch(section, /<h3 id="experience-title">工作经历<\/h3>/);
 });
 

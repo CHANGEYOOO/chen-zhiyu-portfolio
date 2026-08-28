@@ -1,0 +1,18 @@
+.text-type {
+  display: inline;
+  white-space: pre-wrap;
+}
+
+.text-type__cursor {
+  display: inline-block;
+  margin-left: 0.18em;
+  animation: text-type-cursor-blink 0.72s steps(1, end) infinite;
+}
+
+@keyframes text-type-cursor-blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-type__cursor { display: none; }
+}

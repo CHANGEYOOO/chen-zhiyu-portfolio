@@ -37,6 +37,10 @@ window.JOEKUNI_LIVESTREAM_REACT?.mountStrokeHeadings?.(
   document.querySelectorAll("[data-stroke-heading]"),
 );
 
+window.JOEKUNI_LIVESTREAM_REACT?.mountAboutTextType?.(
+  document.querySelectorAll("[data-about-text-type]"),
+);
+
 const aboutLanyard = document.querySelector("[data-about-lanyard]");
 if (aboutLanyard && !reducedMotion.matches) {
   window.JOEKUNI_LIVESTREAM_REACT?.mountAboutLanyard?.(
