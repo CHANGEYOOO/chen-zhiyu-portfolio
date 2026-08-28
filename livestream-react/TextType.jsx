@@ -23,9 +23,8 @@ export default function TextType({
       return undefined;
     }
     const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      setVisible(true);
-      observer.disconnect();
+      setVisible(entry.isIntersecting);
+      if (entry.isIntersecting) setCount(0);
     }, { threshold: 0.12 });
     observer.observe(root);
     return () => observer.disconnect();
