@@ -36,7 +36,7 @@ test("About identity absorbs education and removes the retired method and collab
 
 test("About keeps the typed experience timeline label without the visible Chinese heading", () => {
   const section = aboutSection();
-  assert.match(section, /<p class="about-label" lang="en" data-about-text-type>Experience<\/p>/);
+  assert.match(section, /<p class="about-label" lang="en" data-text-type>Experience<\/p>/);
   assert.doesNotMatch(section, /<h3 id="experience-title">工作经历<\/h3>/);
 });
 
@@ -111,5 +111,5 @@ test("only the About card keeps a page surface while the other sections stay tra
 test("Contact is a compact closing section instead of a full viewport hero", () => {
   assert.match(styles, /\.cinematic-v2 \.contact \{\s*min-height:\s*clamp\(/);
   const contactMarkup = html.slice(html.indexOf('<section class="content-section contact"'));
-  assert.match(contactMarkup, /<p class="contact-role">影视美术指导·视觉设计师<\/p>/);
+  assert.match(contactMarkup, /<p class="contact-role" data-text-type>影视美术指导·视觉设计师<\/p>/);
 });

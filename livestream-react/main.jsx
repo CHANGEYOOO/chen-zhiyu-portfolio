@@ -25,7 +25,7 @@ let livestreamRoot;
 let aboutLanyardRoot;
 let aboutLanyardState;
 const headingRoots = new Map();
-const aboutTextRoots = new Map();
+const textTypeRoots = new Map();
 
 function renderAboutLanyard() {
   if (!aboutLanyardRoot || !aboutLanyardState) return false;
@@ -68,13 +68,13 @@ window.JOEKUNI_LIVESTREAM_REACT = {
     });
     return true;
   },
-  mountAboutTextType(nodes) {
+  mountTextType(nodes) {
     [...nodes].forEach((node, index) => {
-      if (aboutTextRoots.has(node)) return;
+      if (textTypeRoots.has(node)) return;
       const text = node.textContent.replace(/\s+/g, " ").trim();
       if (!text) return;
       const root = createRoot(node);
-      aboutTextRoots.set(node, root);
+      textTypeRoots.set(node, root);
       root.render(
         <TextType
           text={text}
