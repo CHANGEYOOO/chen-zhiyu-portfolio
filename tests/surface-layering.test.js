@@ -11,12 +11,14 @@ function ruleBody(pattern) {
   return match[1];
 }
 
-test("root scrolling cannot expose horizontal canvas space on mobile", () => {
+test("root scrolling clips horizontal canvas space without breaking the sticky intro", () => {
   const html = ruleBody(/(?:^|\n)html\s*\{([^}]*)\}/);
   const body = ruleBody(/(?:^|\n)body\s*\{([^}]*)\}/);
+  const introStage = ruleBody(/(?:^|\n)\.intro-sticky-stage\s*\{([^}]*)\}/);
 
-  assert.match(html, /overflow-x\s*:\s*hidden/);
-  assert.match(body, /overflow-x\s*:\s*hidden/);
+  assert.match(html, /overflow-x\s*:\s*clip/);
+  assert.match(body, /overflow-x\s*:\s*clip/);
+  assert.match(introStage, /position\s*:\s*sticky/);
 });
 
 test("scroll reveal does not clip media shadows", () => {
